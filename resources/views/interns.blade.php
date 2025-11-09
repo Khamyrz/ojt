@@ -1,1172 +1,1246 @@
 @extends('layouts.app')
 
 @section('content')
- 
-</head>
-<body>
-   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f1f5f9;
-      margin: 0;
-      padding: 40px;
-      color: #334155;
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 32px;
-    }
-
-    a.back {
-      display: inline-block;
-      margin: 0 auto 30px;
-      background: #64748b;
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .section-buttons {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .section-buttons form {
-      display: inline-block;
-      margin: 5px;
-    }
-
-    .section-button {
-      background: #3b82f6;
-      color: #fff;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      position: relative;
-      transition: background 0.2s;
-    }
-
-    .section-button:hover {
-      background: #2563eb;
-    }
-
-    .notification {
-      background: #ef4444;
-      color: #fff;
-      border-radius: 9999px;
-      font-size: 12px;
-      padding: 2px 8px;
-      margin-left: 8px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      overflow: hidden;
-    }
-
-    th {
-      background: #3b82f6;
-      color: #fff;
-      padding: 14px;
-      text-align: left;
-    }
-
-    td {
-      padding: 14px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .section-heading {
-      background: #f1f5f9;
-      font-weight: 600;
-      text-align: center;
-      padding: 10px;
-      color: #475569;
-    }
-
-    .button {
-      padding: 6px 12px;
-      font-size: 13px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin: 0 2px;
-      color: #fff;
-      transition: background 0.2s;
-    }
-
-    .view { background: #0ea5e9; }
-    .edit { background: #64748b; }
-    .delete { background: #ef4444; }
-    .accept { background: #22c55e; }
-
-    .view:hover { background: #0284c7; }
-    .edit:hover { background: #475569; }
-    .delete:hover { background: #dc2626; }
-    .accept:hover { background: #16a34a; }
-
-    /* Pagination Styles */
-    .pagination-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 30px 0;
-      gap: 15px;
-    }
-
-    .pagination {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #fff;
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .pagination a,
-    .pagination span {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 40px;
-      height: 40px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: all 0.2s;
-      border: 1px solid #e5e7eb;
-    }
-
-    .pagination a {
-      background: #f8fafc;
-      color: #475569;
-    }
-
-    .pagination a:hover {
-      background: #3b82f6;
-      color: #fff;
-      border-color: #3b82f6;
-      transform: translateY(-1px);
-    }
-
-    .pagination .active span {
-      background: #3b82f6;
-      color: #fff;
-      border-color: #3b82f6;
-      font-weight: 600;
-    }
-
-    .pagination .disabled span {
-      background: #f1f5f9;
-      color: #cbd5e1;
-      cursor: not-allowed;
-      border-color: #e5e7eb;
-    }
-
-    .pagination-info {
-      background: #f8fafc;
-      padding: 10px 15px;
-      border-radius: 6px;
-      color: #64748b;
-      font-size: 14px;
-      border: 1px solid #e5e7eb;
-    }
-
-    /* Previous/Next button styles */
-    .pagination .prev-next {
-      padding: 8px 16px;
-      font-weight: 600;
-      min-width: auto;
-    }
-
-    .pagination .prev-next:hover {
-      background: #2563eb;
-    }
-
-    /* Modal Styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      overflow: auto;
-    }
-
-    .modal-content {
-      background: #fff;
-      margin: 5% auto;
-      padding: 30px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 600px;
-      position: relative;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-
-    .close {
-      position: absolute;
-      right: 20px; top: 20px;
-      font-size: 24px;
-      cursor: pointer;
-      color: #64748b;
-    }
-
-    .close:hover {
-      color: #000;
-    }
-
-    .modal label {
-      display: block;
-      margin-top: 15px;
-      font-weight: 600;
-    }
-
-    .modal p {
-      margin: 5px 0 10px;
-    }
-
-    .modal input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #cbd5e1;
-      border-radius: 4px;
-      margin-top: 5px;
-    }
-
-    .modal button {
-      margin-top: 20px;
-      width: 100%;
-    }
-
-    .doc-link {
-      display: inline-block;
-      margin-top: 5px;
-      color: #3b82f6;
-      text-decoration: underline;
-    }
-
-    /* Message Modal Styles */
-    .message-modal {
-      display: none;
-      position: fixed;
-      z-index: 1100;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      overflow: auto;
-    }
-
-    .message-modal-content {
-      background: #fff;
-      margin: 15% auto;
-      padding: 30px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 400px;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      position: relative;
-      animation: slideIn 0.3s ease-out;
-    }
-
-    @keyframes slideIn {
-      from {
-        transform: translateY(-50px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-
-    .message-icon {
-      font-size: 48px;
-      margin-bottom: 20px;
-    }
-
-    .message-text {
-      font-size: 18px;
-      margin-bottom: 25px;
-      line-height: 1.5;
-    }
-
-    .message-text.success {
-      color: #15803d;
-    }
-
-    .message-text.error {
-      color: #b91c1c;
-    }
-
-    .message-ok-btn {
-      background: #3b82f6;
-      color: #fff;
-      padding: 12px 30px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 16px;
-      transition: background 0.2s;
-    }
-
-    .message-ok-btn:hover {
-      background: #2563eb;
-    }
-
-    .no-interns-message {
-      text-align: center;
-      padding: 40px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      margin-top: 20px;
-    }
-
-    .no-interns-message h3 {
-      color: #b91c1c;
-      margin-bottom: 10px;
-    }
-
-    .no-interns-message p {
-      color: #64748b;
-      margin: 0;
-    }
-
-    /* Confirmation Modal Styles */
-    .confirm-modal {
-      display: none;
-      position: fixed;
-      z-index: 1200;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      overflow: auto;
-    }
-
-    .confirm-modal-content {
-      background: #fff;
-      margin: 15% auto;
-      padding: 30px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 450px;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      position: relative;
-      animation: slideIn 0.3s ease-out;
-    }
-
-    .confirm-icon {
-      font-size: 48px;
-      margin-bottom: 20px;
-      color: #ef4444;
-    }
-
-    .confirm-text {
-      font-size: 18px;
-      margin-bottom: 25px;
-      line-height: 1.5;
-      color: #374151;
-    }
-
-    .confirm-buttons {
-      display: flex;
-      gap: 15px;
-      justify-content: center;
-    }
-
-    .confirm-btn {
-      padding: 12px 25px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 16px;
-      transition: all 0.2s;
-      min-width: 100px;
-    }
-
-    .confirm-btn.yes {
-      background: #ef4444;
-      color: #fff;
-    }
-
-    .confirm-btn.yes:hover {
-      background: #dc2626;
-    }
-
-    .confirm-btn.no {
-      background: #6b7280;
-      color: #fff;
-    }
-
-    .confirm-btn.no:hover {
-      background: #4b5563;
-    }
-
-    /* Document Tab Styles */
-    .doc-tab {
-      background: #f1f5f9;
-      color: #64748b;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px 6px 0 0;
-      cursor: pointer;
-      font-weight: 600;
-      margin-right: 5px;
-      transition: all 0.2s;
-    }
-
-    .doc-tab.active {
-      background: #3b82f6;
-      color: white;
-    }
-
-    .doc-tab:hover {
-      background: #2563eb;
-      color: white;
-    }
-
-    .document-tab {
-      display: none;
-      height: 100%;
-    }
-
-    .document-tab.active {
-      display: block;
-    }
-
-    /* Phase Indicator Banner Styles */
-    .phase-indicator {
-      transition: all 0.3s ease;
-    }
-
-    .phase-indicator:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-    }
-
-    .phase-indicator a:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.5);
-      transform: translateY(-1px);
-    }
-  </style>
-
-  <h1>Pending Interns</h1>
-
-  <!-- Phase Indicator Banner -->
-  @if($phase && $phase !== 'all')
-    <div class="phase-indicator" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 15px 25px; border-radius: 10px; margin-bottom: 25px; text-align: center; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);">
-      <h3 style="margin: 0; font-size: 20px;">
-        📋 Currently Viewing: {{ ucfirst(str_replace('_', ' ', $phase)) }} Phase
-      </h3>
-      <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 14px;">
-        Showing interns in the {{ ucfirst(str_replace('_', ' ', $phase)) }} phase
-        @if(isset($phaseCounts[$phase]))
-          • {{ $phaseCounts[$phase] }} intern(s) found
-        @endif
-      </p>
-      <a href="{{ route('interns', ['filter' => request('filter')]) }}" style="display: inline-block; margin-top: 10px; color: white; text-decoration: none; padding: 8px 16px; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 20px; font-size: 14px; transition: all 0.3s ease;">
-        👁 View All Phases
-      </a>
-    </div>
-  @endif
-
-  <div class="section-buttons">
-    @foreach(['North', 'East', 'West', 'South', 'Northeast'] as $section)
-      <form method="GET" action="{{ route('interns') }}">
-        <input type="hidden" name="filter" value="{{ $section }}">
-        @if($phase && $phase !== 'all')
-          <input type="hidden" name="phase" value="{{ $phase }}">
-        @endif
-        <button class="section-button">
-          {{ $section }}
-          @if(isset($sectionCounts[$section]) && $sectionCounts[$section] > 0)
-            <span class="notification">{{ $sectionCounts[$section] }}</span>
-          @endif
-        </button>
-      </form>
-    @endforeach
-  </div>
-
-  @if($interns->count() > 0)
-  <table>
-    <thead>
-      <tr>
-        <th>First Name</th>
-        <th>Last Name</th>
-        <th>Course</th>
-        <th>Section</th>
-        <th>Current Phase</th>
-        <th>Phase Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      @php $currentSection = null; @endphp
-      @foreach($interns as $intern)
-        @if($currentSection !== $intern->section)
-          @php $currentSection = $intern->section; @endphp
-          <tr>
-            <td colspan="7" class="section-heading">📌 Section: {{ $currentSection }}</td>
-          </tr>
-        @endif
-        <tr>
-          <td>{{ $intern->first_name }}</td>
-          <td>{{ $intern->last_name }}</td>
-          <td>{{ $intern->course }}</td>
-          <td>{{ $intern->section }}</td>
-          <td>
-            @switch($intern->current_phase)
-              @case('pre_enrollment')
-                <span style="color: #6b7280; font-weight: 600;">Pre-Enrollment</span>
-                @break
-              @case('pre_deployment')
-                <span style="color: #f59e0b; font-weight: 600;">Pre-Deployment</span>
-                @break
-              @case('mid_deployment')
-                <span style="color: #3b82f6; font-weight: 600;">Mid-Deployment</span>
-                @break
-              @case('deployment')
-                <span style="color: #8b5cf6; font-weight: 600;">Deployment</span>
-                @break
-              @default
-                <span style="color: #6b7280;">Unknown</span>
-            @endswitch
-          </td>
-          <td>
-            @switch($intern->current_phase)
-              @case('pre_enrollment')
-                <span style="color: {{ $intern->pre_enrollment_status === 'accepted' ? '#10b981' : ($intern->pre_enrollment_status === 'rejected' ? '#ef4444' : '#f59e0b') }}; font-weight: 600;">
-                  {{ ucfirst($intern->pre_enrollment_status) }}
-                </span>
-                @break
-              @case('pre_deployment')
-                <span style="color: {{ $intern->pre_deployment_status === 'accepted' ? '#10b981' : ($intern->pre_deployment_status === 'rejected' ? '#ef4444' : '#f59e0b') }}; font-weight: 600;">
-                  {{ ucfirst($intern->pre_deployment_status) }}
-                </span>
-                @break
-              @case('mid_deployment')
-                <span style="color: {{ $intern->mid_deployment_status === 'accepted' ? '#10b981' : ($intern->mid_deployment_status === 'rejected' ? '#ef4444' : '#f59e0b') }}; font-weight: 600;">
-                  {{ ucfirst($intern->mid_deployment_status) }}
-                </span>
-                @break
-              @case('deployment')
-                <span style="color: {{ $intern->deployment_status === 'accepted' ? '#10b981' : ($intern->deployment_status === 'rejected' ? '#ef4444' : '#f59e0b') }}; font-weight: 600;">
-                  {{ ucfirst($intern->deployment_status) }}
-                </span>
-                @break
-              @default
-                <span style="color: #6b7280;">Unknown</span>
-            @endswitch
-          </td>
-          <td>
-            <!-- View Documents Button -->
-            <button class="button view"
-              onclick="openDocumentsModal(
-                '{{ $intern->resume ? route('documents.view', ['filename' => basename($intern->resume)]) : '#' }}',
-                '{{ $intern->application_letter ? route('documents.view', ['filename' => basename($intern->application_letter)]) : '#' }}',
-                '{{ $intern->medical_certificate ? route('documents.view', ['filename' => basename($intern->medical_certificate)]) : '#' }}',
-                '{{ $intern->insurance ? route('documents.view', ['filename' => basename($intern->insurance)]) : '#' }}',
-                '{{ $intern->acceptance_letter ? route('documents.view', ['filename' => basename($intern->acceptance_letter)]) : '#' }}',
-                '{{ $intern->parents_waiver ? route('documents.view', ['filename' => basename($intern->parents_waiver)]) : '#' }}',
-                '{{ $intern->memorandum_of_agreement ? route('documents.view', ['filename' => basename($intern->memorandum_of_agreement)]) : '#' }}',
-                '{{ $intern->internship_contract ? route('documents.view', ['filename' => basename($intern->internship_contract)]) : '#' }}',
-                '{{ $intern->recommendation_letter ? route('documents.view', ['filename' => basename($intern->recommendation_letter)]) : '#' }}',
-                '{{ $intern->current_phase }}',
-                '{{ route('documents.endorsement', ['id' => $intern->id]) }}'
-              )">
-              👁 View Documents
-            </button>
-
-            <!-- Phase-specific Action Buttons with Confirmations -->
-            @if($intern->status === 'pending' && $intern->current_phase === 'pre_deployment')
-              <button type="button" class="button accept" style="background:#22c55e;" 
-                onclick="showAcceptConfirmModal('account', '{{ $intern->first_name }} {{ $intern->last_name }}', '{{ route('intern.accept', $intern->id) }}')">
-                ✔ Accept Account
-              </button>
-            @endif
-
-            @if($intern->current_phase === 'pre_deployment' && $intern->pre_deployment_status === 'pending')
-              <button type="button" class="button accept" style="background: #10b981;" 
-                onclick="showAcceptConfirmModal('pre-deployment', '{{ $intern->first_name }} {{ $intern->last_name }}', '{{ route('intern.accept.pre-deployment', $intern->id) }}')">
-                ✅ Accept Pre-Deployment
-              </button>
-            @elseif($intern->current_phase === 'mid_deployment' && $intern->mid_deployment_status === 'pending')
-              <button type="button" class="button accept" style="background: #10b981;" 
-                onclick="showAcceptConfirmModal('mid-deployment', '{{ $intern->first_name }} {{ $intern->last_name }}', '{{ route('intern.accept.mid-deployment', $intern->id) }}')">
-                ✅ Accept Mid-Deployment
-              </button>
-            @elseif($intern->current_phase === 'deployment' && $intern->deployment_status === 'pending')
-              <button type="button" class="button accept" style="background: #10b981;" 
-                onclick="showAcceptConfirmModal('deployment', '{{ $intern->first_name }} {{ $intern->last_name }}', '{{ route('intern.accept.deployment', $intern->id) }}')">
-                ✅ Accept Deployment
-              </button>
-            @endif
-
-            <!-- General Action Buttons -->
-            <button class="button edit" onclick="openEditModal({{ $intern->id }}, '{{ $intern->first_name }}', '{{ $intern->last_name }}', '{{ $intern->course }}', '{{ $intern->section }}')">✎ Edit</button>
-            
-            <button type="button" class="button delete" 
-              onclick="showDeleteConfirmModal('{{ $intern->first_name }} {{ $intern->last_name }}', '{{ route('intern.destroy', $intern->id) }}')">
-              🗑 Delete
-            </button>
-            
-            <!-- Accept Intern Button (only show if all phases are completed) -->
-            @if($intern->current_phase === 'completed')
-              <button type="button" class="button accept" 
-                onclick="showAcceptConfirmModal('intern', '{{ $intern->first_name }} {{ $intern->last_name }}', '{{ route('intern.accept', $intern->id) }}')">
-                ✔ Accept Intern
-              </button>
-            @endif
-          </td>
-        </tr>
-      @endforeach
-    </tbody>
-  </table>
-
-  <!-- Pagination -->
-  @if($interns->hasPages())
-  <div class="pagination-container">
-    <div class="pagination-info">
-      Showing {{ $interns->firstItem() }} to {{ $interns->lastItem() }} of {{ $interns->total() }} pending interns
-    </div>
-    
-    <nav class="pagination">
-      {{-- Previous Page Link --}}
-      @if ($interns->onFirstPage())
-        <span class="disabled">
-          <span>← Previous</span>
-        </span>
-      @else
-        <a href="{{ $interns->previousPageUrl() }}" class="prev-next">
-          ← Previous
-        </a>
-      @endif
-
-      {{-- Pagination Elements --}}
-      @foreach ($interns->getUrlRange(1, $interns->lastPage()) as $page => $url)
-        @if ($page == $interns->currentPage())
-          <span class="active"><span>{{ $page }}</span></span>
-        @else
-          <a href="{{ $url }}">{{ $page }}</a>
-        @endif
-      @endforeach
-
-      {{-- Next Page Link --}}
-      @if ($interns->hasMorePages())
-        <a href="{{ $interns->nextPageUrl() }}" class="prev-next">
-          Next →
-        </a>
-      @else
-        <span class="disabled">
-          <span>Next →</span>
-        </span>
-      @endif
-    </nav>
-  </div>
-  @endif
-
-  @else
-    <div class="no-interns-message">
-      <h3>No Pending Interns</h3>
-      <p>{{ request('filter') ? 'No pending interns found for section ' . request('filter') : 'There are currently no pending intern applications.' }}</p>
-    </div>
-  @endif
-
-  <!-- Documents Modal -->
-  <div id="documentsModal" class="modal">
-    <div class="modal-content" style="max-width: 95%; height: 90%;">
-      <span class="close" onclick="closeDocumentsModal()">&times;</span>
-      <h3>Intern Documents</h3>
-
-      <div class="doc-layout" style="display: flex; height: calc(100% - 60px); gap: 16px;">
-        <!-- Sidebar -->
-        <div class="doc-sidebar" style="width: 260px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; height: 100%; overflow-y:auto;">
-          <div style="font-weight:600; color:#475569; margin-bottom:8px;">Pre-Deployment</div>
-          <button class="doc-tab active" style="width: 100%; text-align: left; margin-bottom: 8px;" onclick="switchDocumentTab('resume')">📄 Resume</button>
-          <button class="doc-tab" style="width: 100%; text-align: left; margin-bottom: 8px;" onclick="switchDocumentTab('application')">📝 Application Letter</button>
-          <button class="doc-tab" style="width: 100%; text-align: left; margin-bottom: 8px;" onclick="switchDocumentTab('medical')">🧾 Medical Certificate</button>
-          <button class="doc-tab" style="width: 100%; text-align: left; margin-bottom: 8px;" onclick="switchDocumentTab('insurance')">🛡️ Insurance</button>
-          <button class="doc-tab" style="width: 100%; text-align: left; margin-bottom: 8px;" onclick="switchDocumentTab('acceptance')">✅ Acceptance Letter</button>
-          <button class="doc-tab" style="width: 100%; text-align: left; margin-bottom: 12px;" onclick="switchDocumentTab('parents')">👪 Notarized Parent's Waiver</button>
-
-          <div style="font-weight:600; color:#475569; margin:8px 0;">Mid-Deployment</div>
-          <button class="doc-tab" style="width: 100%; text-align: left; margin-bottom: 8px;" onclick="switchDocumentTab('memorandum')">📑 Memorandum of Agreement</button>
-          <button class="doc-tab" style="width: 100%; text-align: left; margin-bottom: 12px;" onclick="switchDocumentTab('contract')">🖋️ Internship Contract</button>
-
-          <div style="font-weight:600; color:#475569; margin:8px 0;">Deployment</div>
-          <button class="doc-tab" style="width: 100%; text-align: left;" onclick="switchDocumentTab('recommendation')">🎓 Recommendation Letter</button>
-          <button class="doc-tab" style="width: 100%; text-align: left;" onclick="switchDocumentTab('endorsement')">📄 Endorsement (HTML)</button>
-        </div>
-
-        <!-- Content -->
-        <div class="doc-content" style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;">
-          <!-- Resume -->
-          <div id="resumeTab" class="document-tab active" style="height: 100%; display: flex; flex-direction: column;">
-            <div style="padding: 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;"><h4 style="margin:0; color:#3b82f6;">Resume</h4></div>
-            <div style="flex:1; overflow:hidden;"><iframe id="resumeFrame" style="width:100%; height:100%; border:none;" frameborder="0"></iframe></div>
-          </div>
-
-          <!-- Application Letter -->
-          <div id="applicationTab" class="document-tab" style="height: 100%; display: none; flex-direction: column;">
-            <div style="padding: 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;"><h4 style="margin:0; color:#3b82f6;">Application Letter</h4></div>
-            <div style="flex:1; overflow:hidden;"><iframe id="applicationLetterFrame" style="width:100%; height:100%; border:none;" frameborder="0"></iframe></div>
-          </div>
-
-          <!-- Medical Certificate -->
-          <div id="medicalTab" class="document-tab" style="height: 100%; display: none; flex-direction: column;">
-            <div style="padding: 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;"><h4 style="margin:0; color:#3b82f6;">Medical Certificate</h4></div>
-            <div style="flex:1; overflow:hidden;"><iframe id="medicalCertificateFrame" style="width:100%; height:100%; border:none;" frameborder="0"></iframe></div>
-          </div>
-
-          <!-- Insurance -->
-          <div id="insuranceTab" class="document-tab" style="height: 100%; display: none; flex-direction: column;">
-            <div style="padding: 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;"><h4 style="margin:0; color:#3b82f6;">Insurance</h4></div>
-            <div style="flex:1; overflow:hidden;"><iframe id="insuranceFrame" style="width:100%; height:100%; border:none;" frameborder="0"></iframe></div>
-          </div>
-
-          <!-- Acceptance Letter -->
-          <div id="acceptanceTab" class="document-tab" style="height: 100%; display: none; flex-direction: column;">
-            <div style="padding: 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;"><h4 style="margin:0; color:#3b82f6;">Acceptance Letter</h4></div>
-            <div style="flex:1; overflow:hidden;"><iframe id="acceptanceLetterFrame" style="width:100%; height:100%; border:none;" frameborder="0"></iframe></div>
-          </div>
-
-          <!-- Parent's Waiver -->
-          <div id="parentsTab" class="document-tab" style="height: 100%; display: none; flex-direction: column;">
-            <div style="padding: 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;"><h4 style="margin:0; color:#3b82f6;">Notarized Parent's Waiver</h4></div>
-            <div style="flex:1; overflow:hidden;"><iframe id="parentsWaiverFrame" style="width:100%; height:100%; border:none;" frameborder="0"></iframe></div>
-          </div>
-
-          <!-- Memorandum of Agreement -->
-          <div id="memorandumTab" class="document-tab" style="height: 100%; display: none; flex-direction: column;">
-            <div style="padding: 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;"><h4 style="margin:0; color:#3b82f6;">Memorandum of Agreement</h4></div>
-            <div style="flex:1; overflow:hidden;"><iframe id="memorandumFrame" style="width:100%; height:100%; border:none;" frameborder="0"></iframe></div>
-          </div>
-
-          <!-- Internship Contract -->
-          <div id="contractTab" class="document-tab" style="height: 100%; display: none; flex-direction: column;">
-            <div style="padding: 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;"><h4 style="margin:0; color:#3b82f6;">Internship Contract</h4></div>
-            <div style="flex:1; overflow:hidden;"><iframe id="contractFrame" style="width:100%; height:100%; border:none;" frameborder="0"></iframe></div>
-          </div>
-
-          <!-- Recommendation Letter -->
-          <div id="recommendationTab" class="document-tab" style="height: 100%; display: none; flex-direction: column;">
-            <div style="padding: 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;"><h4 style="margin:0; color:#3b82f6;">Recommendation Letter</h4></div>
-            <div style="flex:1; overflow:hidden;"><iframe id="recommendationFrame" style="width:100%; height:100%; border:none;" frameborder="0"></iframe></div>
-          </div>
-
-          <!-- Endorsement (HTML) -->
-          <div id="endorsementTab" class="document-tab" style="height: 100%; display: none; flex-direction: column;">
-            <div style="padding: 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;"><h4 style="margin:0; color:#3b82f6;">Endorsement (Auto-generated)</h4></div>
-            <div style="flex:1; overflow:hidden;"><iframe id="endorsementFrame" style="width:100%; height:100%; border:none;" frameborder="0"></iframe></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Modal -->
-  <div id="editModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeEditModal()">&times;</span>
-      <h3>Edit Intern</h3>
-      <form id="editForm" method="POST">
-        @csrf
-        @method('PUT')
-        <label>First Name:</label>
-        <input type="text" name="first_name" id="edit_first_name" required>
-        <label>Last Name:</label>
-        <input type="text" name="last_name" id="edit_last_name" required>
-        <label>Course:</label>
-        <input type="text" name="course" id="edit_course" required>
-        <label>Section:</label>
-        <input type="text" name="section" id="edit_section" required>
-        <button type="submit" class="button edit">💾 Save</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Accept Confirmation Modal -->
- <div id="acceptConfirmModal" class="confirm-modal hidden">
-  <div class="confirm-modal-content">
-    <div class="confirm-icon">✅</div>
-    <div class="confirm-text" id="acceptConfirmText"></div>
-    <div class="confirm-buttons">
-      <button class="confirm-btn yes" id="acceptConfirmYes">
-        <span>✓</span> Yes, Accept
-      </button>
-      <button class="confirm-btn no" onclick="closeAcceptConfirmModal()">
-        <span>✗</span> Cancel
-      </button>
-    </div>
-  </div>
-</div>
-
-<div id="deleteConfirmModal" class="confirm-modal hidden">
-  <div class="confirm-modal-content">
-    <div class="confirm-icon" style="color: #ef4444;">⚠️</div>
-    <div class="confirm-text" id="deleteConfirmText"></div>
-    <div class="confirm-buttons">
-      <button class="confirm-btn yes" id="deleteConfirmYes">
-        <span>✓</span> Yes, Delete
-      </button>
-      <button class="confirm-btn no" onclick="closeDeleteConfirmModal()">
-        <span>✗</span> Cancel
-      </button>
-    </div>
-  </div>
-</div>
-
-  <!-- Message Modal -->
-  <div id="messageModal" class="message-modal">
-    <div class="message-modal-content">
-      <div class="message-icon" id="messageIcon"></div>
-      <div class="message-text" id="messageText"></div>
-      <button class="message-ok-btn" onclick="closeMessageModal()">Okay</button>
-    </div>
-  </div>
-
-  <!-- Hidden Forms for Actions -->
-  <form id="hiddenAcceptForm" method="POST" style="display: none;">
-    @csrf
-  </form>
-
-  <form id="hiddenDeleteForm" method="POST" style="display: none;">
-    @csrf
-    @method('DELETE')
-  </form>
-
-  <script>
-    // Check for Laravel session messages and show popup
-    document.addEventListener('DOMContentLoaded', function() {
-      @if(session('success'))
-        showMessageModal('success', '{{ session('success') }}');
-      @elseif(session('error'))
-        showMessageModal('error', '{{ session('error') }}');
-      @endif
-    });
-
-    function showMessageModal(type, message) {
-      const modal = document.getElementById('messageModal');
-      const icon = document.getElementById('messageIcon');
-      const text = document.getElementById('messageText');
-      
-      if (type === 'success') {
-        icon.innerHTML = '✅';
-        text.className = 'message-text success';
-      } else {
-        icon.innerHTML = '❌';
-        text.className = 'message-text error';
-      }
-      
-      text.textContent = message;
-      modal.style.display = 'block';
-    }
-
-    function closeMessageModal() {
-      document.getElementById('messageModal').style.display = 'none';
-    }
-
-    // Accept Confirmation Modal Functions
-    function showAcceptConfirmModal(actionType, internName, actionUrl) {
-      const modal = document.getElementById('acceptConfirmModal');
-      const text = document.getElementById('acceptConfirmText');
-      const yesBtn = document.getElementById('acceptConfirmYes');
-      
-      let actionText = '';
-      switch(actionType) {
-        case 'account':
-          actionText = 'accept the account for';
-          break;
-        case 'pre-deployment':
-          actionText = 'accept the pre-deployment phase for';
-          break;
-        case 'mid-deployment':
-          actionText = 'accept the mid-deployment phase for';
-          break;
-        case 'deployment':
-          actionText = 'accept the deployment phase for';
-          break;
-        case 'intern':
-          actionText = 'fully accept the intern';
-          break;
-        default:
-          actionText = 'accept';
-      }
-      
-      text.innerHTML = `Are you sure you want to <strong>${actionText}</strong><br><strong>${internName}</strong>?`;
-      
-      yesBtn.onclick = function() {
-        const form = document.getElementById('hiddenAcceptForm');
-        form.action = actionUrl;
-        form.submit();
-        closeAcceptConfirmModal();
-      };
-      
-      modal.style.display = 'block';
-    }
-
-    function closeAcceptConfirmModal() {
-      document.getElementById('acceptConfirmModal').style.display = 'none';
-    }
-
-    // Delete Confirmation Modal Functions
-    function showDeleteConfirmModal(internName, actionUrl) {
-      const modal = document.getElementById('deleteConfirmModal');
-      const text = document.getElementById('deleteConfirmText');
-      const yesBtn = document.getElementById('deleteConfirmYes');
-      
-      text.innerHTML = `Are you sure you want to <strong>delete</strong><br><strong>${internName}</strong>?<br><small style="color: #6b7280;">This action cannot be undone.</small>`;
-      
-      yesBtn.onclick = function() {
-        const form = document.getElementById('hiddenDeleteForm');
-        form.action = actionUrl;
-        form.submit();
-        closeDeleteConfirmModal();
-      };
-      
-      modal.style.display = 'block';
-    }
-
-    function closeDeleteConfirmModal() {
-      document.getElementById('deleteConfirmModal').style.display = 'none';
-    }
-
-    function openDocumentsModal(resume, appLetter, medicalCert, insurance, acceptanceLetter, parentsWaiver, memorandum, contract, recommendation, currentPhase, endorsementUrl) {
-      // Load ALL documents regardless of current phase
-      
-      // Pre-Deployment documents
-      if (resume && resume !== '#') {
-        document.getElementById('resumeFrame').src = resume;
-      } else {
-        document.getElementById('resumeFrame').src = 'about:blank';
-      }
-      
-      if (appLetter && appLetter !== '#') {
-        document.getElementById('applicationLetterFrame').src = appLetter;
-      } else {
-        document.getElementById('applicationLetterFrame').src = 'about:blank';
-      }
-      
-      if (medicalCert && medicalCert !== '#') {
-        document.getElementById('medicalCertificateFrame').src = medicalCert;
-      } else {
-        document.getElementById('medicalCertificateFrame').src = 'about:blank';
-      }
-      
-      if (insurance && insurance !== '#') {
-        document.getElementById('insuranceFrame').src = insurance;
-      } else {
-        document.getElementById('insuranceFrame').src = 'about:blank';
-      }
-      
-      if (acceptanceLetter && acceptanceLetter !== '#') {
-        document.getElementById('acceptanceLetterFrame').src = acceptanceLetter;
-      } else {
-        document.getElementById('acceptanceLetterFrame').src = 'about:blank';
-      }
-      
-      if (parentsWaiver && parentsWaiver !== '#') {
-        document.getElementById('parentsWaiverFrame').src = parentsWaiver;
-      } else {
-        document.getElementById('parentsWaiverFrame').src = 'about:blank';
-      }
-      
-      // Mid-Deployment documents
-      if (memorandum && memorandum !== '#') {
-        document.getElementById('memorandumFrame').src = memorandum;
-      } else {
-        document.getElementById('memorandumFrame').src = 'about:blank';
-      }
-      
-      if (contract && contract !== '#') {
-        document.getElementById('contractFrame').src = contract;
-      } else {
-        document.getElementById('contractFrame').src = 'about:blank';
-      }
-      
-      // Deployment documents
-      if (recommendation && recommendation !== '#') {
-        document.getElementById('recommendationFrame').src = recommendation;
-      } else {
-        document.getElementById('recommendationFrame').src = 'about:blank';
-      }
-
-      // Endorsement HTML (auto-generated)
-      document.getElementById('endorsementFrame').src = endorsementUrl || 'about:blank';
-      
-      // Determine which tab to show first based on current phase
-      let defaultTab = 'resume'; // Default fallback
-      
-      switch(currentPhase) {
-        case 'pre_deployment':
-          defaultTab = 'resume';
-          break;
-        case 'mid_deployment':
-          defaultTab = 'memorandum';
-          break;
-        case 'deployment':
-          defaultTab = 'recommendation';
-          break;
-        default:
-          defaultTab = 'resume';
-      }
-      
-      // Switch to the appropriate default tab
-      switchDocumentTab(defaultTab);
-      
-      // Show the modal
-      document.getElementById('documentsModal').style.display = 'block';
-    }
-
-    function closeDocumentsModal() {
-      document.getElementById('documentsModal').style.display = 'none';
-      // Clear all iframe sources
-      document.getElementById('applicationLetterFrame').src = '';
-      document.getElementById('parentsWaiverFrame').src = '';
-      document.getElementById('acceptanceLetterFrame').src = '';
-    }
-
-    function switchDocumentTab(tabName) {
-      const tabs = ['resume', 'application', 'medical', 'insurance', 'acceptance', 'parents', 'memorandum', 'contract', 'recommendation', 'endorsement'];
-      tabs.forEach(name => {
-        const tabEl = document.getElementById(name + 'Tab');
-        const btnEl = document.querySelector(`[onclick="switchDocumentTab('${name}')"]`);
-        if (!tabEl || !btnEl) return;
-        if (name === tabName) {
-          tabEl.style.display = 'flex';
-          btnEl.classList.add('active');
-        } else {
-          tabEl.style.display = 'none';
-          btnEl.classList.remove('active');
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f1f5f9;
+            --border: #e2e8f0;
+            --purple: #8b5cf6;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
-      });
-    }
 
-    function openEditModal(id, first, last, course, section) {
-      document.getElementById('edit_first_name').value = first;
-      document.getElementById('edit_last_name').value = last;
-      document.getElementById('edit_course').value = course;
-      document.getElementById('edit_section').value = section;
-      document.getElementById('editForm').action = `/interns/${id}`;
-      document.getElementById('editModal').style.display = 'block';
-    }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: transparent; margin: 0; padding: 0; }
 
-    function closeEditModal() {
-      document.getElementById('editModal').style.display = 'none';
-    }
+        .interns-container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 16px; padding: 32px; box-shadow: var(--shadow-lg); }
 
-    // Close modals when clicking outside
-    window.onclick = function(event) {
-      const editModal = document.getElementById('editModal');
-      const messageModal = document.getElementById('messageModal');
-      const acceptConfirmModal = document.getElementById('acceptConfirmModal');
-      const deleteConfirmModal = document.getElementById('deleteConfirmModal');
-      const documentsModal = document.getElementById('documentsModal');
-      
-      if (event.target === editModal) {
-        closeEditModal();
-      }
-      if (event.target === messageModal) {
-        closeMessageModal();
-      }
-      if (event.target === acceptConfirmModal) {
-        closeAcceptConfirmModal();
-      }
-      if (event.target === deleteConfirmModal) {
-        closeDeleteConfirmModal();
-      }
-      if (event.target === documentsModal) {
-        closeDocumentsModal();
-      }
-    }
+        .page-header {
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
 
-    // Add hover effects for confirmation buttons
- document.addEventListener('DOMContentLoaded', function () {
-  const style = document.createElement('style');
-  style.textContent = `
-    .confirm-modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(5px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    .confirm-modal-content {
-      background: white;
-      padding: 30px;
-      border-radius: 15px;
-      text-align: center;
-      max-width: 400px;
-      width: 90%;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      animation: modalSlideIn 0.3s ease-out;
-    }
+        .page-header p {
+            color: var(--secondary);
+            font-size: 14px;
+            margin: 0;
+        }
 
-    @keyframes modalSlideIn {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+        /* Alert Messages */
+        .alert {
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
 
-    .confirm-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      transition: all 0.2s ease;
-    }
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
 
-    .confirm-btn.yes:hover {
-      background: #16a34a !important;
-    }
+        .alert.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
 
-    .confirm-btn.no:hover {
-      background: #dc2626 !important;
-    }
+        .alert.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-left: 4px solid var(--danger);
+        }
 
-    .confirm-btn:active {
-      transform: translateY(0);
-    }
-  `;
-  document.head.appendChild(style);
-});
+        /* Filter Section */
+        .filter-section {
+            background: var(--light);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
 
-  </script>
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
 
-</body>
-</html>
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid transparent;
+            background: white;
+            color: var(--dark);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+
+        .filter-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .badge {
+            background: var(--danger);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Phase Filter */
+        .phase-filter {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .phase-select {
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .phase-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Phase Indicator Banner */
+        .phase-indicator {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        .phase-indicator h3 {
+            margin: 0 0 8px 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .phase-indicator p {
+            margin: 0 0 16px 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .phase-indicator a {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .phase-indicator a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        /* Table Styles */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: white;
+        }
+
+        th:first-child {
+            border-radius: 0;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--light);
+            transform: scale(1.01);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        td {
+            padding: 16px 20px;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        td:first-child {
+            font-weight: 600;
+        }
+
+        /* Section Heading */
+        .section-heading {
+            background: var(--light);
+            font-weight: 600;
+            text-align: center;
+            padding: 12px;
+            color: var(--secondary);
+            font-size: 14px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-view {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--purple);
+            border: 1px solid var(--purple);
+        }
+
+        .btn-view:hover {
+            background: var(--purple);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-edit {
+            background: rgba(100, 116, 139, 0.1);
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+        }
+
+        .btn-edit:hover {
+            background: var(--secondary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+        }
+
+        .btn-accept {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .btn-accept:hover {
+            background: var(--success);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-reject {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .btn-reject:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-invite {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+            padding: 12px 24px;
+            font-size: 14px;
+        }
+
+        .btn-invite:hover {
+            background: var(--success);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Status Labels */
+        .status-label {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .status-accepted {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .status-rejected {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Phase Labels */
+        .phase-label {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .phase-pre-enrollment {
+            background: rgba(100, 116, 139, 0.1);
+            color: var(--secondary);
+        }
+
+        .phase-pre-deployment {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .phase-mid-deployment {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+        }
+
+        .phase-deployment {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--purple);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--secondary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .interns-container {
+                padding: 20px;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 12px 10px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <div class="interns-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-users"></i>
+                Intern Management
+            </h1>
+            <p>Manage intern applications, phases, and track progress</p>
+        </div>
+
+        <!-- Alert Messages -->
+        @if(session('success'))
+            <div class="alert success">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
+        <!-- Generate Invitation Link Button -->
+        <div style="text-align:center; margin-bottom: 24px;">
+            <button type="button" class="btn btn-invite" onclick="generateAndCopyInviteLink()">
+                <i class="fas fa-link"></i>
+                Generate Invitation Link
+            </button>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-controls">
+                <!-- Phase Filter -->
+                <div class="phase-filter">
+                    <form method="GET" action="{{ route('interns') }}" style="display:flex; gap:10px; align-items:center;">
+                        <input type="hidden" name="filter" value="{{ request('filter') }}">
+                        <select name="phase" onchange="this.form.submit()" class="phase-select">
+                            <option value="all" {{ ($phase === 'all' || !$phase) ? 'selected' : '' }}>All Phases</option>
+                            <option value="pre_deployment" {{ $phase === 'pre_deployment' ? 'selected' : '' }}>Pre-Deployment</option>
+                            <option value="mid_deployment" {{ $phase === 'mid_deployment' ? 'selected' : '' }}>Mid-Deployment</option>
+                            <option value="deployment" {{ $phase === 'deployment' ? 'selected' : '' }}>Deployment</option>
+                        </select>
+                        @if($phase && $phase !== 'all')
+                            <a href="{{ route('interns', ['filter' => request('filter')]) }}" class="btn btn-edit">
+                                <i class="fas fa-times"></i>
+                                Reset Phase
+                            </a>
+                        @endif
+                    </form>
+                </div>
+
+                <!-- Section Filter Buttons -->
+                @foreach(['North', 'East', 'West', 'South', 'Northeast'] as $section)
+                    <form method="GET" action="{{ route('interns') }}" style="display: inline;">
+                        <input type="hidden" name="filter" value="{{ $section }}">
+                        @if($phase && $phase !== 'all')
+                            <input type="hidden" name="phase" value="{{ $phase }}">
+                        @endif
+                        <button type="submit" class="filter-btn {{ request('filter') === $section ? 'active' : '' }}">
+                            <i class="fas fa-users"></i>
+                            {{ $section }}
+                            @if(isset($sectionCounts[$section]) && $sectionCounts[$section] > 0)
+                                <span class="badge">{{ $sectionCounts[$section] }}</span>
+                            @endif
+                        </button>
+                    </form>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Phase Indicator Banner -->
+        @if($phase && $phase !== 'all')
+            <div class="phase-indicator">
+                <h3>
+                    <i class="fas fa-clipboard-list"></i>
+                    Currently Viewing: {{ ucfirst(str_replace('_', ' ', $phase)) }} Phase
+                </h3>
+                <p>
+                    Showing interns in the {{ ucfirst(str_replace('_', ' ', $phase)) }} phase
+                    @if(isset($phaseCounts[$phase]))
+                        • {{ $phaseCounts[$phase] }} intern(s) found
+                    @endif
+                </p>
+                <a href="{{ route('interns', ['filter' => request('filter')]) }}">
+                    <i class="fas fa-eye"></i>
+                    View All Phases
+                </a>
+            </div>
+        @endif
+
+        <!-- Table -->
+        @if($interns->count() > 0)
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> First Name</th>
+                            <th><i class="fas fa-user"></i> Last Name</th>
+                            <th><i class="fas fa-graduation-cap"></i> Course</th>
+                            <th><i class="fas fa-users"></i> Section</th>
+                            <th><i class="fas fa-tasks"></i> Current Phase</th>
+                            <th><i class="fas fa-info-circle"></i> Phase Status</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $currentSection = null; @endphp
+                        @foreach($interns as $intern)
+                            @if($currentSection !== $intern->section)
+                                @php $currentSection = $intern->section; @endphp
+                                <tr>
+                                    <td colspan="7" class="section-heading">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        Section: {{ $currentSection }}
+                                    </td>
+                                </tr>
+                            @endif
+                            <tr>
+                                <td><strong>{{ $intern->first_name }}</strong></td>
+                                <td><strong>{{ $intern->last_name }}</strong></td>
+                                <td>{{ $intern->course }}</td>
+                                <td>{{ $intern->section }}</td>
+                                <td>
+                                    @switch($intern->current_phase)
+                                        @case('pre_enrollment')
+                                            <span class="phase-label phase-pre-enrollment">Pre-Enrollment</span>
+                                            @break
+                                        @case('pre_deployment')
+                                            <span class="phase-label phase-pre-deployment">Pre-Deployment</span>
+                                            @break
+                                        @case('mid_deployment')
+                                            <span class="phase-label phase-mid-deployment">Mid-Deployment</span>
+                                            @break
+                                        @case('deployment')
+                                            <span class="phase-label phase-deployment">Deployment</span>
+                                            @break
+                                        @default
+                                            <span class="phase-label phase-pre-enrollment">{{ ucfirst($intern->current_phase) }}</span>
+                                    @endswitch
+                                </td>
+                                <td>
+                                    @if($intern->status === 'pending')
+                                        <span class="status-label status-pending">Pending</span>
+                                    @elseif($intern->status === 'accepted')
+                                        <span class="status-label status-accepted">Accepted</span>
+                                    @elseif($intern->status === 'rejected')
+                                        <span class="status-label status-rejected">Rejected</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-view" onclick="showInternDetails({{ $intern->id }})">
+                                            <i class="fas fa-eye"></i>
+                                            View
+                                        </button>
+                                        <button type="button" class="btn btn-edit" onclick="showEditIntern({{ $intern->id }})">
+                                            <i class="fas fa-edit"></i>
+                                            Edit
+                                        </button>
+                                        
+                                        @if($intern->status === 'pending')
+                                            <button type="button" class="btn btn-accept" onclick="confirmAccept({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}')">
+                                                <i class="fas fa-check"></i>
+                                                Accept
+                                            </button>
+                                            <button type="button" class="btn btn-reject" onclick="confirmReject({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}')">
+                                                <i class="fas fa-times"></i>
+                                                Reject
+                                            </button>
+                                        @endif
+
+                                        {{-- Pre-Deployment Phase Buttons - Only show when intern is accepted and in pre_deployment phase with pending/null status --}}
+                                        @if($intern->status === 'accepted' && $intern->current_phase === 'pre_deployment' && ($intern->pre_deployment_status === 'pending' || $intern->pre_deployment_status === null))
+                                            <button type="button" class="btn btn-accept" onclick="confirmPhaseAccept({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}', 'pre-deployment')">
+                                                <i class="fas fa-check"></i>
+                                                Accept Pre-Deployment
+                                            </button>
+                                            <button type="button" class="btn btn-reject" onclick="confirmPhaseReject({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}', 'pre-deployment')">
+                                                <i class="fas fa-times"></i>
+                                                Reject Pre-Deployment
+                                            </button>
+                                        @endif
+
+                                        {{-- Mid-Deployment Phase Buttons - Only show when intern is accepted and in mid_deployment phase with pending/null status --}}
+                                        @if($intern->status === 'accepted' && $intern->current_phase === 'mid_deployment' && ($intern->mid_deployment_status === 'pending' || $intern->mid_deployment_status === null))
+                                            <button type="button" class="btn btn-accept" onclick="confirmPhaseAccept({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}', 'mid-deployment')">
+                                                <i class="fas fa-check"></i>
+                                                Accept Mid-Deployment
+                                            </button>
+                                            <button type="button" class="btn btn-reject" onclick="confirmPhaseReject({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}', 'mid-deployment')">
+                                                <i class="fas fa-times"></i>
+                                                Reject Mid-Deployment
+                                            </button>
+                                        @endif
+
+                                        {{-- Deployment Phase Buttons - Only show when intern is accepted and in deployment phase with pending/null status --}}
+                                        @if($intern->status === 'accepted' && $intern->current_phase === 'deployment' && ($intern->deployment_status === 'pending' || $intern->deployment_status === null))
+                                            <button type="button" class="btn btn-accept" onclick="confirmPhaseAccept({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}', 'deployment')">
+                                                <i class="fas fa-check"></i>
+                                                Accept Deployment
+                                            </button>
+                                            <button type="button" class="btn btn-reject" onclick="confirmPhaseReject({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}', 'deployment')">
+                                                <i class="fas fa-times"></i>
+                                                Reject Deployment
+                                            </button>
+                                        @endif
+
+                                        <button type="button" class="btn btn-delete" onclick="confirmDelete({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}')">
+                                            <i class="fas fa-trash"></i>
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="empty-state">
+                <i class="fas fa-user-slash"></i>
+                <h3>No Interns Found</h3>
+                <p>No interns match the current filter criteria</p>
+            </div>
+        @endif
+    </div>
+
+    <!-- View Intern Details Modal -->
+    <div id="viewInternModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close" onclick="closeViewInternModal()">&times;</span>
+            <h2 style="margin-bottom: 20px; color: #1e293b;">
+                <i class="fas fa-user"></i> Intern Details
+            </h2>
+            <div id="internDetailsContent"></div>
+        </div>
+    </div>
+
+    <!-- Edit Intern Modal -->
+    <div id="editInternModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close" onclick="closeEditInternModal()">&times;</span>
+            <h2 style="margin-bottom: 20px; color: #1e293b;">
+                <i class="fas fa-edit"></i> Edit Intern
+            </h2>
+            <form id="editInternForm" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1e293b;">First Name</label>
+                    <input type="text" name="first_name" id="edit_first_name" required 
+                           style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1e293b;">Last Name</label>
+                    <input type="text" name="last_name" id="edit_last_name" required 
+                           style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1e293b;">Course</label>
+                    <input type="text" name="course" id="edit_course" required 
+                           style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1e293b;">Section</label>
+                    <select name="section" id="edit_section" required 
+                            style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        <option value="">Select Section</option>
+                        <option value="North">North</option>
+                        <option value="South">South</option>
+                        <option value="West">West</option>
+                        <option value="East">East</option>
+                        <option value="Northeast">Northeast</option>
+                    </select>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-edit" onclick="closeEditInternModal()" style="margin-right: 10px; background: #64748b;">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-edit" style="background: #2563eb;">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 16px;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .detail-item {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+
+        .detail-item label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .detail-item .value {
+            font-size: 16px;
+            color: #1e293b;
+            font-weight: 500;
+        }
+    </style>
+
+    <script>
+        // Generate and copy invitation link to clipboard
+        async function generateAndCopyInviteLink() {
+            try {
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+                button.disabled = true;
+
+                const response = await fetch('{{ route('interns.invite-link') }}', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate invitation link');
+                }
+
+                const data = await response.json();
+                const inviteLink = data.link;
+
+                await navigator.clipboard.writeText(inviteLink);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Invitation link generated and copied to clipboard! You can now paste it anywhere.',
+                    confirmButtonColor: '#10b981',
+                    timer: 3000,
+                    timerProgressBar: true,
+                });
+
+                button.innerHTML = originalText;
+                button.disabled = false;
+
+            } catch (error) {
+                console.error('Error generating invitation link:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Failed to generate invitation link. Please try again.',
+                    confirmButtonColor: '#ef4444',
+                });
+                
+                const button = event.target;
+                button.innerHTML = '<i class="fas fa-link"></i> Generate Invitation Link';
+                button.disabled = false;
+            }
+        }
+
+        // Accept intern confirmation
+        function confirmAccept(internId, internName) {
+            Swal.fire({
+                title: 'Accept Intern?',
+                text: `Are you sure you want to accept ${internName}? This will allow them to log in and start their internship.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, accept!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/interns/${internId}/accept`;
+                }
+            });
+        }
+
+        // Reject intern confirmation
+        function confirmReject(internId, internName) {
+            Swal.fire({
+                title: 'Reject Intern?',
+                text: `Are you sure you want to reject ${internName}? This will remove them from the intern list.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, reject!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/interns/${internId}/reject`;
+                }
+            });
+        }
+
+        // Phase accept confirmation
+        function confirmPhaseAccept(internId, internName, phase) {
+            Swal.fire({
+                title: `Accept ${phase.charAt(0).toUpperCase() + phase.slice(1)} Phase?`,
+                text: `Are you sure you want to accept the ${phase} phase for ${internName}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, accept!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (phase === 'pre-deployment') {
+                        
+                        window.location.href = `/interns/${internId}/accept-pre-deployment`;
+                    } else if (phase === 'mid-deployment') {
+                        window.location.href = `/interns/${internId}/accept-mid-deployment`;
+                    } else if (phase === 'deployment') {
+                        window.location.href = `/interns/${internId}/accept-deployment`;
+                    }
+                }
+            });
+        }
+
+        // Phase reject confirmation
+        function confirmPhaseReject(internId, internName, phase) {
+            Swal.fire({
+                title: `Reject ${phase.charAt(0).toUpperCase() + phase.slice(1)} Phase?`,
+                text: `Are you sure you want to reject the ${phase} phase for ${internName}? They will need to resubmit their documents.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, reject!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (phase === 'pre-deployment') {
+                        window.location.href = `/interns/${internId}/reject-pre-deployment`;
+                    } else if (phase === 'mid-deployment') {
+                        window.location.href = `/interns/${internId}/reject-mid-deployment`;
+                    } else if (phase === 'deployment') {
+                        window.location.href = `/interns/${internId}/reject-deployment`;
+                    }
+                }
+            });
+        }
+
+        // Delete intern confirmation
+        function confirmDelete(internId, internName) {
+            Swal.fire({
+                title: 'Are you absolutely sure?',
+                text: `This will permanently delete ${internName} and ALL their data including time logs, journals, grades, messages, and documents. This action cannot be undone!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete permanently!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/interns/${internId}`;
+                    
+                    const csrfToken = document.createElement('input');
+                    csrfToken.type = 'hidden';
+                    csrfToken.name = '_token';
+                    csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    
+                    const methodField = document.createElement('input');
+                    methodField.type = 'hidden';
+                    methodField.name = '_method';
+                    methodField.value = 'DELETE';
+                    
+                    form.appendChild(csrfToken);
+                    form.appendChild(methodField);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+
+        // Show session messages with SweetAlert
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: '{{ session('success') }}',
+                confirmButtonColor: '#10b981',
+                timer: 3000,
+                timerProgressBar: true,
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: '{{ session('error') }}',
+                confirmButtonColor: '#ef4444',
+            });
+        @endif
+
+        @if(session('warning'))
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning!',
+                text: '{{ session('warning') }}',
+                confirmButtonColor: '#f59e0b',
+            });
+        @endif
+
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                html: '<ul style="text-align: left;">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
+                confirmButtonColor: '#ef4444',
+            });
+        @endif
+
+        // Show intern details modal
+        async function showInternDetails(internId) {
+            try {
+                const response = await fetch(`{{ url('/interns') }}/${internId}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load intern details');
+                }
+
+                const intern = await response.json();
+                const content = document.getElementById('internDetailsContent');
+                
+                content.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                        <div class="detail-item">
+                            <label>First Name</label>
+                            <div class="value">${intern.first_name || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Last Name</label>
+                            <div class="value">${intern.last_name || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Email</label>
+                            <div class="value">${intern.email || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Phone</label>
+                            <div class="value">${intern.phone || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Course</label>
+                            <div class="value">${intern.course || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Section</label>
+                            <div class="value">${intern.section || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Company Name</label>
+                            <div class="value">${intern.company_name || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Supervisor Name</label>
+                            <div class="value">${intern.supervisor_name || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Supervisor Email</label>
+                            <div class="value">${intern.supervisor_email || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Status</label>
+                            <div class="value">
+                                ${intern.status === 'pending' ? '<span style="color: #f59e0b; font-weight: 600;">Pending</span>' : 
+                                  intern.status === 'accepted' ? '<span style="color: #10b981; font-weight: 600;">Accepted</span>' : 
+                                  intern.status === 'rejected' ? '<span style="color: #ef4444; font-weight: 600;">Rejected</span>' : 
+                                  intern.status || 'N/A'}
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Current Phase</label>
+                            <div class="value">${intern.current_phase ? intern.current_phase.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A'}</div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('viewInternModal').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading intern details:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load intern details. Please try again.',
+                    confirmButtonColor: '#ef4444',
+                });
+            }
+        }
+
+        // Close view intern modal
+        function closeViewInternModal() {
+            document.getElementById('viewInternModal').style.display = 'none';
+        }
+
+        // Show edit intern modal
+        async function showEditIntern(internId) {
+            try {
+                const response = await fetch(`{{ url('/interns') }}/${internId}/edit`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load intern data');
+                }
+
+                const intern = await response.json();
+                
+                document.getElementById('edit_first_name').value = intern.first_name || '';
+                document.getElementById('edit_last_name').value = intern.last_name || '';
+                document.getElementById('edit_course').value = intern.course || '';
+                document.getElementById('edit_section').value = intern.section || '';
+                
+                const form = document.getElementById('editInternForm');
+                form.action = `{{ url('/interns') }}/${internId}`;
+                
+                document.getElementById('editInternModal').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading intern data:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load intern data. Please try again.',
+                    confirmButtonColor: '#ef4444',
+                });
+            }
+        }
+
+        // Close edit intern modal
+        function closeEditInternModal() {
+            document.getElementById('editInternModal').style.display = 'none';
+        }
+
+        // Handle edit form submission
+        document.getElementById('editInternForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const internId = this.action.split('/').pop();
+            
+            try {
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Intern updated successfully.',
+                        confirmButtonColor: '#10b981',
+                        timer: 2000,
+                        timerProgressBar: true,
+                    }).then(() => {
+                        closeEditInternModal();
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.message || 'Failed to update intern');
+                }
+            } catch (error) {
+                console.error('Error updating intern:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Failed to update intern. Please try again.',
+                    confirmButtonColor: '#ef4444',
+                });
+            }
+        });
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const viewModal = document.getElementById('viewInternModal');
+            const editModal = document.getElementById('editInternModal');
+            if (event.target === viewModal) {
+                closeViewInternModal();
+            }
+            if (event.target === editModal) {
+                closeEditInternModal();
+            }
+        }
+    </script>
 @endsection

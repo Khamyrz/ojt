@@ -19,9 +19,23 @@ class DashboardController extends Controller
 {
     public function dashboard()
     {
-        $acceptedCount = Intern::where('status', 'accepted')->whereNull('archived_at')->count();
-        $pendingCount = Intern::where('status', 'pending')->count();
-        $messageCount = Message::count();
+        $adminId = Auth::id();
+
+        // Scope all counts to interns invited/owned by the current admin
+        $acceptedCount = Intern::where('status', 'accepted')
+            ->whereNull('archived_at')
+            ->where('invited_by_user_id', $adminId)
+            ->count();
+
+        $pendingCount = Intern::where('status', 'pending')
+            ->where('invited_by_user_id', $adminId)
+            ->count();
+
+        $messageCount = Message::where(function ($q) use ($adminId) {
+                $q->where('receiver_id', $adminId)->where('receiver_type', 'admin');
+            })->orWhere(function ($q) use ($adminId) {
+                $q->where('sender_id', $adminId)->where('sender_type', 'admin');
+            })->count();
 
         $unreadMessagesCount = Message::where('receiver_id', Auth::id())
             ->where('receiver_type', 'admin')
@@ -36,21 +50,33 @@ class DashboardController extends Controller
         $startOfMonth = Carbon::now()->startOfMonth();
 
         // Sum durations for today
-        $todayHours = TimeLog::whereDate('time_in', $today)->get()->sum(function ($log) {
+        $todayHours = TimeLog::whereDate('time_in', $today)
+            ->whereHas('intern', function ($q) use ($adminId) {
+                $q->where('invited_by_user_id', $adminId);
+            })
+            ->get()->sum(function ($log) {
             return ($log->time_in && $log->time_out)
                 ? Carbon::parse($log->time_out)->diffInMinutes(Carbon::parse($log->time_in)) / 60
                 : 0;
         });
 
         // Sum durations for this week
-        $weekHours = TimeLog::whereBetween('time_in', [$startOfWeek, now()])->get()->sum(function ($log) {
+        $weekHours = TimeLog::whereBetween('time_in', [$startOfWeek, now()])
+            ->whereHas('intern', function ($q) use ($adminId) {
+                $q->where('invited_by_user_id', $adminId);
+            })
+            ->get()->sum(function ($log) {
             return ($log->time_in && $log->time_out)
                 ? Carbon::parse($log->time_out)->diffInMinutes(Carbon::parse($log->time_in)) / 60
                 : 0;
         });
 
         // Sum durations for this month
-        $monthHours = TimeLog::whereBetween('time_in', [$startOfMonth, now()])->get()->sum(function ($log) {
+        $monthHours = TimeLog::whereBetween('time_in', [$startOfMonth, now()])
+            ->whereHas('intern', function ($q) use ($adminId) {
+                $q->where('invited_by_user_id', $adminId);
+            })
+            ->get()->sum(function ($log) {
             return ($log->time_in && $log->time_out)
                 ? Carbon::parse($log->time_out)->diffInMinutes(Carbon::parse($log->time_in)) / 60
                 : 0;
@@ -69,7 +95,10 @@ class DashboardController extends Controller
             : 0;
 
         // ➕ Count "To Review" Submissions
-        $interns = Intern::where('status', 'accepted')->whereNull('archived_at')->get();
+        $interns = Intern::where('status', 'accepted')
+            ->whereNull('archived_at')
+            ->where('invited_by_user_id', $adminId)
+            ->get();
 
         $requests = DocumentRequest::all()->groupBy('intern_id')->map->keyBy('type');
         $submissions = GradeSubmission::all()->groupBy('intern_id')->map->keyBy(function ($item) {
@@ -115,10 +144,12 @@ class DashboardController extends Controller
 
         if ($phase && $phase !== 'all') {
             // Phase-focused view: list interns by current_phase regardless of status
-            $query = Intern::query()->where('current_phase', $phase);
+            $query = Intern::query()->where('current_phase', $phase)
+                ->where('invited_by_user_id', Auth::id());
         } else {
             // Default view: pending accounts awaiting admin approval
-            $query = Intern::query()->where('status', 'pending');
+            $query = Intern::query()->where('status', 'pending')
+                ->where('invited_by_user_id', Auth::id());
         }
 
         if ($filter && $filter !== 'all') {
@@ -154,20 +185,36 @@ class DashboardController extends Controller
 
         $sectionCounts = ($phase && $phase !== 'all')
             ? Intern::where('current_phase', $phase)
+                ->where('invited_by_user_id', Auth::id())
                 ->selectRaw('section, COUNT(*) as count')
                 ->groupBy('section')
                 ->pluck('count', 'section')
             : Intern::where('status', 'pending')
+                ->where('invited_by_user_id', Auth::id())
                 ->selectRaw('section, COUNT(*) as count')
                 ->groupBy('section')
                 ->pluck('count', 'section');
 
         // Phase counts across all interns (regardless of status)
-        $phaseCounts = Intern::selectRaw('current_phase, COUNT(*) as count')
+        $phaseCounts = Intern::where('invited_by_user_id', Auth::id())
+            ->selectRaw('current_phase, COUNT(*) as count')
             ->groupBy('current_phase')
             ->pluck('count', 'current_phase');
 
         return view('interns', compact('interns', 'sectionCounts', 'phaseCounts', 'filter', 'phase'));
+    }
+
+    public function generateInviteLink(Request $request)
+    {
+        $userId = auth()->id();
+        $payload = [
+            'invited_by' => $userId,
+            'exp' => now()->addHours(12)->timestamp,
+        ];
+        $token = \Illuminate\Support\Facades\Crypt::encryptString(json_encode($payload));
+        $loginPath = route('intern.login', [], false); // '/intern/login'
+        $fullUrl = url($loginPath) . '?invite=' . urlencode($token);
+        return response()->json(['link' => $fullUrl]);
     }
 
     public function documents(Request $request)
@@ -177,6 +224,7 @@ class DashboardController extends Controller
 
         $query = Intern::where('status', 'accepted')
             ->whereNull('archived_at')
+            ->where('invited_by_user_id', Auth::id())
             ->with(['timeLogs', 'documents', 'journals']);
 
         // Apply section filter
@@ -214,6 +262,7 @@ class DashboardController extends Controller
         // Get section counts for accepted (unarchived) interns
         $sectionCounts = Intern::where('status', 'accepted')
             ->whereNull('archived_at')
+            ->where('invited_by_user_id', Auth::id())
             ->selectRaw('section, COUNT(*) as count')
             ->groupBy('section')
             ->pluck('count', 'section')
@@ -226,7 +275,8 @@ class DashboardController extends Controller
     {
         $search = $request->input('search');
 
-        $query = Intern::whereNotNull('archived_at');
+        $query = Intern::whereNotNull('archived_at')
+            ->where('invited_by_user_id', Auth::id());
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -249,7 +299,9 @@ class DashboardController extends Controller
 
     public function archiveIntern($id)
     {
-        $intern = Intern::findOrFail($id);
+        $intern = Intern::where('id', $id)
+            ->where('invited_by_user_id', Auth::id())
+            ->firstOrFail();
         $intern->archived_at = now();
         $intern->save();
 
@@ -264,6 +316,7 @@ class DashboardController extends Controller
     public function messages()
     {
         $interns = Intern::where('status', 'accepted')
+            ->where('invited_by_user_id', Auth::id())
             ->select('id', 'first_name', 'last_name', 'email')
             ->get();
 
@@ -275,7 +328,8 @@ class DashboardController extends Controller
         $filter = $request->input('filter');
         $search = $request->input('search');
 
-        $query = Intern::where('status', 'accepted');
+        $query = Intern::where('status', 'accepted')
+            ->where('invited_by_user_id', Auth::id());
 
         // Apply section filter
         if ($filter && $filter !== 'all') {
@@ -296,6 +350,7 @@ class DashboardController extends Controller
             ->get();
 
         $sectionCounts = Intern::where('status', 'accepted')
+            ->where('invited_by_user_id', Auth::id())
             ->selectRaw('section, COUNT(*) as count')
             ->groupBy('section')
             ->pluck('count', 'section')
@@ -357,14 +412,18 @@ class DashboardController extends Controller
 
     public function deleteAllInterns()
     {
-        DB::transaction(function () {
-            TimeLog::truncate();
-            Journal::truncate();
-            Document::truncate();
-            GradeSubmission::truncate();
-            Message::where('sender_type', 'intern')->orWhere('receiver_type', 'intern')->delete();
-            DocumentRequest::truncate();
-            Intern::truncate();
+        $adminId = Auth::id();
+        DB::transaction(function () use ($adminId) {
+            $internIds = Intern::where('invited_by_user_id', $adminId)->pluck('id');
+
+            TimeLog::whereIn('intern_id', $internIds)->delete();
+            Journal::whereIn('intern_id', $internIds)->delete();
+            Document::whereIn('intern_id', $internIds)->delete();
+            GradeSubmission::whereIn('intern_id', $internIds)->delete();
+            Message::whereIn('sender_id', $internIds)->where('sender_type', 'intern')->delete();
+            Message::whereIn('receiver_id', $internIds)->where('receiver_type', 'intern')->delete();
+            DocumentRequest::whereIn('intern_id', $internIds)->delete();
+            Intern::whereIn('id', $internIds)->delete();
         });
 
         return redirect()->back()->with('success', 'All interns and their related data have been deleted.');
@@ -375,8 +434,9 @@ class DashboardController extends Controller
      */
     public function destroyIntern($id)
     {
-        DB::transaction(function () use ($id) {
-            $intern = Intern::findOrFail($id);
+        $adminId = Auth::id();
+        DB::transaction(function () use ($id, $adminId) {
+            $intern = Intern::where('id', $id)->where('invited_by_user_id', $adminId)->firstOrFail();
             
             // Delete all related data
             TimeLog::where('intern_id', $id)->delete();

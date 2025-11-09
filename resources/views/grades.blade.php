@@ -2,263 +2,549 @@
 
 @section('content')
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f5f8fa;
-            margin: 30px;
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f1f5f9;
+            --border: #e2e8f0;
+            --purple: #8b5cf6;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
 
-        h1 {
-            text-align: center;
-            color: #333;
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: transparent; margin: 0; padding: 0; }
+
+        .grades-container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 16px; padding: 32px; box-shadow: var(--shadow-lg); }
+
+        .page-header {
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border);
         }
 
-        .section-search-wrapper {
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0 0 8px 0;
             display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
         }
 
-        .section-buttons form,
-        .search-form {
-            display: inline-flex;
+        .page-header p {
+            color: var(--secondary);
+            font-size: 14px;
+            margin: 0;
         }
 
-        .section-button {
-            padding: 10px 20px;
-            border: none;
-            background-color: #3490dc;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .section-button:hover {
-            background-color: #2779bd;
-        }
-
-        .notification {
-            background-color: #6c757d;
-            color: white;
-            padding: 2px 6px;
-            font-size: 12px;
-            border-radius: 10px;
-            margin-left: 6px;
-        }
-
-        .search-input {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px 0 0 5px;
-            width: 200px;
-        }
-
-        .search-button {
-            padding: 10px 16px;
-            border: none;
-            background-color: #38c172;
-            color: white;
-            border-radius: 0 5px 5px 0;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .search-button:hover {
-            background-color: #2f9e60;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.05);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #3490dc;
-            color: white;
-        }
-
+        /* Alert Messages */
         .alert {
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 20px;
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .alert.success {
-            color: #38c172;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border-left: 4px solid var(--success);
         }
 
         .alert.error {
-            color: #e3342f;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-left: 4px solid var(--danger);
         }
 
-        .request-btn {
-            background-color: #38c172;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-weight: bold;
+        /* Filter Section */
+        .filter-section {
+            background: var(--light);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid transparent;
+            background: white;
+            color: var(--dark);
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
         }
 
-        .request-btn:hover {
-            background-color: #2f9e60;
+        .filter-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
 
-        .requested-label {
-            color: #aaa;
-            font-weight: bold;
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .badge {
+            background: var(--danger);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Search Bar */
+        .search-container {
+            flex: 1;
+            min-width: 250px;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .search-wrapper {
+            display: flex;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .search-wrapper:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            font-size: 14px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .search-input::placeholder {
+            color: var(--secondary);
+        }
+
+        .search-btn {
+            padding: 12px 20px;
+            border: none;
+            background: var(--success);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: #059669;
+        }
+
+        /* Table Styles */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: white;
+        }
+
+        th:first-child {
+            border-radius: 0;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--light);
+            transform: scale(1.01);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        td {
+            padding: 16px 20px;
+            color: var(--dark);
             font-size: 14px;
         }
 
-        .view-btn {
-            background-color: #6f42c1;
-            color: white;
+        td:first-child {
+            font-weight: 600;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
             border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-weight: bold;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
             cursor: pointer;
+            transition: all 0.3s ease;
             text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-view {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--purple);
+            border: 1px solid var(--purple);
+        }
+
+        .btn-view:hover {
+            background: var(--purple);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-request {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .btn-request:hover {
+            background: var(--success);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .status-label {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
             display: inline-block;
         }
 
-        .view-btn:hover {
-            background-color: #563d7c;
+        .status-requested {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
         }
 
-        .delete-btn {
-            background-color: #e3342f;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--secondary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Section Badge */
+        .section-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
             font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
         }
 
-        .delete-btn:hover {
-            background-color: #cc1f1a;
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grades-container {
+                padding: 20px;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container {
+                max-width: 100%;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 12px 10px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
         }
 
-        .action-buttons {
-            display: flex;
-            gap: 5px;
-            justify-content: center;
-            align-items: center;
+        /* Loading Animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
         }
     </style>
 
-    <h1>📊 Grades</h1>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    @if(session('success'))
-        <div class="alert success">{{ session('success') }}</div>
-    @endif
+    <div class="grades-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-chart-bar"></i>
+                Grades Management
+            </h1>
+            <p>View, request, and manage intern certificates and evaluation forms</p>
+        </div>
 
-    <div class="section-search-wrapper">
-        {{-- Show All Button --}}
-        <form method="GET" action="{{ route('grades') }}">
-            <input type="hidden" name="filter" value="all">
-            <button class="section-button">
-                Show All
-                @if(array_sum($sectionCounts))
-                    <span class="notification">{{ array_sum($sectionCounts) }}</span>
-                @endif
-            </button>
-        </form>
+        <!-- Alert Messages -->
+        @if(session('success'))
+            <div class="alert success">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
 
-        {{-- Section Buttons --}}
-        @foreach(array_keys($sectionCounts) as $section)
-            <form method="GET" action="{{ route('grades') }}">
-                <input type="hidden" name="filter" value="{{ $section }}">
-                <button class="section-button">
-                    {{ $section }}
-                    @if(isset($sectionCounts[$section]) && $sectionCounts[$section] > 0)
-                        <span class="notification">{{ $sectionCounts[$section] }}</span>
-                    @endif
-                </button>
-            </form>
-        @endforeach
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-controls">
+                {{-- Show All Button --}}
+                <form method="GET" action="{{ route('grades') }}" style="display: inline;">
+                    <input type="hidden" name="filter" value="all">
+                    <button type="submit" class="filter-btn {{ !request('filter') || request('filter') === 'all' ? 'active' : '' }}">
+                        <i class="fas fa-th-large"></i>
+                        Show All
+                        @if(array_sum($sectionCounts))
+                            <span class="badge">{{ array_sum($sectionCounts) }}</span>
+                        @endif
+                    </button>
+                </form>
 
-        {{-- Search Bar --}}
-        <form class="search-form" action="{{ route('grades') }}" method="GET">
-            <input type="text" name="search" class="search-input" placeholder="Search name or section..." value="{{ request('search') }}" id="searchInput">
-            <button type="submit" class="search-button">🔍</button>
-        </form>
-    </div>
-
-    @if($interns->count() > 0)
-        <table>
-            <thead>
-                <tr>
-                    <th>Full Name</th>
-                    <th>Section</th>
-                    <th>Certificate</th>
-                    <th>Evaluation Form</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($interns as $intern)
-                    <tr>
-                        <td>{{ $intern->first_name }} {{ $intern->last_name }}</td>
-                        <td>{{ $intern->section }}</td>
-                        @foreach(['certificate', 'evaluation'] as $type)
-                            <td>
-                                @php
-                                    $hasSubmission = isset($submissions[$intern->id][$type]);
-                                    $wasRequested = isset($requests[$intern->id][$type]);
-                                @endphp
-
-                                @if($hasSubmission && !empty($submissions[$intern->id][$type]->file_path))
-                                    <a href="{{ asset('storage/' . $submissions[$intern->id][$type]->file_path) }}"
-                                       class="view-btn" target="_blank">View</a>
-                                @elseif($wasRequested)
-                                    <span class="requested-label">Requested</span>
-                                @else
-                                    <form action="{{ route('grades.request') }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="intern_id" value="{{ $intern->id }}">
-                                        <input type="hidden" name="type" value="{{ $type }}">
-                                        <button type="submit" class="request-btn">Request</button>
-                                    </form>
-                                @endif
-                            </td>
-                        @endforeach
-                        <td>
-                            <div class="action-buttons">
-                                <form action="{{ route('intern.destroy', $intern->id) }}" method="POST" 
-                                      onsubmit="return confirm('Are you absolutely sure you want to delete {{ $intern->first_name }} {{ $intern->last_name }}? This will permanently delete the intern and ALL their data including time logs, journals, grades, messages, and documents. This action cannot be undone!')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="delete-btn">🗑 Delete</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
+                {{-- Section Buttons --}}
+                @foreach(array_keys($sectionCounts) as $section)
+                    <form method="GET" action="{{ route('grades') }}" style="display: inline;">
+                        <input type="hidden" name="filter" value="{{ $section }}">
+                        <button type="submit" class="filter-btn {{ request('filter') === $section ? 'active' : '' }}">
+                            <i class="fas fa-users"></i>
+                            {{ $section }}
+                            @if(isset($sectionCounts[$section]) && $sectionCounts[$section] > 0)
+                                <span class="badge">{{ $sectionCounts[$section] }}</span>
+                            @endif
+                        </button>
+                    </form>
                 @endforeach
-            </tbody>
-        </table>
-    @else
-        <p class="alert error">
-            No accepted interns{{ request('filter') && request('filter') !== 'all' ? ' for section ' . request('filter') : '' }}.
-        </p>
-    @endif
+
+                {{-- Search Bar --}}
+                <div class="search-container">
+                    <form class="search-wrapper" action="{{ route('grades') }}" method="GET">
+                        <input 
+                            type="text" 
+                            name="search" 
+                            class="search-input" 
+                            placeholder="Search by name or section..." 
+                            value="{{ request('search') }}" 
+                            id="searchInput"
+                        >
+                        <button type="submit" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        @if($interns->count() > 0)
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Full Name</th>
+                            <th><i class="fas fa-layer-group"></i> Section</th>
+                            <th><i class="fas fa-certificate"></i> Certificate</th>
+                            <th><i class="fas fa-file-alt"></i> Evaluation Form</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($interns as $intern)
+                            <tr>
+                                <td>
+                                    <strong>{{ $intern->first_name }} {{ $intern->last_name }}</strong>
+                                </td>
+                                <td>
+                                    <span class="section-badge">{{ $intern->section }}</span>
+                                </td>
+                                @foreach(['certificate', 'evaluation'] as $type)
+                                    <td>
+                                        @php
+                                            $hasSubmission = isset($submissions[$intern->id][$type]);
+                                            $wasRequested = isset($requests[$intern->id][$type]);
+                                        @endphp
+
+                                        @if($hasSubmission && !empty($submissions[$intern->id][$type]->file_path))
+                                            <a href="{{ asset('storage/' . $submissions[$intern->id][$type]->file_path) }}"
+                                               class="btn btn-view" target="_blank">
+                                                <i class="fas fa-eye"></i>
+                                                View
+                                            </a>
+                                        @elseif($wasRequested)
+                                            <span class="status-label status-requested">
+                                                <i class="fas fa-clock"></i>
+                                                Requested
+                                            </span>
+                                        @else
+                                            <form action="{{ route('grades.request') }}" method="POST" style="display: inline;">
+                                                @csrf
+                                                <input type="hidden" name="intern_id" value="{{ $intern->id }}">
+                                                <input type="hidden" name="type" value="{{ $type }}">
+                                                <button type="submit" class="btn btn-request">
+                                                    <i class="fas fa-paper-plane"></i>
+                                                    Request
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </td>
+                                @endforeach
+                                <td>
+                                    <div class="action-buttons">
+                                        <form action="{{ route('intern.destroy', $intern->id) }}" method="POST" 
+                                              onsubmit="return confirm('Are you absolutely sure you want to delete {{ $intern->first_name }} {{ $intern->last_name }}? This will permanently delete the intern and ALL their data including time logs, journals, grades, messages, and documents. This action cannot be undone!')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-delete">
+                                                <i class="fas fa-trash-alt"></i>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h3>No Interns Found</h3>
+                <p>
+                    @if(request('search'))
+                        No results found for "{{ request('search') }}"
+                    @elseif(request('filter') && request('filter') !== 'all')
+                        No accepted interns for section {{ request('filter') }}
+                    @else
+                        No accepted interns available at the moment
+                    @endif
+                </p>
+            </div>
+        @endif
+    </div>
 
     <script>
         // Real-time search functionality
@@ -285,7 +571,49 @@
                             }
                         }
                     });
+
+                    // Show/hide empty state
+                    const visibleRows = Array.from(tableRows).filter(row => row.style.display !== 'none');
+                    if (visibleRows.length === 0 && searchTerm) {
+                        showEmptyState();
+                    } else {
+                        hideEmptyState();
+                    }
                 });
+            }
+
+            // Add smooth scroll to top on filter change
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+
+            function showEmptyState() {
+                const tableContainer = document.querySelector('.table-container');
+                if (tableContainer && !document.querySelector('.search-empty-state')) {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'empty-state search-empty-state';
+                    emptyState.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No Results Found</h3>
+                        <p>Try adjusting your search terms</p>
+                    `;
+                    tableContainer.style.display = 'none';
+                    tableContainer.parentElement.appendChild(emptyState);
+                }
+            }
+
+            function hideEmptyState() {
+                const emptyState = document.querySelector('.search-empty-state');
+                const tableContainer = document.querySelector('.table-container');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+                if (tableContainer) {
+                    tableContainer.style.display = 'block';
+                }
             }
         });
     </script>

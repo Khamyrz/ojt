@@ -12,7 +12,9 @@ class MessageController extends Controller
 {
     public function index()
     {
-        $interns = Intern::where('status', 'accepted')->get();
+        $interns = Intern::where('status', 'accepted')
+            ->where('invited_by_user_id', Auth::id())
+            ->get();
 
         foreach ($interns as $intern) {
             $intern->unread_count = Message::where('sender_id', $intern->id)
@@ -29,7 +31,9 @@ class MessageController extends Controller
     public function conversation($internId)
     {
         $adminId = Auth::id();
-        $intern = Intern::findOrFail($internId);
+        $intern = Intern::where('id', $internId)
+            ->where('invited_by_user_id', $adminId)
+            ->firstOrFail();
 
         // Mark intern messages as read
         Message::where('sender_id', $internId)
@@ -68,6 +72,12 @@ class MessageController extends Controller
         ]);
 
         $admin = Auth::user();
+        
+        // Ensure the admin can only send messages to their own interns
+        $intern = Intern::where('id', $request->receiver_id)
+            ->where('invited_by_user_id', $admin->id)
+            ->firstOrFail();
+            
         $message = Message::create([
             'sender_id' => $admin->id,
             'receiver_id' => $request->receiver_id,
@@ -93,7 +103,9 @@ class MessageController extends Controller
         ]);
 
         $admin = Auth::user();
-        $interns = Intern::where('status', 'accepted')->get();
+        $interns = Intern::where('status', 'accepted')
+            ->where('invited_by_user_id', $admin->id)
+            ->get();
 
         // Create a single broadcast message
         Message::create([
@@ -105,12 +117,17 @@ class MessageController extends Controller
             'is_read' => false,
         ]);
 
-        return back()->with('success', '📢 Broadcast message sent to all interns.');
+        return back()->with('success', '📢 Broadcast message sent to all your interns.');
     }
 
     public function clearConversation($internId)
     {
         $adminId = Auth::id();
+        
+        // Ensure the admin can only clear conversations with their own interns
+        $intern = Intern::where('id', $internId)
+            ->where('invited_by_user_id', $adminId)
+            ->firstOrFail();
 
         Message::where(function ($q) use ($adminId, $internId) {
             $q->where('sender_id', $adminId)
@@ -130,7 +147,8 @@ class MessageController extends Controller
     public function internMessages()
     {
         $intern = Auth::guard('intern')->user();
-        $admin = User::first();
+        // Determine the owning admin for this intern
+        $admin = \App\Models\User::find($intern?->invited_by_user_id);
 
         if (!$admin) {
             return redirect()->route('intern.dashboard')->with('error', 'Admin not found.');
@@ -193,7 +211,7 @@ class MessageController extends Controller
         ]);
 
         $intern = Auth::guard('intern')->user();
-        $admin = User::first();
+        $admin = \App\Models\User::find($intern?->invited_by_user_id);
 
         if (!$intern) {
             return response()->json(['error' => 'Not authenticated'], 401);

@@ -41,10 +41,10 @@ return [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
             'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', '127.0.0.1'),
-            'port' => env('MAIL_PORT', 2525),
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
+            'host' => env('MAIL_HOST', 'smtp.gmail.com'),
+            'port' => env('MAIL_PORT', 587),
+            'username' => env('MAIL_USERNAME', 'ojtmonitoring71@gmail.com'),
+            'password' => env('MAIL_PASSWORD', 'zfth lhql kukx ejmp'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
@@ -54,12 +54,18 @@ return [
             'host' => 'smtp.gmail.com',
             'port' => 587,
             'encryption' => 'tls',
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
+            'username' => env('MAIL_USERNAME', 'ojtmonitoring71@gmail.com'),
+            'password' => env('MAIL_PASSWORD', 'zfth lhql kukx ejmp'),
             'timeout' => 60,
-            'local_domain' => env('MAIL_EHLO_DOMAIN'),
-            'verify_peer' => false,
-            'verify_peer_name' => false,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            // Relax TLS verification to avoid Windows/OpenSSL issues during local dev
+            'stream' => [
+                'ssl' => [
+                    'allow_self_signed' => true,
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                ],
+            ],
         ],
 
         'ses' => [
@@ -95,7 +101,7 @@ return [
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
-                'smtp',
+                'gmail',
                 'log',
             ],
             'retry_after' => 60,
@@ -124,8 +130,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        'address' => env('MAIL_FROM_ADDRESS', 'ojtmonitoring71@gmail.com'),
+        'name' => env('MAIL_FROM_NAME', 'OJT-MONITORING'),
     ],
 
 ];

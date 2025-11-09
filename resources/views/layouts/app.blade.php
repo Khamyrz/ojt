@@ -3,258 +3,141 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Dashboard</title>
-
-  <!-- Bootstrap (optional) -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Admin - Intern Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Your custom sidebar + layout styles -->
   <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --secondary: #64748b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #1e293b;
+      --light: #f1f5f9;
+      --border: #e2e8f0;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f4f6f8;
-      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 0; /* remove outer padding so sidebar sits flush to the left */
+      margin: 0; /* remove default body margin that creates left gap */
+    }
+
+    .dashboard-container {
+      max-width: none;
+      width: 100%;
+      margin: 0; /* no outer margin so container touches the viewport edges */
       display: flex;
+      gap: 24px;
+      background: white;
+      border-radius: 0 16px 16px 0; /* flush on the left side */
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      min-height: 100vh; /* fill full height */
     }
 
     .sidebar {
-      width: 240px;
-      background-color: #3490dc;
-      color: white;
-      padding: 20px;
-      height: 100vh;
-      position: fixed;
-    }
-
-    .sidebar h2 {
-      margin-bottom: 30px;
-    }
-
-    .sidebar a {
-      display: block;
-      color: white;
-      text-decoration: none;
-      margin: 15px 0;
-      padding: 10px 15px;
-      border-radius: 5px;
-      position: relative;
-    }
-
-    .sidebar a:hover {
-      background-color: #2779bd;
-    }
-
-    .notification-badge {
-      background-color: red;
-      color: white;
-      border-radius: 50%;
-      font-size: 12px;
-      padding: 3px 7px;
-      position: absolute;
-      top: 8px;
-      right: 10px;
-    }
-
-    .logout-btn {
-      background-color: #e3342f;
-      border: none;
-      padding: 10px 20px;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 30px;
-      width: 100%;
-    }
-
-    .logout-btn:hover {
-      background-color: #cc1f1a;
-    }
-
-    .main-content {
-      margin-left: 260px; /* width + padding of sidebar */
-      padding: 40px;
-      flex: 1;
-    }
-
-    /* Navigation Dropdown Styles */
-    .nav-item-with-dropdown {
-      position: relative;
-    }
-
-    .nav-link-main {
-      display: block;
-      color: white;
-      text-decoration: none;
-      margin: 15px 0;
-      padding: 10px 15px;
-      border-radius: 5px;
-      position: relative;
-    }
-
-    .nav-link-main:hover {
-      background-color: #2779bd;
-    }
-
-    .nav-dropdown {
-      position: absolute;
-      left: 100%;
-      top: 0;
-      background-color: #2779bd;
-      border-radius: 8px;
-      min-width: 200px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-      opacity: 0;
-      visibility: hidden;
-      transform: translateX(-10px);
-      transition: all 0.3s ease;
-      z-index: 1000;
-      margin-left: 10px;
-    }
-
-    .nav-item-with-dropdown:hover .nav-dropdown {
-      opacity: 1;
-      visibility: visible;
-      transform: translateX(0);
-    }
-
-    .dropdown-item {
-      display: block;
-      color: white;
-      text-decoration: none;
-      padding: 12px 20px;
-      border-radius: 0;
-      margin: 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      transition: background-color 0.2s ease;
-    }
-
-    .dropdown-item:first-child {
-      border-radius: 8px 8px 0 0;
-    }
-
-    .dropdown-item:last-child {
-      border-radius: 0 0 8px 8px;
-      border-bottom: none;
-    }
-
-    .dropdown-item:hover {
-      background-color: #1e40af;
-      color: white;
-    }
-
-    /* Arrow indicator for dropdown */
-    .nav-link-main::after {
-      content: '▶';
-      position: absolute;
-      right: 15px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 12px;
-      opacity: 0.7;
-      transition: transform 0.2s ease;
-    }
-
-    .nav-item-with-dropdown:hover .nav-link-main::after {
-      transform: translateY(-50%) rotate(90deg);
-    }
-
-    /* Dropdown Count Badge */
-    .dropdown-count {
-      background-color: #ef4444;
-      color: white;
-      border-radius: 50%;
-      font-size: 11px;
-      padding: 2px 6px;
-      margin-left: auto;
-      min-width: 18px;
-      text-align: center;
-      display: inline-block;
-    }
-
-    .dropdown-item {
+      width: 280px;
+      background: linear-gradient(180deg, var(--dark) 0%, #0f172a 100%);
+      padding: 32px 20px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      position: relative;
+      border-radius: 0; /* ensure flush-left */
     }
+
+    .sidebar::after { content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%; background: rgba(255,255,255,0.1); }
+
+    .brand { margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand h2 { color: white; font-size: 24px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+    .brand p { color: rgba(255,255,255,0.6); font-size: 13px; margin: 0; }
+
+    .nav-menu { flex: 1; }
+    .nav-item { margin-bottom: 8px; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 14px 16px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 10px; transition: all 0.3s ease; position: relative; font-weight: 500; font-size: 14px; }
+    .nav-link:hover { background: rgba(255,255,255,0.1); color: white; transform: translateX(4px); }
+    .nav-link.active { background: var(--primary); color: white; }
+    .nav-link i { width: 20px; text-align: center; font-size: 16px; }
+    .badge { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: var(--danger); color: white; border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+    .logout-section { padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .logout-btn { width: 100%; padding: 14px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .logout-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
+
+    .main-content { flex: 1; padding: 32px; overflow-y: auto; background: var(--light); }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>Admin</h2>
+  <div class="dashboard-container">
+    <div class="sidebar">
+      <div class="brand">
+        <h2><i class="fas fa-graduation-cap"></i> Admin</h2>
+        <p>Intern Management System</p>
+      </div>
 
-    <a href="{{ route('dashboard') }}">
-      🏠 Dashboard
-    </a>
+      <nav class="nav-menu">
+        <div class="nav-item">
+          <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <i class="fas fa-th-large"></i><span>Dashboard</span>
+          </a>
+        </div>
+        <div class="nav-item">
+          <a href="{{ route('interns') }}" class="nav-link {{ request()->routeIs('interns') ? 'active' : '' }}">
+            <i class="fas fa-users"></i><span>Intern List</span>
+            @if(isset($pendingCount) && $pendingCount > 0)
+              <span class="badge">{{ $pendingCount }}</span>
+            @endif
+          </a>
+        </div>
+        <div class="nav-item">
+          <a href="{{ route('documents') }}" class="nav-link {{ request()->routeIs('documents') ? 'active' : '' }}">
+            <i class="fas fa-file-alt"></i><span>Documents</span>
+          </a>
+        </div>
+        <div class="nav-item">
+          <a href="{{ route('grades') }}" class="nav-link {{ request()->routeIs('grades') ? 'active' : '' }}">
+            <i class="fas fa-chart-bar"></i><span>Grades</span>
+          </a>
+        </div>
+        <div class="nav-item">
+          <a href="{{ route('messages') }}" class="nav-link {{ request()->routeIs('messages') ? 'active' : '' }}">
+            <i class="fas fa-envelope"></i><span>Messages</span>
+            @if(isset($unreadMessagesCount) && $unreadMessagesCount > 0)
+              <span class="badge">{{ $unreadMessagesCount }}</span>
+            @endif
+          </a>
+        </div>
+      </nav>
 
-    <!-- Phase Dropdown for Intern List -->
-    <div class="nav-item-with-dropdown">
-      <a href="{{ route('interns') }}" class="nav-link-main">
-        👥 Intern List
-        @if(isset($pendingCount) && $pendingCount > 0)
-          <span class="notification-badge">{{ $pendingCount }}</span>
-        @endif
-      </a>
-      <div class="nav-dropdown">
-        <a href="{{ route('interns', ['phase' => 'all']) }}" class="dropdown-item">
-          📋 All Phases
-          @if(isset($pendingCount) && $pendingCount > 0)
-            <span class="dropdown-count">{{ $pendingCount }}</span>
-          @endif
-        </a>
-        <a href="{{ route('interns', ['phase' => 'pre_deployment']) }}" class="dropdown-item">
-          🚀 Pre-Deployment
-          @if(isset($phaseCounts['pre_deployment']) && $phaseCounts['pre_deployment'] > 0)
-            <span class="dropdown-count">{{ $phaseCounts['pre_deployment'] }}</span>
-          @endif
-        </a>
-        <a href="{{ route('interns', ['phase' => 'mid_deployment']) }}" class="dropdown-item">
-          ⚡ Mid-Deployment
-          @if(isset($phaseCounts['mid_deployment']) && $phaseCounts['mid_deployment'] > 0)
-            <span class="dropdown-count">{{ $phaseCounts['mid_deployment'] }}</span>
-          @endif
-        </a>
-        <a href="{{ route('interns', ['phase' => 'deployment']) }}" class="dropdown-item">
-          🎯 Deployment
-          @if(isset($phaseCounts['deployment']) && $phaseCounts['deployment'] > 0)
-            <span class="dropdown-count">{{ $phaseCounts['deployment'] }}</span>
-          @endif
-        </a>
+      <div class="logout-section">
+        <form method="POST" action="{{ route('logout') }}">
+          @csrf
+          <button type="submit" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+          </button>
+        </form>
       </div>
     </div>
 
-    <a href="{{ route('documents') }}">
-      📄 Documents
-    </a>
-
-    <a href="{{ route('grades') }}">
-      📊 Grades
-    </a>
-
-    <a href="{{ route('messages') }}">
-      ✉️ Messages
-      @if(isset($unreadMessagesCount) && $unreadMessagesCount > 0)
-        <span class="notification-badge">{{ $unreadMessagesCount }}</span>
-      @endif
-    </a>
-
-    
-
-    <form method="POST" action="{{ route('logout') }}">
-      @csrf
-      <button type="submit" class="logout-btn">🚪 Logout</button>
-    </form>
+    <div class="main-content">
+      @yield('content')
+    </div>
   </div>
 
-  <!-- Main content area -->
-  <div class="main-content">
-    @yield('content')
-  </div>
-
-  <!-- Bootstrap Bundle (optional) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
   @stack('scripts')
 </body>
 </html>

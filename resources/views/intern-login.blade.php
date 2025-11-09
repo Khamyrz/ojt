@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Intern Login</title>
     <!-- SweetAlert2 CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         /* Reset */
         * {
@@ -24,6 +24,7 @@
             justify-content: center;
             position: relative;
             background: url('{{ asset('logo.png') }}') center center no-repeat fixed;
+            transition: filter 0.3s ease;
         }
 
         /* Dark overlay */
@@ -33,6 +34,7 @@
             inset: 0;
             background: rgba(0, 0, 0, 0.45);
             z-index: 0;
+            transition: filter 0.3s ease;
         }
 
         /* Login card (Glassmorphism) */
@@ -48,6 +50,7 @@
             animation: fadeIn 0.6s ease-out;
             z-index: 1;
             position: relative;
+            transition: filter 0.3s ease;
         }
 
         /* Back button - positioned at top left */
@@ -90,19 +93,7 @@
             font-weight: 700;
             font-size: 26px;
             letter-spacing: 0.5px;
-            margin-top: 20px; /* Add some top margin to account for back button */
-        }
-
-        /* Error message */
-        .error-message {
-            color: #f87171;
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 15px;
-            text-align: center;
+            margin-top: 20px;
         }
 
         /* Input group */
@@ -289,10 +280,6 @@
         }
 
         /* Form Styles */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
         .form-group label {
             display: block;
             margin-bottom: 8px;
@@ -301,8 +288,8 @@
             font-size: 14px;
         }
 
-        .form-group input,
-        .form-group select {
+        .modal .form-group input,
+        .modal .form-group select {
             width: 100%;
             padding: 12px;
             border: 2px solid #e2e8f0;
@@ -313,8 +300,8 @@
             color: #1d3557;
         }
 
-        .form-group input:focus,
-        .form-group select:focus {
+        .modal .form-group input:focus,
+        .modal .form-group select:focus {
             outline: none;
             border-color: #457b9d;
             box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.1);
@@ -341,6 +328,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            width: auto;
         }
 
         .submit-btn:hover {
@@ -366,55 +354,101 @@
                 font-size: 14px;
             }
         }
+
+        /* Blur ONLY the background and container when SweetAlert is active */
+        body.swal2-shown::before {
+            filter: blur(8px);
+        }
+
+        body.swal2-shown .login-container {
+            filter: blur(8px);
+        }
+
+        /* Ensure SweetAlert popup is completely unaffected by blur */
+        .swal2-container {
+            filter: none !important;
+            backdrop-filter: none !important;
+        }
+
+        .swal2-popup {
+            filter: none !important;
+            backdrop-filter: none !important;
+        }
+
+        /* Make SweetAlert stand out */
+        .swal2-popup {
+            transform: scale(1.05) !important;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+            border: 2px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        /* Make the backdrop darker for better focus */
+        .swal2-backdrop-show {
+            background-color: rgba(0, 0, 0, 0.6) !important;
+        }
+
+        /* Add subtle animation to SweetAlert */
+        .swal2-show {
+            animation: sweetAlertFocus 0.4s ease-out !important;
+        }
+
+        @keyframes sweetAlertFocus {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) translateY(-20px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1.05) translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <!-- Back button moved to top left -->
-        <a href="{{ route('login') }}" class="back-button" onclick="confirmBack(event)">Back</a>
-
+        <a href="{{ route('login') }}" class="back-button" onclick="confirmBack(event)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Back
+        </a>
 
         <h2>Intern Login</h2>
-
-        @if(session('error'))
-            <div class="error-message">{{ session('error') }}</div>
-        @endif
 
         <form method="POST" action="{{ route('intern.login.submit') }}">
             @csrf
             <div class="form-group">
                 <input type="email" name="email" placeholder="Intern Email" required>
-                <!-- Email icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M16 12H8m0 0l4-4m-4 4l4 4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
             </div>
             <div class="form-group">
                 <input type="password" name="password" placeholder="Password" required>
-                <!-- Lock icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 15v2m0-6a2 2 0 114 0v2H8v-2a2 2 0 114 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                 </svg>
             </div>
             <button type="submit">Login</button>
         </form>
 
-        <!-- Registration Button -->
         <div style="margin-top: 20px; text-align: center;">
             <button type="button" onclick="openRegistrationModal()" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
                 New Intern? Register Here
             </button>
         </div>
+
+        <div style="margin-top: 15px; text-align: center;">
+            <button type="button" onclick="showForgotPasswordModal()" style="background: transparent; border: 1px solid rgba(255, 255, 255, 0.3); color: rgba(255, 255, 255, 0.8); padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">
+                Forgot Password?
+            </button>
+        </div>
     </div>
 
-    <!-- Registration Modal -->
-    <div id="registrationModal" class="modal" style="display: none;">
+    <div id="registrationModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeRegistrationModal()">&times;</span>
             
-            <!-- Step Indicators -->
             <div class="step-indicators">
                 <div class="step active" data-step="1">1</div>
                 <div class="step" data-step="2">2</div>
@@ -422,42 +456,47 @@
                 <div class="step" data-step="4">4</div>
             </div>
 
-            <!-- Step 1: Pre-Enrollment (Initial Registration) -->
-            <div class="step-content" id="step1">
+            <div class="step-content" id="step1" style="display: block;">
                 <h3>Pre-Enrollment Phase</h3>
                 <p class="step-description">Please provide your basic information to start the registration process:</p>
                 
                 <form id="registrationForm" method="POST" action="{{ route('intern.store') }}">
                     @csrf
+                    <input type="hidden" name="invited_token" id="invited_token">
                     
                     <div class="form-group">
+                        <label>Invitation Link</label>
+                        <input type="text" id="invitation_link_input" placeholder="Paste invitation link here" required>
+                    </div>
+
+                    <div class="form-group">
                         <label>Email Address</label>
-                        <input type="email" name="email" required>
+                        <input type="email" name="email" required disabled>
                     </div>
                     
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" name="password" required>
+                        <input type="password" name="password" required disabled>
                     </div>
                     
                     <div class="form-group">
                         <label>First Name</label>
-                        <input type="text" name="first_name" required>
+                        <input type="text" name="first_name" required disabled>
                     </div>
                     
                     <div class="form-group">
                         <label>Last Name</label>
-                        <input type="text" name="last_name" required>
+                        <input type="text" name="last_name" required disabled>
                     </div>
                     
                     <div class="form-group">
                         <label>Course</label>
-                        <input type="text" name="course" required>
+                        <input type="text" name="course" required disabled>
                     </div>
                     
                     <div class="form-group">
                         <label>Section</label>
-                        <select name="section" required>
+                        <select name="section" required disabled>
                             <option value="">Select Section</option>
                             <option value="North">North</option>
                             <option value="South">South</option>
@@ -469,29 +508,32 @@
                     
                     <div class="form-group">
                         <label>Phone Number</label>
-                        <input type="text" name="phone" required>
+                        <input type="text" name="phone" required disabled>
                     </div>
                     
                     <div class="form-group">
                         <label>Supervisor Name</label>
-                        <input type="text" name="supervisor_name" required>
+                        <input type="text" name="supervisor_name" required disabled>
                     </div>
+                    
                     <div class="form-group">
                         <label>Supervisor Position</label>
-                        <input type="text" name="supervisor_position" placeholder="(Position)">
+                        <input type="text" name="supervisor_position" placeholder="(Position)" disabled>
                     </div>
                     
                     <div class="form-group">
                         <label>Supervisor Email</label>
-                        <input type="email" name="supervisor_email" required>
+                        <input type="email" name="supervisor_email" required disabled>
                     </div>
+                    
                     <div class="form-group">
                         <label>Company Name</label>
-                        <input type="text" name="company_name" placeholder="(Company Name)">
+                        <input type="text" name="company_name" placeholder="(Company Name)" disabled>
                     </div>
+                    
                     <div class="form-group">
                         <label>Company Address</label>
-                        <input type="text" name="company_address" placeholder="(Company Address)">
+                        <input type="text" name="company_address" placeholder="(Company Address)" disabled>
                     </div>
                     
                     <div class="form-actions">
@@ -500,8 +542,7 @@
                 </form>
             </div>
 
-            <!-- Step 2: Pre-Deployment (Hidden initially) -->
-            <div class="step-content" id="step2" style="display: none;">
+            <div class="step-content" id="step2">
                 <h3>Pre-Deployment Phase</h3>
                 <p class="step-description">Please submit the following documents:</p>
                 
@@ -544,8 +585,7 @@
                 </form>
             </div>
 
-            <!-- Step 3: Mid-Deployment (Hidden initially) -->
-            <div class="step-content" id="step3" style="display: none;">
+            <div class="step-content" id="step3">
                 <h3>Mid-Deployment Phase</h3>
                 <p class="step-description">Please submit the following documents:</p>
                 
@@ -568,8 +608,7 @@
                 </form>
             </div>
 
-            <!-- Step 4: Deployment (Hidden initially) -->
-            <div class="step-content" id="step4" style="display: none;">
+            <div class="step-content" id="step4">
                 <h3>Deployment Phase</h3>
                 <p class="step-description">Please submit the following document:</p>
                 
@@ -589,9 +628,226 @@
         </div>
     </div>
 
+    <!-- OTP Verification Modal -->
+    <div id="otpModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Verify Your Email</h2>
+                <span class="close" onclick="closeOtpModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>We sent a 6-digit code to <b id="otpEmailLabel"></b>. Enter it below to verify.</p>
+                <form id="otpForm" method="POST" action="{{ route('intern.otp.verify.submit') }}">
+                    @csrf
+                    <input type="hidden" name="email" id="otpEmail" value="">
+                    <input 
+                        type="text" 
+                        name="otp" 
+                        id="otpInput" 
+                        maxlength="6" 
+                        pattern="\d{6}"
+                        required 
+                        placeholder="Enter 6-digit code" 
+                        inputmode="numeric"
+                        style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 18px; background: white; color: #333; box-sizing: border-box; letter-spacing: 6px; text-align: center;"
+                    >
+                    <div class="security-indicator">
+                        <i>🔒</i> Code expires in 10 minutes
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="resendOtp()">Resend Code</button>
+                <button class="btn btn-primary" onclick="submitOtp()">Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Reset Password</h2>
+                <span class="close" onclick="closeForgotPasswordModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Enter your email address and we'll send you an OTP code to reset your password.</p>
+                <form id="forgotPasswordForm">
+                    <input 
+                        type="email" 
+                        name="email" 
+                        id="forgotPasswordEmail" 
+                        placeholder="Enter your email address" 
+                        required 
+                        autocomplete="email"
+                        style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white; color: #333; box-sizing: border-box;"
+                    >
+                    <div class="security-indicator">
+                        <i>🔒</i> OTP codes are valid for 10 minutes and can only be used once
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeForgotPasswordModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="sendForgotPasswordOtp()">Send OTP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password OTP Verification Modal -->
+    <div id="forgotPasswordOtpModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Verify OTP</h2>
+                <span class="close" onclick="closeForgotPasswordOtpModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>We sent a 6-digit code to <b id="forgotPasswordOtpEmailLabel"></b>. Enter it below to continue.</p>
+                <form id="forgotPasswordOtpForm">
+                    <input type="hidden" name="email" id="forgotPasswordOtpEmail" value="">
+                    <input 
+                        type="text" 
+                        name="otp" 
+                        id="forgotPasswordOtpInput" 
+                        maxlength="6" 
+                        pattern="\d{6}"
+                        required 
+                        placeholder="Enter 6-digit code" 
+                        inputmode="numeric"
+                        style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 18px; background: white; color: #333; box-sizing: border-box; letter-spacing: 6px; text-align: center;"
+                    >
+                    <div class="security-indicator">
+                        <i>🔒</i> Code expires in 10 minutes
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="resendForgotPasswordOtp()">Resend Code</button>
+                <button class="btn btn-primary" onclick="verifyForgotPasswordOtp()">Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Password Modal -->
+    <div id="newPasswordModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Set New Password</h2>
+                <span class="close" onclick="closeNewPasswordModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Please enter your new password below.</p>
+                <form id="newPasswordForm" method="POST" action="{{ route('intern.password.reset.submit') }}">
+                    @csrf
+                    <input type="hidden" name="email" id="newPasswordEmail" value="">
+                    <input type="hidden" name="otp" id="newPasswordOtp" value="">
+                    
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input 
+                            type="password" 
+                            name="password" 
+                            id="newPassword" 
+                            placeholder="Enter new password (Min 8 characters)" 
+                            required 
+                            minlength="8"
+                            autocomplete="new-password"
+                            style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white; color: #333; box-sizing: border-box;"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Confirm New Password</label>
+                        <input 
+                            type="password" 
+                            name="password_confirmation" 
+                            id="newPasswordConfirmation" 
+                            placeholder="Confirm new password" 
+                            required 
+                            minlength="8"
+                            autocomplete="new-password"
+                            style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white; color: #333; box-sizing: border-box;"
+                        >
+                    </div>
+                    
+                    <div class="security-indicator">
+                        <i>🔒</i> Password will be encrypted using Argon2id algorithm
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeNewPasswordModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitNewPassword()">Reset Password</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let failedAttempts = parseInt(localStorage.getItem('internFailedAttempts')) || 0;
+        let lockoutEndTime = parseInt(localStorage.getItem('internLockoutEndTime')) || 0;
+        let backgroundTimerInterval = null;
+
+        function getRemainingTime() {
+            const now = Date.now();
+            if (lockoutEndTime > now) {
+                const remainingSeconds = Math.ceil((lockoutEndTime - now) / 1000);
+                const minutes = Math.floor(remainingSeconds / 60);
+                const seconds = remainingSeconds % 60;
+                return { 
+                    locked: true, 
+                    timeLeft: `${minutes}:${seconds.toString().padStart(2, '0')}`,
+                    remainingSeconds: remainingSeconds
+                };
+            } else if (lockoutEndTime > 0) {
+                localStorage.removeItem('internFailedAttempts');
+                localStorage.removeItem('internLockoutEndTime');
+                failedAttempts = 0;
+                lockoutEndTime = 0;
+                enableAllButtons();
+                stopBackgroundTimer();
+            }
+            return { locked: false, timeLeft: '0:00', remainingSeconds: 0 };
+        }
+
+        function disableAllButtons() {
+            document.querySelectorAll('button, input[type="submit"]').forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            });
+        }
+
+        function enableAllButtons() {
+            document.querySelectorAll('button, input[type="submit"]').forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            });
+        }
+
+        function startBackgroundTimer() {
+            if (backgroundTimerInterval) {
+                clearInterval(backgroundTimerInterval);
+            }
+            
+            backgroundTimerInterval = setInterval(() => {
+                const status = getRemainingTime();
+                if (!status.locked) {
+                    stopBackgroundTimer();
+                    enableAllButtons();
+                }
+            }, 1000);
+        }
+
+        function stopBackgroundTimer() {
+            if (backgroundTimerInterval) {
+                clearInterval(backgroundTimerInterval);
+                backgroundTimerInterval = null;
+            }
+        }
+
         function confirmBack(event) {
-            event.preventDefault(); // Prevent default link behavior
+            event.preventDefault();
             
             Swal.fire({
                 title: 'Are you sure?',
@@ -602,16 +858,10 @@
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Yes, go back',
                 cancelButtonText: 'No, stay here',
-                background: 'rgba(255, 255, 255, 0.95)',
-                backdrop: 'rgba(0, 0, 0, 0.6)',
-                customClass: {
-                    popup: 'swal-popup-custom',
-                    title: 'swal-title-custom',
-                    content: 'swal-content-custom'
-                }
+                allowOutsideClick: false,
+                allowEscapeKey: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Redirect to main login page
                     window.location.href = '{{ route("login") }}';
                 }
             });
@@ -619,7 +869,6 @@
 
         function openRegistrationModal() {
             document.getElementById('registrationModal').style.display = 'block';
-            // Reset step indicators and content
             document.querySelectorAll('.step-indicators .step').forEach(step => step.classList.remove('active'));
             document.querySelectorAll('.step-content').forEach(content => content.style.display = 'none');
             document.getElementById('step1').style.display = 'block';
@@ -630,8 +879,463 @@
             document.getElementById('registrationModal').style.display = 'none';
         }
 
-        // Step navigation
+        // OTP Modal Functions
+        function showOtpModal(email) {
+            const modal = document.getElementById('otpModal');
+            const emailInput = document.getElementById('otpEmail');
+            const emailLabel = document.getElementById('otpEmailLabel');
+            const otpInput = document.getElementById('otpInput');
+            
+            if (!modal || !emailInput || !emailLabel) {
+                console.error('OTP modal elements not found');
+                return;
+            }
+            
+            emailInput.value = email;
+            emailLabel.textContent = email;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            if (otpInput) {
+                setTimeout(() => otpInput.focus(), 150);
+            }
+        }
+
+        function closeOtpModal() {
+            document.getElementById('otpModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitOtp() {
+            const form = document.getElementById('otpForm');
+            const input = document.getElementById('otpInput');
+            
+            if (!form || !input) {
+                Swal.fire('Error', 'OTP form elements not found. Please refresh the page.', 'error');
+                return;
+            }
+            
+            const digits = (input.value || '').replace(/\D/g, '');
+            if (digits.length !== 6) {
+                Swal.fire('Invalid Code', 'Please enter the 6-digit code.', 'warning');
+                input.focus();
+                return;
+            }
+            input.value = digits;
+            form.submit();
+        }
+
+        function resendOtp() {
+            const emailInput = document.getElementById('otpEmail');
+            if (!emailInput) {
+                Swal.fire('Error', 'Email input not found. Please refresh the page.', 'error');
+                return;
+            }
+            
+            const email = emailInput.value;
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (!csrfToken) {
+                Swal.fire('Error', 'CSRF token not found. Please refresh the page.', 'error');
+                return;
+            }
+            
+            fetch('{{ route('intern.otp.resend') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken.getAttribute('content') },
+                body: JSON.stringify({ email })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    Swal.fire('Sent', 'A new code has been emailed to you.', 'success');
+                    // In non-production, backend includes otp_fallback
+                    if (data.otp_fallback) {
+                        const input = document.getElementById('otpInput');
+                        if (input) {
+                            input.value = data.otp_fallback;
+                        }
+                    }
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to resend code.', 'error');
+                    if (data.otp_fallback) {
+                        const input = document.getElementById('otpInput');
+                        if (input) {
+                            input.value = data.otp_fallback;
+                        }
+                    }
+                }
+            }).catch(() => Swal.fire('Error', 'Failed to resend code.', 'error'));
+        }
+
+        // Forgot Password Functions
+        function showForgotPasswordModal() {
+            const modal = document.getElementById('forgotPasswordModal');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('forgotPasswordEmail').focus(), 150);
+        }
+
+        function closeForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function sendForgotPasswordOtp() {
+            const email = document.getElementById('forgotPasswordEmail').value;
+            
+            if (!email.trim()) {
+                Swal.fire('Email Required', 'Please enter your email address.', 'warning');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                Swal.fire('Invalid Email', 'Please enter a valid email address.', 'warning');
+                return;
+            }
+
+            fetch('{{ route('intern.password.forgot') }}', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+                },
+                body: JSON.stringify({ email })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    closeForgotPasswordModal();
+                    showForgotPasswordOtpModal(email);
+                    Swal.fire('OTP Sent', 'A verification code has been sent to your email.', 'success');
+                    if (data.otp_fallback) {
+                        setTimeout(() => {
+                            const input = document.getElementById('forgotPasswordOtpInput');
+                            input.value = data.otp_fallback;
+                        }, 300);
+                    }
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to send OTP.', 'error');
+                }
+            }).catch(() => Swal.fire('Error', 'Failed to send OTP.', 'error'));
+        }
+
+        function showForgotPasswordOtpModal(email) {
+            const modal = document.getElementById('forgotPasswordOtpModal');
+            document.getElementById('forgotPasswordOtpEmail').value = email;
+            document.getElementById('forgotPasswordOtpEmailLabel').textContent = email;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('forgotPasswordOtpInput').focus(), 150);
+        }
+
+        function closeForgotPasswordOtpModal() {
+            document.getElementById('forgotPasswordOtpModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function verifyForgotPasswordOtp() {
+            const email = document.getElementById('forgotPasswordOtpEmail').value;
+            const otp = document.getElementById('forgotPasswordOtpInput').value;
+            
+            if (!otp || otp.length !== 6) {
+                Swal.fire('Invalid Code', 'Please enter the 6-digit code.', 'warning');
+                return;
+            }
+
+            fetch('{{ route('intern.password.verify-otp') }}', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+                },
+                body: JSON.stringify({ email, otp })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    closeForgotPasswordOtpModal();
+                    showNewPasswordModal(email, otp);
+                    Swal.fire('OTP Verified', 'Please set your new password.', 'success');
+                } else {
+                    Swal.fire('Error', data.message || 'Invalid OTP code.', 'error');
+                }
+            }).catch(() => Swal.fire('Error', 'Failed to verify OTP.', 'error'));
+        }
+
+        function resendForgotPasswordOtp() {
+            const email = document.getElementById('forgotPasswordOtpEmail').value;
+            
+            fetch('{{ route('intern.password.resend-otp') }}', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+                },
+                body: JSON.stringify({ email })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    Swal.fire('Sent', 'A new code has been emailed to you.', 'success');
+                    if (data.otp_fallback) {
+                        const input = document.getElementById('forgotPasswordOtpInput');
+                        input.value = data.otp_fallback;
+                    }
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to resend code.', 'error');
+                }
+            }).catch(() => Swal.fire('Error', 'Failed to resend code.', 'error'));
+        }
+
+        function showNewPasswordModal(email, otp) {
+            const modal = document.getElementById('newPasswordModal');
+            document.getElementById('newPasswordEmail').value = email;
+            document.getElementById('newPasswordOtp').value = otp;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('newPassword').focus(), 150);
+        }
+
+        function closeNewPasswordModal() {
+            document.getElementById('newPasswordModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitNewPassword() {
+            const form = document.getElementById('newPasswordForm');
+            const password = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('newPasswordConfirmation').value;
+            
+            if (!password || password.length < 8) {
+                Swal.fire('Invalid Password', 'Password must be at least 8 characters long.', 'warning');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                Swal.fire('Password Mismatch', 'Passwords do not match.', 'warning');
+                return;
+            }
+
+            form.submit();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Parse invitation from query and bind input parsing
+            const params = new URLSearchParams(window.location.search);
+            const invite = params.get('invite');
+            const hiddenTokenInput = document.getElementById('invited_token');
+            const inviteInput = document.getElementById('invitation_link_input');
+            if (invite) {
+                // Verify token with backend
+                fetch(`{{ route('api.invite.verify') }}?token=${encodeURIComponent(invite)}`)
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.valid) {
+                            hiddenTokenInput.value = invite;
+                            if (inviteInput) inviteInput.value = window.location.href;
+                            // enable fields
+                            document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(el => {
+                                if (el.id !== 'invitation_link_input') {
+                                    el.disabled = false;
+                                }
+                            });
+                        } else {
+                            Swal.fire({ title: 'Expired Link', text: 'The invitation link has expired.', icon: 'error', timer: 2000, showConfirmButton: false });
+                        }
+                    })
+                    .catch(() => {
+                        Swal.fire({ title: 'Expired Link', text: 'The invitation link has expired.', icon: 'error', timer: 2000, showConfirmButton: false });
+                    });
+            }
+            if (inviteInput) {
+                inviteInput.addEventListener('input', function() {
+                    try {
+                        const url = new URL(this.value);
+                        const qp = new URLSearchParams(url.search);
+                        const t = qp.get('invite');
+                        if (t) {
+                            fetch(`{{ route('api.invite.verify') }}?token=${encodeURIComponent(t)}`)
+                                .then(r => r.json())
+                                .then(res => {
+                                    if (res.valid) {
+                                        hiddenTokenInput.value = t;
+                                        document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(el => {
+                                            if (el.id !== 'invitation_link_input') {
+                                                el.disabled = false;
+                                            }
+                                        });
+                                    } else {
+                                        hiddenTokenInput.value = '';
+                                        document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(el => {
+                                            if (el.id !== 'invitation_link_input') {
+                                                el.disabled = true;
+                                            }
+                                        });
+                                        Swal.fire({ title: 'Expired Link', text: 'The invitation link has expired.', icon: 'error', timer: 1800, showConfirmButton: false });
+                                    }
+                                })
+                                .catch(() => {
+                                    hiddenTokenInput.value = '';
+                                    document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(el => {
+                                        if (el.id !== 'invitation_link_input') {
+                                            el.disabled = true;
+                                        }
+                                    });
+                                    Swal.fire({ title: 'Expired Link', text: 'The invitation link has expired.', icon: 'error', timer: 1800, showConfirmButton: false });
+                                });
+                        }
+                    } catch (e) {
+                        // ignore malformed
+                    }
+                });
+            }
+            const lockoutStatus = getRemainingTime();
+            if (lockoutStatus.locked) {
+                disableAllButtons();
+                startBackgroundTimer();
+                
+                Swal.fire({
+                    title: 'System Locked!',
+                    html: `Too many failed attempts.<br>Please wait <b>${lockoutStatus.timeLeft}</b> before trying again.`,
+                    icon: 'warning',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK',
+                    didOpen: () => {
+                        const content = Swal.getHtmlContainer();
+                        const b = content.querySelector('b');
+                        
+                        const timerInterval = setInterval(() => {
+                            const status = getRemainingTime();
+                            if (status.locked) {
+                                b.textContent = status.timeLeft;
+                            } else {
+                                clearInterval(timerInterval);
+                                Swal.close();
+                            }
+                        }, 1000);
+                    }
+                });
+            }
+
+            @if(session('error'))
+                failedAttempts++;
+                localStorage.setItem('internFailedAttempts', failedAttempts);
+                
+                const attemptsLeft = 3 - failedAttempts;
+                
+                if (failedAttempts >= 3) {
+                    lockoutEndTime = Date.now() + (5 * 60 * 1000);
+                    localStorage.setItem('internLockoutEndTime', lockoutEndTime);
+                    disableAllButtons();
+                    startBackgroundTimer();
+                    
+                    Swal.fire({
+                        title: 'Account Locked!',
+                        html: 'Too many failed attempts.<br>Please wait <b>5:00</b> before trying again.',
+                        icon: 'error',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK',
+                        didOpen: () => {
+                            const content = Swal.getHtmlContainer();
+                            const b = content.querySelector('b');
+                            
+                            const timerInterval = setInterval(() => {
+                                const status = getRemainingTime();
+                                if (status.locked) {
+                                    b.textContent = status.timeLeft;
+                                } else {
+                                    clearInterval(timerInterval);
+                                    Swal.close();
+                                }
+                            }, 1000);
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Login Error!',
+                        html: '{{ session('error') }}<br><br><b style="color: #fbbf24;">You only have ' + attemptsLeft + ' attempt' + (attemptsLeft > 1 ? 's' : '') + ' left!</b>',
+                        icon: 'error',
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    });
+                }
+            @endif
+
+            @if ($errors->any())
+                let errorMessages = '';
+                @foreach ($errors->all() as $error)
+                    errorMessages += '{{ $error }}\n';
+                @endforeach
+                
+                Swal.fire({
+                    title: 'Validation Error!',
+                    text: errorMessages.trim(),
+                    icon: 'error',
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+            @endif
+
+            @if(session('success'))
+                localStorage.removeItem('internFailedAttempts');
+                localStorage.removeItem('internLockoutEndTime');
+                failedAttempts = 0;
+                lockoutEndTime = 0;
+                stopBackgroundTimer();
+                
+                Swal.fire({
+                    title: 'Success!',
+                    text: '{{ session('success') }}',
+                    icon: 'success',
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+            @endif
+
+            @if(session('document_success'))
+                Swal.fire({
+                    title: 'Documents Submitted!',
+                    text: '{{ session('document_success') }}',
+                    icon: 'success',
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+            @endif
+
+            // Open OTP modal automatically after registration
+            @if(session('otp_email'))
+                showOtpModal('{{ session('otp_email') }}');
+                @if(session('otp_code_fallback'))
+                    // Fallback: show OTP if email could not be sent
+                    setTimeout(() => {
+                        const input = document.getElementById('otpInput');
+                        if (input) {
+                            input.value = '{{ session('otp_code_fallback') }}';
+                        }
+                    }, 500);
+                    // Show fallback OTP after OTP modal is displayed
+                    setTimeout(() => {
+                        Swal.fire({
+                            title: 'Email Sending Issue',
+                            html: 'We could not send the email. Use this code:<br><b style="font-size: 24px; color: #1d3557;">{{ session('otp_code_fallback') }}</b>',
+                            icon: 'warning',
+                            confirmButtonColor: '#457b9d',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false
+                        });
+                    }, 600);
+                @endif
+            @endif
+
             const stepIndicators = document.querySelectorAll('.step-indicators .step');
             const stepContents = document.querySelectorAll('.step-content');
             let currentStep = 0;
@@ -649,41 +1353,62 @@
                     if (index < currentStep) {
                         showStep(index);
                     } else if (index > currentStep) {
-                        // Logic to handle next step (e.g., form submission)
                         if (currentStep === 0) {
-                            // Pre-enrollment form submission
                             document.getElementById('registrationForm').submit();
                         } else if (currentStep === 1) {
-                            // Pre-deployment form submission
                             document.getElementById('preDeploymentForm').submit();
                         } else if (currentStep === 2) {
-                            // Mid-deployment form submission
                             document.getElementById('midDeploymentForm').submit();
                         } else if (currentStep === 3) {
-                            // Deployment form submission
                             document.getElementById('deploymentForm').submit();
                         }
                     }
                 });
             });
         });
-    </script>
 
-    <style>
-        /* Custom SweetAlert styling to match the theme */
-        .swal-popup-custom {
-            border-radius: 16px !important;
-            backdrop-filter: blur(10px) !important;
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const otpModal = document.getElementById('otpModal');
+            const registrationModal = document.getElementById('registrationModal');
+            const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+            const forgotPasswordOtpModal = document.getElementById('forgotPasswordOtpModal');
+            const newPasswordModal = document.getElementById('newPasswordModal');
+            
+            if (event.target === otpModal) {
+                closeOtpModal();
+            }
+            if (event.target === registrationModal) {
+                closeRegistrationModal();
+            }
+            if (event.target === forgotPasswordModal) {
+                closeForgotPasswordModal();
+            }
+            if (event.target === forgotPasswordOtpModal) {
+                closeForgotPasswordOtpModal();
+            }
+            if (event.target === newPasswordModal) {
+                closeNewPasswordModal();
+            }
         }
-        
-        .swal-title-custom {
-            color: #1d3557 !important;
-            font-weight: 700 !important;
-        }
-        
-        .swal-content-custom {
-            color: #457b9d !important;
-        }
-    </style>
+
+        window.addEventListener('beforeunload', function() {
+            // Timer data is already saved in localStorage
+        });
+
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                const status = getRemainingTime();
+                if (!status.locked && lockoutEndTime > 0) {
+                    localStorage.removeItem('internFailedAttempts');
+                    localStorage.removeItem('internLockoutEndTime');
+                    failedAttempts = 0;
+                    lockoutEndTime = 0;
+                    enableAllButtons();
+                    stopBackgroundTimer();
+                }
+            }
+        });
+    </script>
 </body>
 </html>

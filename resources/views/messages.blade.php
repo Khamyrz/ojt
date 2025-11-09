@@ -1,277 +1,575 @@
 @extends('layouts.app')
 
 @section('content')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f1f5f9;
+            --border: #e2e8f0;
+            --purple: #8b5cf6;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
 
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        padding: 30px;
-        background-color: #f8f9fa;
-    }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: transparent; margin: 0; padding: 0; }
 
-    /* Back button header */
-    .header {
-        margin-bottom: 10px;
-    }
+        .messages-container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 16px; padding: 32px; box-shadow: var(--shadow-lg); }
 
-    .back-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
-        background-color: #3490dc;
-        color: white;
-        text-decoration: none;
-        border-radius: 50px;
-        font-weight: bold;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-    }
+        .page-header {
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
 
-    .back-button:hover {
-        background-color: #2779bd;
-        transform: translateX(-2px);
-    }
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    h1 {
-        color: #333;
-        margin-top: 0;
-    }
+        .page-header p {
+            color: var(--secondary);
+            font-size: 14px;
+            margin: 0;
+        }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 25px;
-        background-color: white;
-        box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-    }
+        /* Alert Messages */
+        .alert {
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
 
-    th, td {
-        padding: 12px 15px;
-        border: 1px solid #ddd;
-        text-align: left;
-    }
-
-    th {
-        background-color: #3490dc;
-        color: white;
-    }
-
-    tr:hover {
-        background-color: #f1f1f1;
-    }
-
-    .chat-link {
-        padding: 6px 12px;
-        background-color: #38c172;
-        color: white;
-        border-radius: 4px;
-        text-decoration: none;
-        margin-right: 8px;
-    }
-
-    .chat-link:hover {
-        background-color: #2fa360;
-    }
-
-    .clear-button {
-        padding: 6px 12px;
-        background-color: #e3342f;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    .clear-button:hover {
-        background-color: #cc1f1a;
-    }
-
-    .delete-button {
-        padding: 6px 12px;
-        background-color: #e3342f;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-    }
-
-    .delete-button:hover {
-        background-color: #cc1f1a;
-    }
-
-    .broadcast-box {
-        margin-bottom: 30px;
-        padding: 20px;
-        background-color: #fff;
-        border: 1px solid #ddd;
-        box-shadow: 0 0 5px rgba(0,0,0,0.05);
-    }
-
-    .broadcast-box h3 {
-        margin-top: 0;
-    }
-
-    .broadcast-box textarea {
-        width: 100%;
-        padding: 10px;
-        font-size: 14px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        resize: vertical;
-    }
-
-    .broadcast-box button {
-        margin-top: 10px;
-        padding: 8px 16px;
-        background-color: #3490dc;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-    .broadcast-box button:hover {
-        background-color: #2779bd;
-    }
-
-    .actions {
-        display: flex;
-        gap: 10px;
-    }
-</style>
-
-<div class="header">
-    <a href="{{ route('dashboard') }}" class="back-button">← Back</a>
-</div>
-
-<h1>Message Center</h1>
-<p>Select an intern below to view and send messages.</p>
-
-<div class="broadcast-box">
-    <h3>📢 Send Message to All Interns</h3>
-    <form method="POST" action="{{ route('messages.broadcast') }}">
-        @csrf
-        <textarea name="content" rows="4" placeholder="Write your message to all interns..." required></textarea>
-        <br>
-        <button type="button" onclick="confirmBroadcast()">Send to All</button>
-    </form>
-</div>
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach($interns as $intern)
-            @php
-                $unreadCount = \App\Models\Message::where('sender_id', $intern->id)
-                    ->where('receiver_id', auth()->id())
-                    ->where('sender_type', 'intern')
-                    ->where('receiver_type', 'admin')
-                    ->where('is_read', false)
-                    ->count();
-            @endphp
-            <tr>
-                <td>
-                    {{ $intern->first_name }} {{ $intern->last_name }}
-                    @if($unreadCount > 0)
-                        <span style="background: red; color: white; font-size: 12px; padding: 2px 6px; border-radius: 10px; margin-left: 6px;">
-                            {{ $unreadCount }}
-                        </span>
-                    @endif
-                </td>
-                <td>{{ $intern->email }}</td>
-                <td class="actions">
-                    <a href="{{ route('messages.conversation', $intern->id) }}" class="chat-link">Open Chat</a>
-                    <form id="clear-form-{{ $intern->id }}" action="{{ route('messages.clear', $intern->id) }}" method="POST" style="display: inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="button" class="clear-button" onclick="confirmClear({{ $intern->id }})">🗑 Clear</button>
-                    </form>
-                    <form action="{{ route('intern.destroy', $intern->id) }}" method="POST" style="display: inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="button" class="delete-button" onclick="confirmDelete({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}')">🗑 Delete</button>
-                    </form>
-                </td>
-            </tr>
-        @endforeach
-    </tbody>
-</table>
-
-{{-- SweetAlert Confirmations --}}
-<script>
-    function confirmClear(internId) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "This will delete the conversation with this intern.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e3342f',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, delete it!',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('clear-form-' + internId).submit();
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
             }
-        });
-    }
-
-    function confirmDelete(internId, internName) {
-        Swal.fire({
-            title: 'Are you absolutely sure?',
-            text: `This will permanently delete ${internName} and ALL their data including time logs, journals, grades, messages, and documents. This action cannot be undone!`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e3342f',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, delete permanently!',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Find the delete form and submit it
-                const deleteForm = document.querySelector(`form[action*="/interns/${internId}"]`);
-                if (deleteForm) {
-                    deleteForm.submit();
-                }
+            to {
+                transform: translateY(0);
+                opacity: 1;
             }
-        });
-    }
+        }
 
-    function confirmBroadcast() {
-        Swal.fire({
-            title: 'Send to all interns?',
-            text: "Are you sure you want to broadcast this message?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3490dc',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, send it!',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.querySelector('.broadcast-box form').submit();
+        .alert.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
+
+        .alert.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-left: 4px solid var(--danger);
+        }
+
+        /* Broadcast Section */
+        .broadcast-section {
+            background: var(--light);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .broadcast-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .broadcast-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .broadcast-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .broadcast-textarea {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: all 0.3s ease;
+        }
+
+        .broadcast-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .broadcast-textarea::placeholder {
+            color: var(--secondary);
+        }
+
+        /* Table Styles */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: white;
+        }
+
+        th:first-child {
+            border-radius: 0;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--light);
+            transform: scale(1.01);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        td {
+            padding: 16px 20px;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        td:first-child {
+            font-weight: 600;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-chat {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .btn-chat:hover {
+            background: var(--success);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-clear {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .btn-clear:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-broadcast {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 12px 24px;
+            font-size: 14px;
+        }
+
+        .btn-broadcast:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Unread Badge */
+        .unread-badge {
+            background: var(--danger);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 20px;
+            text-align: center;
+            margin-left: 8px;
+        }
+
+        /* Email Badge */
+        .email-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--purple);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--secondary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .messages-container {
+                padding: 20px;
             }
-        });
-    }
-</script>
 
-{{-- SweetAlert for session success --}}
-@if(session('success'))
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 12px 10px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .broadcast-form {
+                gap: 12px;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <div class="messages-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-envelope"></i>
+                Message Center
+            </h1>
+            <p>Communicate with interns and manage conversations</p>
+        </div>
+
+        <!-- Alert Messages -->
+        @if(session('success'))
+            <div class="alert success">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
+        <!-- Broadcast Section -->
+        <div class="broadcast-section">
+            <div class="broadcast-header">
+                <i class="fas fa-bullhorn"></i>
+                <h3>Send Message to All Interns</h3>
+            </div>
+            <form method="POST" action="{{ route('messages.broadcast') }}" class="broadcast-form">
+                @csrf
+                <textarea 
+                    name="content" 
+                    class="broadcast-textarea" 
+                    placeholder="Write your message to all interns..." 
+                    required
+                ></textarea>
+                <button type="button" class="btn btn-broadcast" onclick="confirmBroadcast()">
+                    <i class="fas fa-paper-plane"></i>
+                    Send to All Interns
+                </button>
+            </form>
+        </div>
+
+        <!-- Table -->
+        @if($interns->count() > 0)
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Full Name</th>
+                            <th><i class="fas fa-envelope"></i> Email</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($interns as $intern)
+                            @php
+                                $unreadCount = \App\Models\Message::where('sender_id', $intern->id)
+                                    ->where('receiver_id', auth()->id())
+                                    ->where('sender_type', 'intern')
+                                    ->where('receiver_type', 'admin')
+                                    ->where('is_read', false)
+                                    ->count();
+                            @endphp
+                            <tr>
+                                <td>
+                                    <strong>{{ $intern->first_name }} {{ $intern->last_name }}</strong>
+                                    @if($unreadCount > 0)
+                                        <span class="unread-badge">{{ $unreadCount }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="email-badge">{{ $intern->email }}</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="{{ route('messages.conversation', $intern->id) }}" class="btn btn-chat">
+                                            <i class="fas fa-comments"></i>
+                                            Open Chat
+                                        </a>
+                                        <form id="clear-form-{{ $intern->id }}" action="{{ route('messages.clear', $intern->id) }}" method="POST" style="display: inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" class="btn btn-clear" onclick="confirmClear({{ $intern->id }})">
+                                                <i class="fas fa-trash"></i>
+                                                Clear
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('intern.destroy', $intern->id) }}" method="POST" style="display: inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" class="btn btn-delete" onclick="confirmDelete({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}')">
+                                                <i class="fas fa-user-times"></i>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h3>No Interns Found</h3>
+                <p>No accepted interns available for messaging at the moment</p>
+            </div>
+        @endif
+    </div>
+
     <script>
-        Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: '{{ session('success') }}',
-            confirmButtonColor: '#3085d6',
-        });
+        function confirmClear(internId) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This will delete the conversation with this intern.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, clear it!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('clear-form-' + internId).submit();
+                }
+            });
+        }
+
+        function confirmDelete(internId, internName) {
+            Swal.fire({
+                title: 'Are you absolutely sure?',
+                text: `This will permanently delete ${internName} and ALL their data including time logs, journals, grades, messages, and documents. This action cannot be undone!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete permanently!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const deleteForm = document.querySelector(`form[action*="/interns/${internId}"]`);
+                    if (deleteForm) {
+                        deleteForm.submit();
+                    }
+                }
+            });
+        }
+
+        function confirmBroadcast() {
+            const textarea = document.querySelector('.broadcast-textarea');
+            const message = textarea.value.trim();
+            
+            if (!message) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Message Required',
+                    text: 'Please write a message before broadcasting.',
+                    confirmButtonColor: '#ef4444',
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Send to all interns?',
+                text: "Are you sure you want to broadcast this message to all interns?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, send it!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.querySelector('.broadcast-form').submit();
+                }
+            });
+        }
+
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: '{{ session('success') }}',
+                confirmButtonColor: '#10b981',
+                timer: 3000,
+                timerProgressBar: true,
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: '{{ session('error') }}',
+                confirmButtonColor: '#ef4444',
+            });
+        @endif
+
+        @if(session('warning'))
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning!',
+                text: '{{ session('warning') }}',
+                confirmButtonColor: '#f59e0b',
+            });
+        @endif
+
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                html: '<ul style="text-align: left;">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
+                confirmButtonColor: '#ef4444',
+            });
+        @endif
     </script>
-@endif
 @endsection

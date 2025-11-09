@@ -11,12 +11,13 @@ use App\Http\Controllers\TimeLogController;
 use App\Http\Controllers\JournalController;
 use App\Http\Controllers\SupervisorController;  
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AdminController;
 /*
 |--------------------------------------------------------------------------
 | Default Redirect
 |--------------------------------------------------------------------------
 */
-Route::get('/', fn () => redirect()->route('login'));
+Route::get('/', fn () => view('welcome'))->name('welcome');
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +27,30 @@ Route::get('/', fn () => redirect()->route('login'));
 Route::get('/login', [AuthController::class, 'showLoginRegister'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
+// Secret Admin API routes
+Route::get('/admin/check-exists', [AdminController::class, 'checkAdminExists'])->name('admin.checkExists');
+Route::post('/admin/login', [AdminController::class, 'login'])->name('admin.login');
+Route::post('/admin/register', [AdminController::class, 'register'])->name('admin.register');
+Route::post('/admin/forgot-password', [AdminController::class, 'forgotPassword'])->name('admin.forgot');
+Route::post('/admin/verify-forgot-otp', [AdminController::class, 'verifyForgotOtp'])->name('admin.verify-forgot-otp');
+// OTP Verification Routes (Users)
+Route::get('/verify-otp', [AuthController::class, 'showOtpForm'])->name('otp.verify');
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('otp.verify.submit');
+Route::post('/resend-otp', [AuthController::class, 'resendOtp'])->name('otp.resend');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Password Reset Routes
+Route::post('/password/email', [AuthController::class, 'sendPasswordResetLink'])->name('password.email');
+Route::get('/password/reset/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
+Route::post('/password/reset', [AuthController::class, 'resetPassword'])->name('password.update');
+
+// OTP-based forgot password routes
+Route::post('/password/forgot', [AuthController::class, 'forgotPassword'])->name('password.forgot');
+Route::post('/password/verify-otp', [AuthController::class, 'verifyForgotPasswordOtp'])->name('password.verify-otp');
+Route::post('/password/resend-otp', [AuthController::class, 'resendForgotPasswordOtp'])->name('password.resend-otp');
+Route::post('/password/reset-submit', [AuthController::class, 'resetPasswordWithOtp'])->name('password.reset.submit');
+
+// Admin routes removed
 
 // Supervisor Login & Registration (PUBLIC)
 Route::get('/supervisor/login', [SupervisorController::class, 'showLoginForm'])->name('supervisor.login');
@@ -44,9 +68,17 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+    
+    // Admin Dashboard
+    Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/ip-details/{ipAddress}', [AdminController::class, 'getIpDetails'])->name('admin.ipDetails');
 
     // Intern Management
     Route::get('/interns', [DashboardController::class, 'interns'])->name('interns');
+    // Invitation link generation (12-hour token) - MUST come before /interns/{id} to avoid route conflict
+    Route::get('/interns/invite-link', [DashboardController::class, 'generateInviteLink'])->name('interns.invite-link');
+    Route::get('/interns/{id}', [InternController::class, 'show'])->name('intern.show');
+    Route::get('/interns/{id}/edit', [InternController::class, 'edit'])->name('intern.edit');
     Route::put('/interns/{id}', [InternController::class, 'update'])->name('intern.update');
     // Delete pending/accepted intern via DashboardController for admin view consistency
     Route::delete('/interns/{id}', [DashboardController::class, 'destroyIntern'])->name('intern.destroy');
@@ -59,6 +91,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/interns/{id}/accept-pre-deployment', [InternController::class, 'acceptPreDeployment'])->name('intern.accept.pre-deployment');
     Route::post('/interns/{id}/accept-mid-deployment', [InternController::class, 'acceptMidDeployment'])->name('intern.accept.mid-deployment');
     Route::post('/interns/{id}/accept-deployment', [InternController::class, 'acceptDeployment'])->name('intern.accept.deployment');
+
+    // Phase Rejection/Reset
+    Route::post('/interns/{id}/reject-pre-deployment', [InternController::class, 'rejectPreDeployment'])->name('intern.reject.pre-deployment');
+    Route::post('/interns/{id}/reject-mid-deployment', [InternController::class, 'rejectMidDeployment'])->name('intern.reject.mid-deployment');
+    Route::post('/interns/{id}/reject-deployment', [InternController::class, 'rejectDeployment'])->name('intern.reject.deployment');
 
     // Document Viewing
     Route::get('/documents/view/{filename}', [InternController::class, 'viewDocument'])->name('documents.view');
@@ -99,9 +136,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/supervisors/{id}/delete', [SupervisorController::class, 'delete'])->name('supervisor.delete');
 });
 
-// Admin: Connect Interns to Supervisor
-Route::get('/admin/supervisors/{supervisor}/connect-interns', [\App\Http\Controllers\AdminController::class, 'showConnectInternsForm'])->name('admin.connect-interns');
-Route::post('/admin/supervisors/{supervisor}/connect-interns', [\App\Http\Controllers\AdminController::class, 'connectInterns'])->name('admin.connect-interns.save');
+// Admin connect interns routes removed
 
 /*
 |--------------------------------------------------------------------------
@@ -110,6 +145,7 @@ Route::post('/admin/supervisors/{supervisor}/connect-interns', [\App\Http\Contro
 */
 Route::get('/qr-register', fn () => view('qr'))->name('qr.register');
 Route::post('/intern/store', [InternController::class, 'store'])->name('intern.store');
+Route::get('/api/invite/verify', [InternController::class, 'verifyInvite'])->name('api.invite.verify');
 
 /*
 |--------------------------------------------------------------------------
@@ -120,6 +156,16 @@ Route::post('/intern/store', [InternController::class, 'store'])->name('intern.s
 Route::get('/intern/login', [InternAuthController::class, 'showLoginForm'])->name('intern.login');
 Route::post('/intern/login', [InternAuthController::class, 'login'])->name('intern.login.submit');
 Route::post('/intern/logout', [InternAuthController::class, 'logout'])->name('intern.logout');
+
+// Intern OTP routes
+Route::post('/intern/verify-otp', [InternController::class, 'verifyOtp'])->name('intern.otp.verify.submit');
+Route::post('/intern/resend-otp', [InternController::class, 'resendOtp'])->name('intern.otp.resend');
+
+// Intern Forgot Password routes
+Route::post('/intern/password/forgot', [InternController::class, 'forgotPassword'])->name('intern.password.forgot');
+Route::post('/intern/password/verify-otp', [InternController::class, 'verifyForgotPasswordOtp'])->name('intern.password.verify-otp');
+Route::post('/intern/password/resend-otp', [InternController::class, 'resendForgotPasswordOtp'])->name('intern.password.resend-otp');
+Route::post('/intern/password/reset', [InternController::class, 'resetPassword'])->name('intern.password.reset.submit');
 Route::get('/intern/phase-submission', [InternAuthController::class, 'phaseSubmission'])->name('intern.phase-submission');
 
 

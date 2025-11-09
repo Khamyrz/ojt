@@ -50,6 +50,11 @@ class Intern extends Authenticatable
         'deployment_status',
         'deployment_accepted_at',
         'current_phase',
+        'invited_by_user_id',
+        // OTP fields
+        'otp_code',
+        'otp_expires_at',
+        'otp_verified',
     ];
 
     protected $casts = [
@@ -59,6 +64,8 @@ class Intern extends Authenticatable
         'pre_deployment_accepted_at' => 'datetime',
         'mid_deployment_accepted_at' => 'datetime',
         'deployment_accepted_at' => 'datetime',
+        'otp_expires_at' => 'datetime',
+        'otp_verified' => 'boolean',
     ];
 
     protected $hidden = ['password'];

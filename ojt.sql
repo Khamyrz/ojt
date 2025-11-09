@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 16, 2025 at 07:07 AM
+-- Generation Time: Nov 09, 2025 at 08:44 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -38,6 +38,30 @@ CREATE TABLE `attendances` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `cache`
+--
+
+CREATE TABLE `cache` (
+  `key` varchar(255) NOT NULL,
+  `value` mediumtext NOT NULL,
+  `expiration` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `cache_locks`
+--
+
+CREATE TABLE `cache_locks` (
+  `key` varchar(255) NOT NULL,
+  `owner` varchar(255) NOT NULL,
+  `expiration` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `documents`
 --
 
@@ -66,6 +90,18 @@ CREATE TABLE `document_requests` (
   `intern_id` bigint(20) UNSIGNED NOT NULL,
   `type` enum('midterm','final','certificate','evaluation') NOT NULL,
   `requested_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `dtrs`
+--
+
+CREATE TABLE `dtrs` (
+  `id` bigint(20) UNSIGNED NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -134,40 +170,53 @@ CREATE TABLE `interns` (
   `attendance_status` varchar(255) NOT NULL DEFAULT 'not_released',
   `attendance_time` timestamp NULL DEFAULT NULL,
   `attendance_notes` text DEFAULT NULL,
-  `qr_code_scanned` varchar(255) DEFAULT NULL
+  `qr_code_scanned` varchar(255) DEFAULT NULL,
+  `resume` varchar(255) DEFAULT NULL,
+  `medical_certificate` varchar(255) DEFAULT NULL,
+  `insurance` varchar(255) DEFAULT NULL,
+  `pre_deployment_status` enum('pending','accepted','rejected') NOT NULL DEFAULT 'pending',
+  `pre_deployment_accepted_at` timestamp NULL DEFAULT NULL,
+  `memorandum_of_agreement` varchar(255) DEFAULT NULL,
+  `internship_contract` varchar(255) DEFAULT NULL,
+  `mid_deployment_status` enum('pending','accepted','rejected') NOT NULL DEFAULT 'pending',
+  `mid_deployment_accepted_at` timestamp NULL DEFAULT NULL,
+  `recommendation_letter` varchar(255) DEFAULT NULL,
+  `deployment_status` enum('pending','accepted','rejected') NOT NULL DEFAULT 'pending',
+  `deployment_accepted_at` timestamp NULL DEFAULT NULL,
+  `current_phase` enum('pre_enrollment','pre_deployment','mid_deployment','deployment','completed') DEFAULT 'pre_enrollment',
+  `pre_enrollment_status` enum('pending','accepted','rejected') NOT NULL DEFAULT 'pending',
+  `pre_enrollment_accepted_at` timestamp NULL DEFAULT NULL,
+  `company_address` varchar(255) DEFAULT NULL,
+  `supervisor_position` varchar(255) DEFAULT NULL,
+  `endorsement_letter` varchar(255) DEFAULT NULL,
+  `invited_by_user_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `otp_code` varchar(255) DEFAULT NULL,
+  `otp_expires_at` timestamp NULL DEFAULT NULL,
+  `otp_verified` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `interns`
 --
 
-INSERT INTO `interns` (`id`, `supervisor_id`, `email`, `password`, `first_name`, `last_name`, `course`, `section`, `phone`, `company_name`, `company_phone`, `supervisor_name`, `supervisor_email`, `application_letter`, `parents_waiver`, `acceptance_letter`, `created_at`, `updated_at`, `status`, `archived_at`, `attendance_released_at`, `attendance_status`, `attendance_time`, `attendance_notes`, `qr_code_scanned`) VALUES
-(4, 1, 'cho@gmail.com', '$2y$12$i5p3HCBX12J.vh.rgGaaqOlvn5DnwsZ5ostiMRDnUST3pNrUfxc8.', 'cho', 'to', 'BSIT', 'west', '0912345123', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/HkLvaMoVK79B3YzUpl2fFsJ2VZ6p5nmxBMlNeMBm.png', 'documents/gCGIO7YAOIl2rkQHc1H3WYUvhCVFNlfjODz4cZI4.png', 'documents/7nzs5RwrMiblyXyzKZ2hQymVV2qnBsvHqTdraD5V.png', '2025-07-02 23:21:52', '2025-08-13 19:18:36', 'rejected', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(6, NULL, 'aa@gmail.com', '$2y$12$7AOAj7Laf9g.vrfZubAJ.e28Wnx/xo1L0GihNgkhWSz84ejHUNuaa', 'dsfasdfa', 'assdlfadsfl', 'BSIT', 'North', '40503429', 'KJFdkdlsjfksld', '1223423423', 'dfklsalfkadsjkl', 'jdfk@gmail.com', 'documents/RdEsEU23l8wDhNUxuoleefEpudqHBNYAJo5zjUjc.png', 'documents/oFr3IFAj9SflEoTqoDuqjoEdXYKZQtwyq0e9EtAQ.png', 'documents/1HCx0vpuY6Oj1O5uFVgK1KcAwhwKhLHcFkS6ROOj.png', '2025-07-03 05:28:15', '2025-07-03 05:28:25', 'rejected', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(29, NULL, 'sj@gmail.com', '$2y$12$aMYeia2XBBP5w5JyzKXuhuJPauGQUlED4BmkQwR1FWwN/N3V04Fr6', 'Sj', 'Js', 'BSIT', 'North', '04539593', 'plss lang Inc.', '34534524', 'dfklsalfkadsjkl', 'pss@gmail.com', 'documents/YdCfkgUuqkZZnZvdPXtjDsPwHol9ViMcqOgWzhsF.png', 'documents/khEae3QSnreZgSTPu4q1RYj9G9oi705hw08XrpKN.png', 'documents/9p9xfo9JHh5i8YTrknaFiNd1JWVYsk4Yp5vRZjJX.png', '2025-08-08 06:46:34', '2025-08-12 23:26:30', 'accepted', NULL, '2025-08-13 07:26:30', 'released', '2025-08-12 23:05:22', NULL, NULL),
-(32, NULL, 'kh@gmail.com', '$2y$12$JGc3oXgJWWO0k1f3tvowhOzNS1vTBDHRN5HGteqFZBDmezJCB4n1m', 'Kj', 'jk', 'BSIT', 'North', '09223232', 'adfads', 'asdfasdf', 'asdfdsf', 'adfadsf@gmail.com', 'documents/JjgZzsTgRvhOcLOFuYqJRG7lS4TeMlDDVHfeT3a7.pdf', 'documents/lvrt0XBHbPD66MEsDvbG9zuUBGvGPxllJmkFW4C7.pdf', 'documents/X4h4qezJ8Dfx4UBBLeB3GAzKRr2t5SUCQtIVM30x.pdf', '2025-08-09 06:33:42', '2025-08-13 16:54:40', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(33, NULL, 'g@gmail.com', '$2y$12$zywbAgJwckxfvVSYpicAyuM8TDZ5fQ9XJQBGM08rM1dn8.dfZX/G.', 'geno', 'colambot', 'BSIT', 'South', '09123456782', 'plss lang Inc.', '09123456789', 'hehsh', 'h@gmail.com', 'documents/W1mrcbzc0HiO4D7S1PgO9vGwsTTuqSPQOLOP1xOi.docx', 'documents/Q5rmLtMT0OYRT2GrBscrM58LUa0MkYUEQzNpfiZW.docx', 'documents/MASPg6T2fuF6TH0ZVTlTGrKZZzIcYuM0QdFre7bs.docx', '2025-08-12 23:38:18', '2025-08-12 23:38:59', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(34, NULL, 'y@gmail.com', '$2y$12$vondWIE7QpdBR0vS1ZgO5ed0Tde.UOZeRTGbCCCumia6Br8aeAVxi', 'yawe', 'kho', 'BSIT', 'North', '09123456782', 'grehnj', '09123456789', 'hfgj', 'r@gmail.com', 'documents/Dc5rlYMjrLQiOsBczOxxFhZxzjeiU3AltUFy3Srp.png', 'documents/gIHmq5kF0HDIyu7icIK0bRbfozXkkBKed2Atxe3u.png', 'documents/hRit9snGuiR295oZayK6KoZjtKKIoWnOII4GXu8H.docx', '2025-08-13 16:39:42', '2025-08-13 16:54:46', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(35, NULL, 'f@gmail.com', '$2y$12$CmztLCKL19bUvMBKxszoae9jqAr1IYfsDOVAnk.onJLNdv1TFikNu', 'fat', 'mas', 'BSIT', 'North', '09162960264', 'fwgsevr', '09123456789', 'gsdfh', 'a@gmail.com', 'documents/RzsWPFTodQ7Vby6XciqYR1c4xjJLYwlM4bhhE06n.pdf', 'documents/V0qpHCeSZHt61vGdkV5jggnXFueLHFnNzKsUVrmP.docx', 'documents/q6pmbjxmSsrmBWcFZN9JumGCbRhyGwoRR2RWRFtB.docx', '2025-08-13 16:41:38', '2025-08-13 16:54:50', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(36, NULL, 'j@gmail.com', '$2y$12$gwviWnR55GUhaR.3Bs7gz.HBwZRkKhob3g4GWbz.g2C9XbBPHZ77W', 'd', 'asasa', 'BSIT', 'North', '09123456782', 'egrhreh', '09220056798', 'gsdfhgdfh', 'm@gmail.com', 'documents/J3NxSzteOBhNXV4tbTilWuVo5VJxOoK5TA9HvUAP.pdf', 'documents/dZ9unZT9zrzdO86ZlWBOvB4QofJbPxgC9QX4Zigw.pdf', 'documents/nhDMc44WDjrNLphLR6keaiQD1PeVXk8HpNm6vsGM.pdf', '2025-08-13 16:43:07', '2025-08-13 16:54:56', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(37, NULL, 'l@gmail.com', '$2y$12$oBUjEy8FAegk4Ma0Vi2z5e6HJje/Lo/sAJ/iFnVbIujPbg8D9fow6', 'u', 'd', 'BSIT', 'North', '09123456782', 'lasdflasf', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/72r1rYL0hDslgH7N1a9p1Ol1UbCargsCUkGYFmgj.pdf', 'documents/4sDSM9BSGjc50yqD6nuoFSqmiC2B3JrUgOyOtHcs.pdf', 'documents/8WJzvlydA2jhPjI6eBUC9NpaFrL7YVOOGBTHFl57.pdf', '2025-08-13 16:44:47', '2025-08-13 16:55:03', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(38, NULL, 'q@gmail.com', '$2y$12$BJuw7EE2o.s2CXdE98ILCu.eWa1BfO1zn3Fw.6id6hkbDIUDxP0Qq', 'r', 'inso', 'BSIT', 'North', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/YVbyd8W43r0iGNnRwfJEfk7MYWD1gH8K5BE7N5E5.pdf', 'documents/oBB7e9kIa5G0vruJL0llhD0qlOenkDpJH4otkb6y.pdf', 'documents/sa2bD57mBZIGTPxq2DUlw5LEFVnk4XfSb2sn4Arq.pdf', '2025-08-13 16:46:03', '2025-08-13 16:55:08', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(39, NULL, 'en@gmail.com', '$2y$12$XPMl4czurkYkbIwtO.OJf..4eB3tJIIHneKeDfGkWNYNH6H8EkrtC', 'd', 'k', 'BSIT', 'North', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/0yeSLzAhYMRIMp6aXpUxY4cXXGLDzUJfdkF3WBQa.pdf', 'documents/gbxsoJNv627KxBi5ygcYvL8BZUcRtHjmTPYqJY9C.pdf', 'documents/qXUy3pcXhyFFJXAMj9AwY4tLeRE05HIj1vdC9Dnr.pdf', '2025-08-13 16:47:29', '2025-08-13 16:55:13', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(40, NULL, 'i@gmail.com', '$2y$12$JzFEaFf7WLL2UXtgSEg2k./M2vGZ646nz6LN6eNoAt1eVnoZo9LvK', 'i', 'i', 'BSIT', 'West', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/HRrCCXfkSTIYrOzrtpsVQvvxtCgJgufcZI6B4TnW.pdf', 'documents/n8eaQjw9BelUqynCU6ssJSqZCf8AXrTdh5FNdlyf.pdf', 'documents/oOCNjjwpycU42DpaWCltBnpHOfJGHXgREA158koS.pdf', '2025-08-13 16:49:03', '2025-08-13 16:55:27', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(41, NULL, 'v@gmail.com', '$2y$12$DGMFCYXhBW3nOxajxv1DhelH4AeXuNJV/72ewmkEky6C7/YS5WyTS', 'aasd', 'fgh', 'BSIT', 'North', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/4oBWBdccJVHpDXadWEOw4BPD9ASRjbk0HmQ3aegI.pdf', 'documents/xImRtfIzEJXGMhTVTnqIpCeS2zLEbezfhQGSccOo.pdf', 'documents/ldvpmCapZPlz0EKLcvcy3iRf6hUGhViiuGd8j2A7.pdf', '2025-08-13 16:50:39', '2025-08-13 16:55:18', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(42, NULL, 'z@gmail.com', '$2y$12$fDDHD0OQtxg4ePw/4fBECOSlE9ziAhfPBMM817Ok3j3FV.WhvubNu', 'asd', 'cvb', 'BSIT', 'West', '09123456782', 'plss lang Inc.', '09123456789', 'ajiosdjfaksdfa', 'revesco@gmail.com', 'documents/lHzUNd14sR7kmGWzPzSOac7wyT1pxRvuL18LjFiN.png', 'documents/Wm07BY4Rq5Ds9U5cHALrg1QLVkO2RclKMuLlGGBG.png', 'documents/dWKbVTdn5QoIrA54ZxSWAeeXKTdyHdCgXoqRB6rb.png', '2025-08-13 16:52:11', '2025-08-13 16:55:31', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(43, NULL, 'e@gmail.com', '$2y$12$lSg1qtllABQIgLXcpllxpeH7i0ifWgQq..N6uEiRK/rOLinAm.1vy', 'd', 'f', 'BSIT', 'North', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/87Li3KQHitkLrKe4BdmbzRJBV0YUVAil0s7b9f4z.png', 'documents/ml2WMvn5yqWTWAGfWkJLI66tWsF1S0yUip0nIKSE.png', 'documents/a13Yiy39f7I3roEDIX0qGu5zUhMnox9zBuGjQnk4.png', '2025-08-13 16:54:19', '2025-08-13 16:55:22', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(44, NULL, 'abcbs@gmail.com', '$2y$12$dxwLZN5e1qBopWw6tLI8/ePpZrxOypEsPbwGJF1ofQWJmxFtAgbDa', 'hfgghjgfhj', 'nvbjvbvj', 'BSIT', 'North', '09162960264', 'lasdflasf', '09220056798', 'bbbb', 'g@gmail.com', 'documents/HtWtilkr9r2tKYtyXCBueFlM4mQW21OcqI4LqjPM.png', 'documents/excnQfRiRq2KaNuassA7QHvfvHCAN239k8x6BVhd.png', 'documents/SZRzXrZQd3XtVe7hcd94oWpMTTyS1Z80Z0Qy641r.png', '2025-08-13 17:08:22', '2025-08-13 17:08:22', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(45, NULL, 'john123@gmail.com', '$2y$12$.BA.W5ahCYCKDCa.EckneebAY0p5ywEY7r5uzvZWv37yQTIIfwaqm', 'john', 'george', 'BSIT', 'North', '09123456782', 'plss lang Inc.', '09123456789', 'koko', 'koko@gmail', 'documents/oqnXQIPzf99O2Eved3ahnxjAzyes26NYHMNyS5Mf.png', 'documents/s4RPRyvg1r0TmqvxBZMFzhHYIsEhBDL4uvibPnHZ.png', 'documents/m5uvXd88T1MXxXKUrpTIAhcWojJGTZmkGPcHbxnV.png', '2025-08-13 17:10:31', '2025-08-13 17:10:31', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(46, NULL, 'tine@gmail.com', '$2y$12$QV5BoMD4Xr5rSJ856wnCf.B7My8QuptfHB.n6SZFccICaOYep..1O', 'cho', 'inso', 'BSIT', 'North', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'reves@gmail.com', 'documents/EQaqTzXrQSHnYeG2c4jmf2nJyPGEOv8uTVO2Rlii.png', 'documents/4V3cpK93XBKs7JWoQznjgAgHWekPTnwMuscqibCI.png', 'documents/eSNX8ILnkzXNqNYzwXAOaruRovBLNRX1m3EikYdY.png', '2025-08-13 17:11:55', '2025-08-13 17:11:55', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(47, NULL, 'kenneth123@gmail.com', '$2y$12$ZKGFJHAw0lHqtSbA3CVLhe4FNMkzfkf.s65BNFwmw0Xc5RIMlOo4m', 'john', 'grande', 'BSIT', 'North', '09162960264', 'brewery incorporated', '09123456789', 'ramon', 'ramon@gmail.com', 'documents/3l5W46VSXqW7hh7WEfuYy7vE2jtpvaBpMKtMBPmr.png', 'documents/MIBIxCSBc6d7adStZjhEzuzxfAipbzMkVlwu2Rs8.png', 'documents/4YzTZN8HopInFLUk7RQKkEzVbkwSTvAPdGsyVhHb.png', '2025-08-13 17:15:40', '2025-08-13 17:15:40', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(48, NULL, 'shery@gmail.com', '$2y$12$hi4KAFzWyS/94d4JCB6JbuVs70HFEdThOckMz9qFzdziyojrY2hV.', 'sherry', 'dorin', 'BSIT', 'North', '09123456782', 'san miguel', '09220056798', 'ato ang', 'ato@gmail.com', 'documents/TzHf3Q4PGsBFcJlZX6UCnYnvOdA687YayCZLtsT6.png', 'documents/XjRBXuM5fUNy8ifuKLGBkfJyroITuHerZczivPQK.png', 'documents/rh0M8Ks34rViuNP8PQpXsCRkhYJyGutwn5qOpcLL.png', '2025-08-13 17:19:00', '2025-08-13 17:19:00', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(49, NULL, 'art@gmail.com', '$2y$12$Rfv9B72VJrhj7R/kpsb7quka3pIfQ9C9AdeGnenLwt6YzLBOQ/YTe', 'art', 'singson', 'BSIT', 'North', '09123456782', 'vitamillk', '09220056798', 'vita', 'vita@gmail.com', 'documents/4Qea37yIm2AvDCFnJNFF6ADizINoPRMPNbMwy0bf.png', 'documents/nA4RgmdGUqi6izQc6IzxEXv00wEniqx1g15LQ9z2.png', 'documents/oRVfnF73ktAhXl523f36HVP74CNQZcxgiHW8FkY2.png', '2025-08-13 17:20:35', '2025-08-13 17:20:35', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(50, NULL, 'sou@gmail.com', '$2y$12$sllznNCUNYSS/edUtvSwtu5lIm8A.Sz29g0h5LArJsYoKuvfr6A5W', 'sou', 'lao', 'BSIT', 'North', '09123456782', 'oishi', '09220056798', 'rebesco', 'lao@gamil.com', 'documents/G1G3gicWrO4kUrtpUh4VykotfvIchhEtN1iTwaxn.png', 'documents/yPTEzWGT45SdGj28sWZCmt9VQjGjjPh5bImEVa6r.png', 'documents/frL1C9iwGZGIMeN9udFdjNa2PunzskYqD6BiqKsv.png', '2025-08-13 17:23:41', '2025-08-13 17:23:41', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(51, NULL, 'ron@mail.com', '$2y$12$GAAKc/tmcUg3e.ftfMQzQ.RwIoNM.3ilANlwdod2mXyYw2qt4c3te', 'ron', 'ty', 'BSIT', 'North', '09162960264', 'bohol inc', '09220056798', 'rebesco', 'cebeco@gmail.com', 'documents/va35V1RNwZcslnqRUvoUeqCSkEQ8I3xiTQeO3Nui.png', 'documents/xYmECQm8RmeqxwrnS4qyAsoGohMRHo0h9ghf1Ts3.png', 'documents/qzWmp4tnTAp5EKRBDWtg6f9fHQvbfBSGRvZ7ym9K.png', '2025-08-13 17:25:30', '2025-08-13 17:25:30', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(52, NULL, 'nick@gmail.com', '$2y$12$TnHAMFxEiuTa1WWtf52gh.mAjIT/cqzb36Q0Og5vg.ONAtZeH2Dei', 'unik', 'inso', 'BSIT', 'North', '09162960264', 'san miguel', '09220056798', 'jun', 'oishi@gmail.com', 'documents/cVcKLIJPGWWo0hIUMgpZHeA0wt9ap6CbHytmKXOy.png', 'documents/0fYXB2fBuFdqr4tMA9MugnMh8ERPFiEEdmFlLqOW.png', 'documents/13n2sfb36mpcwJELSNyrd9qFwPXQJ3cjV6MalCWu.png', '2025-08-13 17:27:02', '2025-08-13 17:27:02', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(53, NULL, 'mj@gmail.com', '$2y$12$ZC8yuuBjrnS.d7NDBFUvTOSf.rRzn8vxvWRJ.EUcRPV.BcF0Kd3uO', 'jm', 'grande', 'BSIT', 'North', '09162960264', 'plss lang Inc.', '09123456789', 'rebesco', 'sun@gmail.com', 'documents/pN2DNPFdKpszMLjftnDHtxF26g802m2mMzkwBetg.png', 'documents/IEuJW5vmgoUKS4TeQHdANEi3ONTcxoldWehsdtAL.png', 'documents/3GtqaLw2V5n2v6aw3D96k0ABeHvnHZOyzPOrpGQ0.png', '2025-08-13 17:28:38', '2025-08-13 17:28:38', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL),
-(54, NULL, 'quezon@gmail.com', '$2y$12$9pNLWqweTn.4U4GR7la7Aud65dlTvpP2IfY.oPSjZu7nd/uqeD05m', 'mark', 'quezon', 'BSIT', 'North', '09162960264', 'plss lang Inc.', '09220056798', 'sun', 'sunny@gmail.com', 'documents/vpPlmDoGBeonRd9Xnkv1buL4g8M0vJNtMzCOTaUE.png', 'documents/tfOGCU7duj7ukKKEhFLc6CUwqKIxAB4q906liwHg.png', 'documents/mgqh7iSs1dEG5mOtXRQtH9vz4BQPkLjB35aCRCXk.png', '2025-08-13 17:30:10', '2025-08-13 17:30:10', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL);
+INSERT INTO `interns` (`id`, `supervisor_id`, `email`, `password`, `first_name`, `last_name`, `course`, `section`, `phone`, `company_name`, `company_phone`, `supervisor_name`, `supervisor_email`, `application_letter`, `parents_waiver`, `acceptance_letter`, `created_at`, `updated_at`, `status`, `archived_at`, `attendance_released_at`, `attendance_status`, `attendance_time`, `attendance_notes`, `qr_code_scanned`, `resume`, `medical_certificate`, `insurance`, `pre_deployment_status`, `pre_deployment_accepted_at`, `memorandum_of_agreement`, `internship_contract`, `mid_deployment_status`, `mid_deployment_accepted_at`, `recommendation_letter`, `deployment_status`, `deployment_accepted_at`, `current_phase`, `pre_enrollment_status`, `pre_enrollment_accepted_at`, `company_address`, `supervisor_position`, `endorsement_letter`, `invited_by_user_id`, `otp_code`, `otp_expires_at`, `otp_verified`) VALUES
+(4, 1, 'cho@gmail.com', '$2y$12$i5p3HCBX12J.vh.rgGaaqOlvn5DnwsZ5ostiMRDnUST3pNrUfxc8.', 'cho', 'to', 'BSIT', 'west', '0912345123', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/HkLvaMoVK79B3YzUpl2fFsJ2VZ6p5nmxBMlNeMBm.png', 'documents/gCGIO7YAOIl2rkQHc1H3WYUvhCVFNlfjODz4cZI4.png', 'documents/7nzs5RwrMiblyXyzKZ2hQymVV2qnBsvHqTdraD5V.png', '2025-07-02 23:21:52', '2025-08-13 19:18:36', 'rejected', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(6, NULL, 'aa@gmail.com', '$2y$12$7AOAj7Laf9g.vrfZubAJ.e28Wnx/xo1L0GihNgkhWSz84ejHUNuaa', 'dsfasdfa', 'assdlfadsfl', 'BSIT', 'North', '40503429', 'KJFdkdlsjfksld', '1223423423', 'dfklsalfkadsjkl', 'jdfk@gmail.com', 'documents/RdEsEU23l8wDhNUxuoleefEpudqHBNYAJo5zjUjc.png', 'documents/oFr3IFAj9SflEoTqoDuqjoEdXYKZQtwyq0e9EtAQ.png', 'documents/1HCx0vpuY6Oj1O5uFVgK1KcAwhwKhLHcFkS6ROOj.png', '2025-07-03 05:28:15', '2025-07-03 05:28:25', 'rejected', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(29, NULL, 'sj@gmail.com', '$2y$12$aMYeia2XBBP5w5JyzKXuhuJPauGQUlED4BmkQwR1FWwN/N3V04Fr6', 'Sj', 'Js', 'BSIT', 'North', '04539593', 'plss lang Inc.', '34534524', 'dfklsalfkadsjkl', 'pss@gmail.com', 'documents/YdCfkgUuqkZZnZvdPXtjDsPwHol9ViMcqOgWzhsF.png', 'documents/khEae3QSnreZgSTPu4q1RYj9G9oi705hw08XrpKN.png', 'documents/9p9xfo9JHh5i8YTrknaFiNd1JWVYsk4Yp5vRZjJX.png', '2025-08-08 06:46:34', '2025-08-12 23:26:30', 'accepted', NULL, '2025-08-13 07:26:30', 'released', '2025-08-12 23:05:22', NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(32, NULL, 'kh@gmail.com', '$2y$12$JGc3oXgJWWO0k1f3tvowhOzNS1vTBDHRN5HGteqFZBDmezJCB4n1m', 'Kj', 'jk', 'BSIT', 'North', '09223232', 'adfads', 'asdfasdf', 'asdfdsf', 'adfadsf@gmail.com', 'documents/JjgZzsTgRvhOcLOFuYqJRG7lS4TeMlDDVHfeT3a7.pdf', 'documents/lvrt0XBHbPD66MEsDvbG9zuUBGvGPxllJmkFW4C7.pdf', 'documents/X4h4qezJ8Dfx4UBBLeB3GAzKRr2t5SUCQtIVM30x.pdf', '2025-08-09 06:33:42', '2025-08-13 16:54:40', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(33, NULL, 'g@gmail.com', '$2y$12$zywbAgJwckxfvVSYpicAyuM8TDZ5fQ9XJQBGM08rM1dn8.dfZX/G.', 'geno', 'colambot', 'BSIT', 'South', '09123456782', 'plss lang Inc.', '09123456789', 'hehsh', 'h@gmail.com', 'documents/W1mrcbzc0HiO4D7S1PgO9vGwsTTuqSPQOLOP1xOi.docx', 'documents/Q5rmLtMT0OYRT2GrBscrM58LUa0MkYUEQzNpfiZW.docx', 'documents/MASPg6T2fuF6TH0ZVTlTGrKZZzIcYuM0QdFre7bs.docx', '2025-08-12 23:38:18', '2025-08-12 23:38:59', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(34, NULL, 'y@gmail.com', '$2y$12$vondWIE7QpdBR0vS1ZgO5ed0Tde.UOZeRTGbCCCumia6Br8aeAVxi', 'yawe', 'kho', 'BSIT', 'North', '09123456782', 'grehnj', '09123456789', 'hfgj', 'r@gmail.com', 'documents/Dc5rlYMjrLQiOsBczOxxFhZxzjeiU3AltUFy3Srp.png', 'documents/gIHmq5kF0HDIyu7icIK0bRbfozXkkBKed2Atxe3u.png', 'documents/hRit9snGuiR295oZayK6KoZjtKKIoWnOII4GXu8H.docx', '2025-08-13 16:39:42', '2025-08-13 16:54:46', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(35, NULL, 'f@gmail.com', '$2y$12$CmztLCKL19bUvMBKxszoae9jqAr1IYfsDOVAnk.onJLNdv1TFikNu', 'fat', 'mas', 'BSIT', 'North', '09162960264', 'fwgsevr', '09123456789', 'gsdfh', 'a@gmail.com', 'documents/RzsWPFTodQ7Vby6XciqYR1c4xjJLYwlM4bhhE06n.pdf', 'documents/V0qpHCeSZHt61vGdkV5jggnXFueLHFnNzKsUVrmP.docx', 'documents/q6pmbjxmSsrmBWcFZN9JumGCbRhyGwoRR2RWRFtB.docx', '2025-08-13 16:41:38', '2025-08-13 16:54:50', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(36, NULL, 'j@gmail.com', '$2y$12$gwviWnR55GUhaR.3Bs7gz.HBwZRkKhob3g4GWbz.g2C9XbBPHZ77W', 'd', 'asasa', 'BSIT', 'North', '09123456782', 'egrhreh', '09220056798', 'gsdfhgdfh', 'm@gmail.com', 'documents/J3NxSzteOBhNXV4tbTilWuVo5VJxOoK5TA9HvUAP.pdf', 'documents/dZ9unZT9zrzdO86ZlWBOvB4QofJbPxgC9QX4Zigw.pdf', 'documents/nhDMc44WDjrNLphLR6keaiQD1PeVXk8HpNm6vsGM.pdf', '2025-08-13 16:43:07', '2025-08-13 16:54:56', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(37, NULL, 'l@gmail.com', '$2y$12$oBUjEy8FAegk4Ma0Vi2z5e6HJje/Lo/sAJ/iFnVbIujPbg8D9fow6', 'u', 'd', 'BSIT', 'North', '09123456782', 'lasdflasf', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/72r1rYL0hDslgH7N1a9p1Ol1UbCargsCUkGYFmgj.pdf', 'documents/4sDSM9BSGjc50yqD6nuoFSqmiC2B3JrUgOyOtHcs.pdf', 'documents/8WJzvlydA2jhPjI6eBUC9NpaFrL7YVOOGBTHFl57.pdf', '2025-08-13 16:44:47', '2025-08-13 16:55:03', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(38, NULL, 'q@gmail.com', '$2y$12$BJuw7EE2o.s2CXdE98ILCu.eWa1BfO1zn3Fw.6id6hkbDIUDxP0Qq', 'r', 'inso', 'BSIT', 'North', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/YVbyd8W43r0iGNnRwfJEfk7MYWD1gH8K5BE7N5E5.pdf', 'documents/oBB7e9kIa5G0vruJL0llhD0qlOenkDpJH4otkb6y.pdf', 'documents/sa2bD57mBZIGTPxq2DUlw5LEFVnk4XfSb2sn4Arq.pdf', '2025-08-13 16:46:03', '2025-08-13 16:55:08', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(39, NULL, 'en@gmail.com', '$2y$12$XPMl4czurkYkbIwtO.OJf..4eB3tJIIHneKeDfGkWNYNH6H8EkrtC', 'd', 'k', 'BSIT', 'North', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/0yeSLzAhYMRIMp6aXpUxY4cXXGLDzUJfdkF3WBQa.pdf', 'documents/gbxsoJNv627KxBi5ygcYvL8BZUcRtHjmTPYqJY9C.pdf', 'documents/qXUy3pcXhyFFJXAMj9AwY4tLeRE05HIj1vdC9Dnr.pdf', '2025-08-13 16:47:29', '2025-08-13 16:55:13', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(40, NULL, 'i@gmail.com', '$2y$12$JzFEaFf7WLL2UXtgSEg2k./M2vGZ646nz6LN6eNoAt1eVnoZo9LvK', 'i', 'i', 'BSIT', 'West', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/HRrCCXfkSTIYrOzrtpsVQvvxtCgJgufcZI6B4TnW.pdf', 'documents/n8eaQjw9BelUqynCU6ssJSqZCf8AXrTdh5FNdlyf.pdf', 'documents/oOCNjjwpycU42DpaWCltBnpHOfJGHXgREA158koS.pdf', '2025-08-13 16:49:03', '2025-08-13 16:55:27', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(41, NULL, 'v@gmail.com', '$2y$12$DGMFCYXhBW3nOxajxv1DhelH4AeXuNJV/72ewmkEky6C7/YS5WyTS', 'aasd', 'fgh', 'BSIT', 'North', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/4oBWBdccJVHpDXadWEOw4BPD9ASRjbk0HmQ3aegI.pdf', 'documents/xImRtfIzEJXGMhTVTnqIpCeS2zLEbezfhQGSccOo.pdf', 'documents/ldvpmCapZPlz0EKLcvcy3iRf6hUGhViiuGd8j2A7.pdf', '2025-08-13 16:50:39', '2025-08-13 16:55:18', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(42, NULL, 'z@gmail.com', '$2y$12$fDDHD0OQtxg4ePw/4fBECOSlE9ziAhfPBMM817Ok3j3FV.WhvubNu', 'asd', 'cvb', 'BSIT', 'West', '09123456782', 'plss lang Inc.', '09123456789', 'ajiosdjfaksdfa', 'revesco@gmail.com', 'documents/lHzUNd14sR7kmGWzPzSOac7wyT1pxRvuL18LjFiN.png', 'documents/Wm07BY4Rq5Ds9U5cHALrg1QLVkO2RclKMuLlGGBG.png', 'documents/dWKbVTdn5QoIrA54ZxSWAeeXKTdyHdCgXoqRB6rb.png', '2025-08-13 16:52:11', '2025-08-13 16:55:31', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(43, NULL, 'e@gmail.com', '$2y$12$lSg1qtllABQIgLXcpllxpeH7i0ifWgQq..N6uEiRK/rOLinAm.1vy', 'd', 'f', 'BSIT', 'North', '09123456782', 'plss lang Inc.', '09123456789', 'rebesco', 'revesco@gmail.com', 'documents/87Li3KQHitkLrKe4BdmbzRJBV0YUVAil0s7b9f4z.png', 'documents/ml2WMvn5yqWTWAGfWkJLI66tWsF1S0yUip0nIKSE.png', 'documents/a13Yiy39f7I3roEDIX0qGu5zUhMnox9zBuGjQnk4.png', '2025-08-13 16:54:19', '2025-08-13 16:55:22', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_enrollment', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(56, NULL, 'jkr.grande@gmail.com', '$2y$12$bBkZPHdFnPS00ydelnQ.jOXC/Sl0QCsK67d6QYhUdW6cTglvdZvDu', 'John Kenneth', 'Grande', 'BSIT', 'North', '095836436', 'sdfg', '', 'fdgsdffg', 'sdgsdf@gmail.com', 'documents/P8vxXWmroQg35tS5KccBoGqwH4UweR7xXSq01F7d.pdf', 'documents/RTvxQPZHbapm8MEGXFrao7vDf2bcBVKOc2Ts2bD1.pdf', 'documents/acceptance_letter_intern_56.html', '2025-10-21 14:18:28', '2025-10-21 14:28:11', 'accepted', NULL, NULL, 'not_released', NULL, NULL, NULL, 'documents/Wul95MnQcaLGE8W51p2135r6ZnEkAD7Rg518bMBL.pdf', 'documents/B1zKKOJORdvwj4QW6QLwr4kMXcf5obLa72z7rvKn.pdf', 'documents/tkrGDMpYC3HxlRTVTebc7MZRijhC8Az7XjknXYCl.pdf', 'accepted', '2025-10-21 14:26:59', 'documents/memorandum_intern_56.html', 'documents/internship_contract_intern_56.html', 'accepted', '2025-10-21 14:27:47', 'documents/zvAER62JbPrT9XC106jRZOou5o9CdB0LFMTYVDux.pdf', 'accepted', '2025-10-21 14:28:11', 'completed', 'pending', NULL, 'dfsgsdfg', 'dfgdsgf', NULL, 17, NULL, NULL, 0),
+(57, NULL, 'insomarkgeno1@gmail.com', '$2y$12$mfAROyZ5ARJzZ6C/L3GpYeyKsENlWiI.oPXedEGNdc4zTiVCSacW6', 'sdfsd', 'sfdgsfd', 'BSIT', 'North', '5465434634', 'hsashdasjh', '', 'asdfadsf', 'sdfa@gmail.com', '', '', '', '2025-11-08 10:17:54', '2025-11-08 10:19:39', 'pending', NULL, NULL, 'not_released', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, 'pending', NULL, NULL, 'pending', NULL, 'pre_deployment', 'pending', NULL, 'hasjfhsdkf', 'sdfadsfdsf', NULL, 17, NULL, NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -183,6 +232,38 @@ CREATE TABLE `journals` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `day` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `login_attempts`
+--
+
+CREATE TABLE `login_attempts` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `ip_address` varchar(255) NOT NULL,
+  `user_agent` text DEFAULT NULL,
+  `success` tinyint(1) NOT NULL DEFAULT 0,
+  `reason` varchar(255) DEFAULT NULL,
+  `city` varchar(255) DEFAULT NULL,
+  `country` varchar(255) DEFAULT NULL,
+  `latitude` decimal(10,8) DEFAULT NULL,
+  `longitude` decimal(11,8) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `login_attempts`
+--
+
+INSERT INTO `login_attempts` (`id`, `email`, `ip_address`, `user_agent`, `success`, `reason`, `city`, `country`, `latitude`, `longitude`, `created_at`, `updated_at`) VALUES
+(1, 'ojtmonitoring71@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', 1, 'Login successful', 'Local', 'Local', 0.00000000, 0.00000000, '2025-10-28 02:43:32', '2025-10-28 02:43:32'),
+(2, 'khamyrbautista@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', 0, 'Invalid credentials', 'Local', 'Local', 0.00000000, 0.00000000, '2025-10-28 02:48:58', '2025-10-28 02:48:58'),
+(3, 'ojtmonitoring71@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', 1, 'Login successful', 'Local', 'Local', 0.00000000, 0.00000000, '2025-10-28 09:18:58', '2025-10-28 09:18:58'),
+(4, 'ojtmonitoring71@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', 1, 'Login successful', 'Local', 'Local', 0.00000000, 0.00000000, '2025-10-28 09:24:52', '2025-10-28 09:24:52'),
+(5, 'khamyrbautista@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', 1, 'Login successful', 'Local', 'Local', 0.00000000, 0.00000000, '2025-11-08 10:16:30', '2025-11-08 10:16:30');
 
 -- --------------------------------------------------------
 
@@ -311,7 +392,10 @@ INSERT INTO `messages` (`id`, `sender_id`, `receiver_id`, `sender_type`, `receiv
 (189, 29, 4, 'intern', 'supervisor', 'Sj Js has marked attendance.', 0, '2025-08-12 16:12:38', '2025-08-12 16:12:38'),
 (190, 4, 29, 'supervisor', 'intern', 'Time In is now available! Click \"Time In\" to mark your attendance. (Expires in 5 minutes)', 0, '2025-08-12 23:05:02', '2025-08-12 23:05:02'),
 (191, 29, 4, 'intern', 'supervisor', 'Sj Js has marked attendance.', 0, '2025-08-12 23:05:22', '2025-08-12 23:05:22'),
-(192, 4, 29, 'supervisor', 'intern', 'Time In is now available! Click \"Time In\" to mark your attendance. (Expires in 5 minutes)', 0, '2025-08-12 23:26:30', '2025-08-12 23:26:30');
+(192, 4, 29, 'supervisor', 'intern', 'Time In is now available! Click \"Time In\" to mark your attendance. (Expires in 5 minutes)', 0, '2025-08-12 23:26:30', '2025-08-12 23:26:30'),
+(193, 56, 17, 'intern', 'admin', 'Heeeeey', 1, '2025-10-21 14:28:27', '2025-10-21 14:28:37'),
+(194, 17, 56, 'admin', 'intern', 'bayot', 1, '2025-10-21 14:33:54', '2025-10-21 14:34:01'),
+(195, 56, 17, 'intern', 'admin', 'dako akoy lagay', 1, '2025-10-21 14:34:40', '2025-10-21 14:34:42');
 
 -- --------------------------------------------------------
 
@@ -360,7 +444,41 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (30, '2025_08_09_101010_add_archived_at_to_interns_table', 25),
 (32, '2025_08_09_121200_add_otp_back_to_supervisors_table', 26),
 (35, '2025_01_15_000000_create_attendances_table', 27),
-(36, '2025_08_12_154632_add_attendance_tracking_to_interns_table', 27);
+(36, '2025_08_12_154632_add_attendance_tracking_to_interns_table', 27),
+(37, '2025_08_13_052957_create_dtrs_table', 28),
+(38, '2025_08_16_062424_add_phase_tracking_to_interns_table', 28),
+(39, '2025_08_16_081426_add_missing_phase_fields_to_interns_table', 28),
+(40, '2025_09_08_000001_add_endorsement_and_recommendation_columns_to_interns_table', 28),
+(41, '2025_09_08_194758_add_endorsement_letter_to_interns_table', 28),
+(42, '2025_09_13_135919_add_company_address_to_interns_table', 29),
+(43, '2025_10_12_203343_add_current_phase_to_interns_table', 29),
+(44, '2025_10_13_000001_add_invited_by_to_interns_table', 29),
+(45, '2025_10_16_222522_create_password_reset_tokens_table', 30),
+(46, '2025_10_17_000001_add_otp_fields_to_users_table', 30),
+(47, '2025_10_19_160935_add_otp_fields_to_interns_table', 31),
+(48, '2025_10_23_140305_create_cache_table', 32),
+(49, '2025_10_28_103819_create_login_attempts_table', 33),
+(50, '2025_10_28_103847_add_role_to_users_table', 33),
+(51, '2025_10_28_000001_add_role_to_users_table', 34);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `password_reset_tokens`
+--
+
+CREATE TABLE `password_reset_tokens` (
+  `email` varchar(255) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `password_reset_tokens`
+--
+
+INSERT INTO `password_reset_tokens` (`email`, `token`, `created_at`) VALUES
+('khamyrbautista@gmail.com', '$2y$12$pSj8yl2p./nb8T.kiEvtteBQU9BFCNGQmjKVnmiJnR/8.NBd3LVSa', '2025-10-19 08:26:47');
 
 -- --------------------------------------------------------
 
@@ -416,9 +534,13 @@ CREATE TABLE `users` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
+  `role` varchar(255) NOT NULL DEFAULT 'user',
   `email_verified_at` timestamp NULL DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `remember_token` varchar(100) DEFAULT NULL,
+  `otp_code` varchar(6) DEFAULT NULL,
+  `otp_expires_at` timestamp NULL DEFAULT NULL,
+  `otp_verified` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -427,23 +549,29 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'mark', 'm@gmail.com', NULL, '$2y$12$D61kUI95eHpWhknNnfaWEOLlpum2XdF../S5ELlpOhp.J8gQzIs62', NULL, '2025-07-01 07:33:34', '2025-07-01 07:33:34'),
-(2, 'tyron c. inso', 'tyron@gmail.com', NULL, '$2y$12$o5Hr3HHwYJkLq27ngGz3SepuT.hLolY6eZqNs01xtAp/vLbMVqydW', NULL, '2025-07-02 22:30:28', '2025-07-02 22:30:28'),
-(3, 'mark', 'ken@gmail.com', NULL, '$2y$12$mpdnX.hkCtwaIDmaVGzhheFp0JPHM/aPpXT7YMhKVopFbClztAx2e', NULL, '2025-07-02 23:14:31', '2025-07-02 23:14:31'),
-(4, 'truy c.inso', 'de@gmail.com', NULL, '$2y$12$bd2yLHGUfsgiLFeytgCmjOfW1FFzrwkdXyJeeR67UgFmXji3blRxC', NULL, '2025-07-02 23:29:38', '2025-07-02 23:29:38'),
-(5, 'mark', 'geno@gmail.com', NULL, '$2y$12$h7XW1u7zzDAz0/biL3OjD.B95ftLtYHTp82ctS3.ikr6uR3yHkid2', NULL, '2025-07-06 02:19:56', '2025-07-06 02:19:56'),
-(6, 'dong inso', 'dong@gmail.com', NULL, '$2y$12$xBU1qaTYwuiLpmOvnkFO/e.bnnPphAk29u6twEVaCzVtFkOYct9k.', NULL, '2025-07-06 02:45:41', '2025-07-06 02:45:41'),
-(7, 'jade', 'leira@gmail.com', NULL, '$2y$12$csrnI/TGvfz3asZWWU7mnerkMpFiVLYgYaMoVQCLub8AX9ZhcA9ay', NULL, '2025-07-07 00:23:51', '2025-07-07 00:23:51'),
-(8, 'tintin', 'tintin@gmail.com', NULL, '$2y$12$ohkrVukdCSdqIwF0jUy9MOPHCJyfXfKN9pC5pkSsyTCTY/bEL409O', NULL, '2025-07-07 05:18:17', '2025-07-07 05:18:17'),
-(9, 'joerge', 'joerge@gmail.com', NULL, '$2y$12$Il17FiLLMNNCdNNA2G8qcOtPv0IJgTlT6MEl9Iq3pS5L0aqrEJJuK', NULL, '2025-07-10 08:24:46', '2025-07-10 08:24:46'),
-(10, 'mark', 'gwapo@gmail.com', NULL, '$2y$12$liCx77BnBSieWuYA8tjQduGdx702l3F4duhMCZOZRjz/IUBIWgVme', NULL, '2025-07-10 17:21:04', '2025-07-10 17:21:04'),
-(11, 'mark', 'ff@gmail.com', NULL, '$2y$12$PvIC.ELb3MamAeYQlBnS5eEHdC.e1/3F2bfyxRK6ea3e.LCvFJ5dO', NULL, '2025-07-20 06:46:23', '2025-07-20 06:46:23'),
-(12, 'adfads', 'kk@gmail.com', NULL, '$2y$12$w3RIx5r4CtxjOWfsAk.76eS/Mzovn8KMQYImSIcMz13QNO2JqxtA6', NULL, '2025-07-20 07:32:24', '2025-07-20 07:32:24'),
-(13, 'BSBA', 'r@gmail.com', NULL, '$2y$12$.SoeQmEzRrTS9FwHIoq0h.ZSqCpJ4tw9a2JbiZBcpgaiT6LL.8Sxa', NULL, '2025-07-20 08:09:16', '2025-07-20 08:09:16'),
-(14, 'Ryan C. INSO', 'ryan@gmail.com', NULL, '$2y$12$TjzsM/qmufNlT4OCmEVRTu4Gy2DHb/JnOAr6PEZpK5P22uzOHYUGi', NULL, '2025-08-03 16:12:31', '2025-08-03 16:12:31'),
-(15, 'mark', 'm@gmai.com', NULL, '$2y$12$474HyHjxMB2zVAYtJUb0MOmvqTS.z6IJ6skZD3iRkrDWixm669j6K', NULL, '2025-08-04 06:43:44', '2025-08-04 06:43:44'),
-(16, 'bodd', 'bodd@gmail.com', NULL, '$2y$12$mOz71vva5.v0643oSY8UPOtXPYXaxCoNw2.fEqLDK7qVUxcbm/GpO', NULL, '2025-08-04 06:46:01', '2025-08-04 06:46:01');
+INSERT INTO `users` (`id`, `name`, `email`, `role`, `email_verified_at`, `password`, `remember_token`, `otp_code`, `otp_expires_at`, `otp_verified`, `created_at`, `updated_at`) VALUES
+(1, 'mark', 'm@gmail.com', 'user', NULL, '$2y$12$D61kUI95eHpWhknNnfaWEOLlpum2XdF../S5ELlpOhp.J8gQzIs62', NULL, NULL, NULL, 0, '2025-07-01 07:33:34', '2025-07-01 07:33:34'),
+(2, 'tyron c. inso', 'tyron@gmail.com', 'user', NULL, '$2y$12$o5Hr3HHwYJkLq27ngGz3SepuT.hLolY6eZqNs01xtAp/vLbMVqydW', NULL, NULL, NULL, 0, '2025-07-02 22:30:28', '2025-07-02 22:30:28'),
+(3, 'mark', 'ken@gmail.com', 'user', NULL, '$2y$12$mpdnX.hkCtwaIDmaVGzhheFp0JPHM/aPpXT7YMhKVopFbClztAx2e', NULL, NULL, NULL, 0, '2025-07-02 23:14:31', '2025-07-02 23:14:31'),
+(4, 'truy c.inso', 'de@gmail.com', 'user', NULL, '$2y$12$bd2yLHGUfsgiLFeytgCmjOfW1FFzrwkdXyJeeR67UgFmXji3blRxC', NULL, NULL, NULL, 0, '2025-07-02 23:29:38', '2025-07-02 23:29:38'),
+(5, 'mark', 'geno@gmail.com', 'user', NULL, '$2y$12$h7XW1u7zzDAz0/biL3OjD.B95ftLtYHTp82ctS3.ikr6uR3yHkid2', NULL, NULL, NULL, 0, '2025-07-06 02:19:56', '2025-07-06 02:19:56'),
+(6, 'dong inso', 'dong@gmail.com', 'user', NULL, '$2y$12$xBU1qaTYwuiLpmOvnkFO/e.bnnPphAk29u6twEVaCzVtFkOYct9k.', NULL, NULL, NULL, 0, '2025-07-06 02:45:41', '2025-07-06 02:45:41'),
+(7, 'jade', 'leira@gmail.com', 'user', NULL, '$2y$12$csrnI/TGvfz3asZWWU7mnerkMpFiVLYgYaMoVQCLub8AX9ZhcA9ay', NULL, NULL, NULL, 0, '2025-07-07 00:23:51', '2025-07-07 00:23:51'),
+(8, 'tintin', 'tintin@gmail.com', 'user', NULL, '$2y$12$ohkrVukdCSdqIwF0jUy9MOPHCJyfXfKN9pC5pkSsyTCTY/bEL409O', NULL, NULL, NULL, 0, '2025-07-07 05:18:17', '2025-07-07 05:18:17'),
+(9, 'joerge', 'joerge@gmail.com', 'user', NULL, '$2y$12$Il17FiLLMNNCdNNA2G8qcOtPv0IJgTlT6MEl9Iq3pS5L0aqrEJJuK', NULL, NULL, NULL, 0, '2025-07-10 08:24:46', '2025-07-10 08:24:46'),
+(10, 'mark', 'gwapo@gmail.com', 'user', NULL, '$2y$12$liCx77BnBSieWuYA8tjQduGdx702l3F4duhMCZOZRjz/IUBIWgVme', NULL, NULL, NULL, 0, '2025-07-10 17:21:04', '2025-07-10 17:21:04'),
+(11, 'mark', 'ff@gmail.com', 'user', NULL, '$2y$12$PvIC.ELb3MamAeYQlBnS5eEHdC.e1/3F2bfyxRK6ea3e.LCvFJ5dO', NULL, NULL, NULL, 0, '2025-07-20 06:46:23', '2025-07-20 06:46:23'),
+(12, 'adfads', 'kk@gmail.com', 'user', NULL, '$2y$12$w3RIx5r4CtxjOWfsAk.76eS/Mzovn8KMQYImSIcMz13QNO2JqxtA6', NULL, NULL, NULL, 0, '2025-07-20 07:32:24', '2025-07-20 07:32:24'),
+(13, 'BSBA', 'r@gmail.com', 'user', NULL, '$2y$12$.SoeQmEzRrTS9FwHIoq0h.ZSqCpJ4tw9a2JbiZBcpgaiT6LL.8Sxa', NULL, NULL, NULL, 0, '2025-07-20 08:09:16', '2025-07-20 08:09:16'),
+(14, 'Ryan C. INSO', 'ryan@gmail.com', 'user', NULL, '$2y$12$TjzsM/qmufNlT4OCmEVRTu4Gy2DHb/JnOAr6PEZpK5P22uzOHYUGi', NULL, NULL, NULL, 0, '2025-08-03 16:12:31', '2025-08-03 16:12:31'),
+(15, 'mark', 'm@gmai.com', 'user', NULL, '$2y$12$474HyHjxMB2zVAYtJUb0MOmvqTS.z6IJ6skZD3iRkrDWixm669j6K', NULL, NULL, NULL, 0, '2025-08-04 06:43:44', '2025-08-04 06:43:44'),
+(16, 'bodd', 'bodd@gmail.com', 'user', NULL, '$2y$12$mOz71vva5.v0643oSY8UPOtXPYXaxCoNw2.fEqLDK7qVUxcbm/GpO', NULL, NULL, NULL, 0, '2025-08-04 06:46:01', '2025-08-04 06:46:01'),
+(17, 'Khamyr Araño', 'khamyrbautista@gmail.com', 'user', '2025-10-17 13:29:06', '$2y$12$OyMcO4iIcydbdYd5E90RPeUCX7pF1e3ZhP.Z.eK.UPllYLnDd5rVu', NULL, NULL, NULL, 1, '2025-10-17 09:07:10', '2025-10-21 14:05:15'),
+(18, 'Inso Mark Geno', 'inosmarkgeno406@gmail.com', 'user', NULL, '$2y$12$W5rJni6DJ1lXQGyjeMf26.FQO7HfbefLDqxXClQozl6qOHQsBGfSe', NULL, '219752', '2025-10-22 06:46:16', 0, '2025-10-22 06:36:16', '2025-10-22 06:36:16'),
+(19, 'Inso Mark Geno', 'insomarkgeno406@gmail.com', 'user', '2025-10-22 06:37:44', '$2y$12$yzk9W/97l9TTm2PoAHNeTeHPRS9bijXxUoj2gLcZ7tSBMGO1Rwldm', NULL, NULL, NULL, 1, '2025-10-22 06:37:21', '2025-10-22 06:39:31'),
+(20, 'Mark Geno', 'insomarkgeno59@gmail.com', 'user', NULL, '$2y$12$b9reG0M6SvfF/LtMzDsUx.zja5kZLeA4QAXXSkp4HQAs7DwVRD7mW', NULL, '900963', '2025-10-23 06:13:42', 0, '2025-10-23 06:03:42', '2025-10-23 06:03:42'),
+(21, 'John Kenneth Grande', 'jkr.grande@gmail.com', 'user', '2025-10-25 05:17:23', '$2y$12$TOzCmLl9.CHD5BSDcDZxKeWlHnha1BL.Xi4VmRvIipa3bxgZFFfC6', NULL, NULL, NULL, 1, '2025-10-25 05:03:43', '2025-10-25 05:17:23'),
+(22, 'OJT MONITORING', 'ojtmonitoring71@gmail.com', 'admin', NULL, '$2y$12$2JR5Rbi.GXGrVy7qVqxMqeSekotHmngfRmaAi3S3t2vY5MuY1BNAW', NULL, NULL, NULL, 0, '2025-10-28 02:43:19', '2025-10-28 02:43:19');
 
 --
 -- Indexes for dumped tables
@@ -455,6 +583,18 @@ INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `re
 ALTER TABLE `attendances`
   ADD PRIMARY KEY (`id`),
   ADD KEY `attendances_supervisor_id_foreign` (`supervisor_id`);
+
+--
+-- Indexes for table `cache`
+--
+ALTER TABLE `cache`
+  ADD PRIMARY KEY (`key`);
+
+--
+-- Indexes for table `cache_locks`
+--
+ALTER TABLE `cache_locks`
+  ADD PRIMARY KEY (`key`);
 
 --
 -- Indexes for table `documents`
@@ -470,6 +610,12 @@ ALTER TABLE `documents`
 ALTER TABLE `document_requests`
   ADD PRIMARY KEY (`id`),
   ADD KEY `document_requests_intern_id_foreign` (`intern_id`);
+
+--
+-- Indexes for table `dtrs`
+--
+ALTER TABLE `dtrs`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `grade_requests`
@@ -492,7 +638,8 @@ ALTER TABLE `grade_submissions`
 ALTER TABLE `interns`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `interns_email_unique` (`email`),
-  ADD KEY `interns_supervisor_id_foreign` (`supervisor_id`);
+  ADD KEY `interns_supervisor_id_foreign` (`supervisor_id`),
+  ADD KEY `interns_invited_by_user_id_foreign` (`invited_by_user_id`);
 
 --
 -- Indexes for table `journals`
@@ -500,6 +647,15 @@ ALTER TABLE `interns`
 ALTER TABLE `journals`
   ADD PRIMARY KEY (`id`),
   ADD KEY `journals_intern_id_foreign` (`intern_id`);
+
+--
+-- Indexes for table `login_attempts`
+--
+ALTER TABLE `login_attempts`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `login_attempts_ip_address_created_at_index` (`ip_address`,`created_at`),
+  ADD KEY `login_attempts_email_created_at_index` (`email`,`created_at`),
+  ADD KEY `login_attempts_success_index` (`success`);
 
 --
 -- Indexes for table `messages`
@@ -512,6 +668,12 @@ ALTER TABLE `messages`
 --
 ALTER TABLE `migrations`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `password_reset_tokens`
+--
+ALTER TABLE `password_reset_tokens`
+  ADD KEY `password_reset_tokens_email_index` (`email`);
 
 --
 -- Indexes for table `supervisors`
@@ -557,6 +719,12 @@ ALTER TABLE `document_requests`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
+-- AUTO_INCREMENT for table `dtrs`
+--
+ALTER TABLE `dtrs`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `grade_requests`
 --
 ALTER TABLE `grade_requests`
@@ -572,7 +740,7 @@ ALTER TABLE `grade_submissions`
 -- AUTO_INCREMENT for table `interns`
 --
 ALTER TABLE `interns`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
 
 --
 -- AUTO_INCREMENT for table `journals`
@@ -581,16 +749,22 @@ ALTER TABLE `journals`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
+-- AUTO_INCREMENT for table `login_attempts`
+--
+ALTER TABLE `login_attempts`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT for table `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=193;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=196;
 
 --
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT for table `supervisors`
@@ -608,7 +782,7 @@ ALTER TABLE `time_logs`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- Constraints for dumped tables
@@ -650,6 +824,7 @@ ALTER TABLE `grade_submissions`
 -- Constraints for table `interns`
 --
 ALTER TABLE `interns`
+  ADD CONSTRAINT `interns_invited_by_user_id_foreign` FOREIGN KEY (`invited_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `interns_supervisor_id_foreign` FOREIGN KEY (`supervisor_id`) REFERENCES `supervisors` (`id`) ON DELETE SET NULL;
 
 --

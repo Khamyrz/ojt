@@ -1,582 +1,755 @@
 @extends('layouts.app')
 
 @section('content')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<style>
-    body {
-        font-family: 'Segoe UI', sans-serif;
-        background-color: #f8fafc;
-        margin: 0;
-        padding: 0;
-    }
-
-    .container {
-        max-width: 1200px;
-        margin: 40px auto;
-        background-color: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-    }
-
-    h1 {
-        margin-bottom: 25px;
-        color: #2c3e50;
-        font-weight: 600;
-        text-align: center;
-    }
-
-    .filter-bar {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 25px;
-    }
-
-    .search-form {
-        display: inline-flex;
-    }
-
-    .section-button {
-        position: relative;
-        padding: 10px 16px;
-        background-color: #3490dc;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        transition: background-color 0.2s ease;
-        font-weight: bold;
-    }
-
-    .section-button:hover {
-        background-color: #2779bd;
-    }
-
-    .notification {
-        position: absolute;
-        top: -6px;
-        right: -6px;
-        background-color: #e3342f;
-        color: white;
-        font-size: 11px;
-        font-weight: bold;
-        padding: 3px 6px;
-        border-radius: 50%;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-
-    .search-input {
-        padding: 8px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 14px;
-        width: 180px;
-    }
-
-    .search-button {
-        padding: 8px 12px;
-        background-color: #10b981;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 14px;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-
-    .search-button:hover {
-        background-color: #059669;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        overflow: hidden;
-        border-radius: 10px;
-    }
-
-    th, td {
-        padding: 14px 16px;
-        text-align: center;
-        vertical-align: middle;
-    }
-
-    th {
-        background-color: #3490dc;
-        color: white;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    td {
-        background-color: white;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    tr:nth-child(even) td {
-        background-color: #f9fafb;
-    }
-
-    .no-data {
-        color: #6b7280;
-        font-style: italic;
-        text-align: center;
-        padding: 20px;
-    }
-
-    .button {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 14px;
-        font-weight: 500;
-        color: white;
-        border: none;
-        cursor: pointer;
-        text-decoration: none;
-        transition: background-color 0.2s ease;
-    }
-
-    .dtr-button { background-color: #f59e0b; }
-    .dtr-button:hover { background-color: #d97706; }
-
-    .journal-button { background-color: #38c172; }
-    .journal-button:hover { background-color: #2f9e63; }
-
-    .delete-button {
-        background-color: #e3342f;
-    }
-    .delete-button:hover {
-        background-color: #cc1f1a;
-    }
-
-    .progress-bar-container {
-        width: 100%;
-        background-color: #e5e7eb;
-        border-radius: 10px;
-        overflow: hidden;
-        height: 20px;
-        position: relative;
-    }
-
-    .progress-bar {
-        height: 100%;
-        background-color: #38c172;
-        color: white;
-        text-align: center;
-        line-height: 20px;
-        font-size: 13px;
-        font-weight: bold;
-        white-space: nowrap;
-        transition: width 0.4s ease;
-    }
-
-    .hours-text {
-        font-size: 12px;
-        color: #6b7280;
-        margin-top: 4px;
-        display: block;
-    }
-
-    /* Enhanced Pagination Styles */
-    .pagination-wrapper {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 25px;
-        padding: 15px 0;
-        border-top: 1px solid #e5e7eb;
-    }
-
-    .pagination-info {
-        font-size: 14px;
-        color: #6b7280;
-        font-weight: 500;
-    }
-
-    /* Custom Pagination Navigation */
-    .pagination-nav {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .pagination-controls {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .pagination-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        text-decoration: none;
-        color: #374151;
-        font-size: 14px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        background-color: white;
-        min-width: 80px;
-        justify-content: center;
-    }
-
-    .pagination-btn:hover:not(.disabled) {
-        background-color: #3490dc;
-        color: white;
-        border-color: #3490dc;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(52, 144, 220, 0.2);
-    }
-
-    .pagination-btn.disabled {
-        color: #9ca3af;
-        cursor: not-allowed;
-        opacity: 0.6;
-    }
-
-    .pagination-btn.disabled:hover {
-        background-color: white;
-        color: #9ca3af;
-        border-color: #d1d5db;
-        transform: none;
-        box-shadow: none;
-    }
-
-    .page-numbers {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .page-number {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        text-decoration: none;
-        color: #374151;
-        font-size: 14px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        background-color: white;
-    }
-
-    .page-number:hover:not(.active):not(.disabled) {
-        background-color: #f3f4f6;
-        border-color: #9ca3af;
-    }
-
-    .page-number.active {
-        background-color: #3490dc;
-        color: white;
-        border-color: #3490dc;
-        font-weight: 600;
-    }
-
-    .page-number.disabled {
-        color: #9ca3af;
-        cursor: not-allowed;
-    }
-
-    .pagination-ellipsis {
-        padding: 8px 4px;
-        color: #9ca3af;
-        font-weight: 500;
-    }
-
-    /* Default Laravel pagination override */
-    .pagination {
-        display: none !important;
-    }
-
-    /* Responsive pagination */
-    @media (max-width: 768px) {
-        .pagination-wrapper {
-            flex-direction: column;
-            gap: 15px;
-            align-items: stretch;
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f1f5f9;
+            --border: #e2e8f0;
+            --purple: #8b5cf6;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
 
-        .pagination-nav {
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: transparent; margin: 0; padding: 0; }
+
+        .documents-container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 16px; padding: 32px; box-shadow: var(--shadow-lg); }
+
+        .page-header {
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-header p {
+            color: var(--secondary);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .alert.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
+
+        .alert.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-left: 4px solid var(--danger);
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: var(--light);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid transparent;
+            background: white;
+            color: var(--dark);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+
+        .filter-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .badge {
+            background: var(--danger);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Search Bar */
+        .search-container {
+            flex: 1;
+            min-width: 250px;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .search-wrapper {
+            display: flex;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .search-wrapper:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            font-size: 14px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .search-input::placeholder {
+            color: var(--secondary);
+        }
+
+        .search-btn {
+            padding: 12px 20px;
+            border: none;
+            background: var(--success);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: #059669;
+        }
+
+        /* Table Styles */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: white;
+        }
+
+        th:first-child {
+            border-radius: 0;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--light);
+            transform: scale(1.01);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        td {
+            padding: 16px 20px;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        td:first-child {
+            font-weight: 600;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
             justify-content: center;
         }
 
-        .page-numbers {
-            display: none;
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
-    }
-</style>
 
-<div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-        <h1 style="margin:0;">📁 Intern Document Overview</h1>
-        <a href="{{ route('documents.archive') }}" class="button" style="background:#6b7280; text-decoration:none;">📦 Archive</a>
-    </div>
+        .btn-view {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--purple);
+            border: 1px solid var(--purple);
+        }
 
-    <!-- Section Filter and Search -->
-    <div class="filter-bar">
-        {{-- Show All Button --}}
-        <form method="GET" action="{{ route('documents') }}">
-            <input type="hidden" name="filter" value="all">
-            @if(request('search'))
-                <input type="hidden" name="search" value="{{ request('search') }}">
-            @endif
-            <button type="submit" class="section-button">
-                Show All
-                @if(array_sum($sectionCounts))
-                    <span class="notification">{{ array_sum($sectionCounts) }}</span>
-                @endif
-            </button>
-        </form>
+        .btn-view:hover {
+            background: var(--purple);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
 
-        {{-- Section Buttons --}}
-        @foreach(array_keys($sectionCounts) as $section)
-            <form method="GET" action="{{ route('documents') }}">
-                <input type="hidden" name="filter" value="{{ $section }}">
-                @if(request('search'))
-                    <input type="hidden" name="search" value="{{ request('search') }}">
-                @endif
-                <button type="submit" class="section-button">
-                    {{ $section }}
-                    @if(isset($sectionCounts[$section]) && $sectionCounts[$section] > 0)
-                        <span class="notification">{{ $sectionCounts[$section] }}</span>
-                    @endif
-                </button>
-            </form>
-        @endforeach
+        .btn-dtr {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
 
-        {{-- Search Bar --}}
-        <form method="GET" action="{{ route('documents') }}" class="search-form">
-            @if(request('filter'))
-                <input type="hidden" name="filter" value="{{ request('filter') }}">
-            @endif
-            <input type="text" name="search" class="search-input" placeholder="Search name or section..." value="{{ request('search') }}" id="searchInput">
-            <button type="submit" class="search-button">🔍</button>
-        </form>
-    </div>
+        .btn-dtr:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
 
-    @if($interns->isEmpty())
-        <div class="no-data">No accepted interns found.</div>
-    @else
-        <table>
-            <thead>
-                <tr>
-                    <th>Full Name</th>
-                    <th>Section</th>
-                    <th>Company</th>
-                    <th>📅 Attendance (by Month/Year)</th>
-                    <th>📌 Task</th>
-                    <th style="width: 180px;">Progress (486h)</th>
-                    <th style="width: 260px;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($interns as $intern)
-                    @php
-                        $totalHours = $intern->timeLogs->sum(function($log) {
-                            if ($log->time_in && $log->time_out) {
-                                $in = \Carbon\Carbon::parse($log->date . ' ' . $log->time_in, 'Asia/Manila');
-                                $out = \Carbon\Carbon::parse($log->date . ' ' . $log->time_out, 'Asia/Manila');
-                                return round($in->floatDiffInRealHours($out), 2);
-                            }
-                            return 0;
-                        });
-                        $progressPercent = min(round(($totalHours / 486) * 100, 2), 100);
-                    @endphp
-                    <tr>
-                        <td>{{ $intern->first_name }} {{ $intern->last_name }}</td>
-                        <td>{{ $intern->section ?? 'N/A' }}</td>
-                        <td>{{ $intern->company_name }}</td>
-                        <td>
-                            <a href="{{ route('documents.dtr', ['id' => $intern->id]) }}" class="button dtr-button">🕒 View DTR</a>
-                            <div style="margin-top:8px; font-size:12px; color:#555;">
-                                @php
-                                    $grouped = $intern->timeLogs->groupBy(function($log){
-                                        return \Carbon\Carbon::parse($log->date, 'Asia/Manila')->format('F Y');
-                                    });
-                                @endphp
-                                @foreach($grouped as $monthYear => $logs)
-                                    <div>{{ $monthYear }} ({{ $logs->count() }} days)</div>
-                                @endforeach
-                            </div>
-                        </td>
-                        <td>
-                            <a href="{{ route('admin.journal', ['id' => $intern->id]) }}" class="button journal-button">📝 Journal</a>
-                        </td>
-                        <td>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar" style="width: {{ $progressPercent }}%;">
-                                    {{ $progressPercent }}%
-                                </div>
-                            </div>
-                            <span class="hours-text">{{ $totalHours }} / 486 hours</span>
-                        </td>
-                        <td>
-                            <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-                                <button type="button" class="button" style="background:#6b7280;" onclick="openArchiveModal({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}', '{{ $intern->application_letter ? route('documents.view', ['filename' => basename($intern->application_letter)]) : '' }}', '{{ $intern->parents_waiver ? route('documents.view', ['filename' => basename($intern->parents_waiver)]) : '' }}', '{{ $intern->acceptance_letter ? route('documents.view', ['filename' => basename($intern->acceptance_letter)]) : '' }}')">📦 Archive</button>
-                                <form class="delete-form" action="{{ route('intern.destroy', $intern->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="button delete-button delete-btn">🗑 Delete</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
+        .btn-journal {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .btn-journal:hover {
+            background: var(--success);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-archive {
+            background: rgba(107, 114, 128, 0.1);
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+        }
+
+        .btn-archive:hover {
+            background: var(--secondary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .status-label {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-requested {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            width: 100%;
+            background-color: var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            height: 20px;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success) 0%, #059669 100%);
+            color: white;
+            text-align: center;
+            line-height: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: width 0.4s ease;
+        }
+
+        .hours-text {
+            font-size: 12px;
+            color: var(--secondary);
+            margin-top: 4px;
+            display: block;
+        }
+
+        /* Section Badge */
+        .section-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+        }
+
+        /* Company Badge */
+        .company-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--purple);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--secondary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .documents-container {
+                padding: 20px;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container {
+                max-width: 100%;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 12px 10px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <div class="documents-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-file-alt"></i>
+                Document Management
+            </h1>
+            <p>View, manage, and track intern documents, attendance, and progress</p>
+        </div>
+
+        <!-- Alert Messages -->
+        @if(session('success'))
+            <div class="alert success">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-controls">
+                {{-- Show All Button --}}
+                <form method="GET" action="{{ route('documents') }}" style="display: inline;">
+                    <input type="hidden" name="filter" value="all">
+                    <button type="submit" class="filter-btn {{ !request('filter') || request('filter') === 'all' ? 'active' : '' }}">
+                        <i class="fas fa-th-large"></i>
+                        Show All
+                        @if(array_sum($sectionCounts))
+                            <span class="badge">{{ array_sum($sectionCounts) }}</span>
+                        @endif
+                    </button>
+                </form>
+
+                {{-- Section Buttons --}}
+                @foreach(array_keys($sectionCounts) as $section)
+                    <form method="GET" action="{{ route('documents') }}" style="display: inline;">
+                        <input type="hidden" name="filter" value="{{ $section }}">
+                        <button type="submit" class="filter-btn {{ request('filter') === $section ? 'active' : '' }}">
+                            <i class="fas fa-users"></i>
+                            {{ $section }}
+                            @if(isset($sectionCounts[$section]) && $sectionCounts[$section] > 0)
+                                <span class="badge">{{ $sectionCounts[$section] }}</span>
+                            @endif
+                        </button>
+                    </form>
                 @endforeach
-            </tbody>
-        </table>
 
-        <!-- Enhanced Pagination -->
-        <div class="pagination-wrapper">
-            <div class="pagination-info">
-                Showing {{ $interns->firstItem() }} to {{ $interns->lastItem() }} of {{ $interns->total() }} results
-            </div>
-            
-            <div class="pagination-nav">
-                <!-- Previous Button -->
-                @if($interns->onFirstPage())
-                    <span class="pagination-btn disabled">
-                        ← Previous
-                    </span>
-                @else
-                    <a href="{{ $interns->appends(request()->query())->previousPageUrl() }}" class="pagination-btn">
-                        ← Previous
-                    </a>
-                @endif
+                {{-- Archive Button --}}
+                <a href="{{ route('documents.archive') }}" class="btn btn-archive" style="margin-left: auto;">
+                    <i class="fas fa-archive"></i>
+                    Archive
+                </a>
 
-                <!-- Page Numbers -->
-                <div class="page-numbers">
-                    @php
-                        $currentPage = $interns->currentPage();
-                        $lastPage = $interns->lastPage();
-                        $startPage = max(1, $currentPage - 2);
-                        $endPage = min($lastPage, $currentPage + 2);
-                    @endphp
-
-                    {{-- First Page --}}
-                    @if($startPage > 1)
-                        <a href="{{ $interns->appends(request()->query())->url(1) }}" class="page-number">1</a>
-                        @if($startPage > 2)
-                            <span class="pagination-ellipsis">...</span>
-                        @endif
-                    @endif
-
-                    {{-- Page Numbers --}}
-                    @for($i = $startPage; $i <= $endPage; $i++)
-                        @if($i == $currentPage)
-                            <span class="page-number active">{{ $i }}</span>
-                        @else
-                            <a href="{{ $interns->appends(request()->query())->url($i) }}" class="page-number">{{ $i }}</a>
-                        @endif
-                    @endfor
-
-                    {{-- Last Page --}}
-                    @if($endPage < $lastPage)
-                        @if($endPage < $lastPage - 1)
-                            <span class="pagination-ellipsis">...</span>
-                        @endif
-                        <a href="{{ $interns->appends(request()->query())->url($lastPage) }}" class="page-number">{{ $lastPage }}</a>
-                    @endif
+                {{-- Search Bar --}}
+                <div class="search-container">
+                    <form class="search-wrapper" action="{{ route('documents') }}" method="GET">
+                        <input 
+                            type="text" 
+                            name="search" 
+                            class="search-input" 
+                            placeholder="Search by name or section..." 
+                            value="{{ request('search') }}" 
+                            id="searchInput"
+                        >
+                        <button type="submit" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
                 </div>
-
-                <!-- Next Button -->
-                @if($interns->hasMorePages())
-                    <a href="{{ $interns->appends(request()->query())->nextPageUrl() }}" class="pagination-btn">
-                        Next →
-                    </a>
-                @else
-                    <span class="pagination-btn disabled">
-                        Next →
-                    </span>
-                @endif
             </div>
         </div>
 
-        <!-- Hide default Laravel pagination -->
-        <div style="display: none;">
-            {{ $interns->links() }}
-        </div>
-    @endif
-</div>
-
-<script>
-    // Archived list is now a dedicated page; no header modal needed
-
-    function openArchiveModal(id, fullName, appUrl, parentUrl, acceptUrl) {
-        const links = [];
-        if (appUrl) links.push(`<a href="${appUrl}" target="_blank">Application Letter</a>`);
-        if (parentUrl) links.push(`<a href="${parentUrl}" target="_blank">Parent's Waiver</a>`);
-        if (acceptUrl) links.push(`<a href="${acceptUrl}" target="_blank">Acceptance Letter</a>`);
-
-        const html = `
-            <div style="text-align:left">
-                <p><strong>Intern:</strong> ${fullName}</p>
-                ${links.length ? `<p><strong>Documents:</strong></p><ul style="padding-left:18px;">${links.map(l=>`<li>${l}</li>`).join('')}</ul>` : '<p><em>No document links available.</em></p>'}
-                <p>Archiving will hide this intern from the Documents list but keep their data for future reference.</p>
+        <!-- Table -->
+        @if($interns->count() > 0)
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Full Name</th>
+                            <th><i class="fas fa-layer-group"></i> Section</th>
+                            <th><i class="fas fa-building"></i> Company</th>
+                            <th><i class="fas fa-calendar-alt"></i> Attendance</th>
+                            <th><i class="fas fa-tasks"></i> Journal</th>
+                            <th><i class="fas fa-chart-line"></i> Progress</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($interns as $intern)
+                            @php
+                                $totalHours = $intern->timeLogs->sum(function($log) {
+                                    if ($log->time_in && $log->time_out) {
+                                        $in = \Carbon\Carbon::parse($log->date . ' ' . $log->time_in, 'Asia/Manila');
+                                        $out = \Carbon\Carbon::parse($log->date . ' ' . $log->time_out, 'Asia/Manila');
+                                        return round($in->floatDiffInRealHours($out), 2);
+                                    }
+                                    return 0;
+                                });
+                                $progressPercent = min(round(($totalHours / 486) * 100, 2), 100);
+                            @endphp
+                            <tr>
+                                <td>
+                                    <strong>{{ $intern->first_name }} {{ $intern->last_name }}</strong>
+                                </td>
+                                <td>
+                                    <span class="section-badge">{{ $intern->section ?? 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <span class="company-badge">{{ $intern->company_name ?? 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ route('documents.dtr', ['id' => $intern->id]) }}" class="btn btn-dtr">
+                                        <i class="fas fa-clock"></i>
+                                        View DTR
+                                    </a>
+                                    <div style="margin-top:8px; font-size:12px; color:var(--secondary);">
+                                        @php
+                                            $grouped = $intern->timeLogs->groupBy(function($log){
+                                                return \Carbon\Carbon::parse($log->date, 'Asia/Manila')->format('F Y');
+                                            });
+                                        @endphp
+                                        @foreach($grouped as $monthYear => $logs)
+                                            <div>{{ $monthYear }} ({{ $logs->count() }} days)</div>
+                                        @endforeach
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ route('admin.journal', ['id' => $intern->id]) }}" class="btn btn-journal">
+                                        <i class="fas fa-book"></i>
+                                        Journal
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" style="width: {{ $progressPercent }}%;">
+                                            {{ $progressPercent }}%
+                                        </div>
+                                    </div>
+                                    <span class="hours-text">{{ $totalHours }} / 486 hours</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-archive" onclick="openArchiveModal({{ $intern->id }}, '{{ $intern->first_name }} {{ $intern->last_name }}', '{{ $intern->application_letter ? route('documents.view', ['filename' => basename($intern->application_letter)]) : '' }}', '{{ $intern->parents_waiver ? route('documents.view', ['filename' => basename($intern->parents_waiver)]) : '' }}', '{{ $intern->acceptance_letter ? route('documents.view', ['filename' => basename($intern->acceptance_letter)]) : '' }}')">
+                                            <i class="fas fa-archive"></i>
+                                            Archive
+                                        </button>
+                                        <form action="{{ route('intern.destroy', $intern->id) }}" method="POST" 
+                                              onsubmit="return confirm('Are you absolutely sure you want to delete {{ $intern->first_name }} {{ $intern->last_name }}? This will permanently delete the intern and ALL their data including time logs, journals, grades, messages, and documents. This action cannot be undone!')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-delete">
+                                                <i class="fas fa-trash-alt"></i>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-        `;
+        @else
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h3>No Interns Found</h3>
+                <p>
+                    @if(request('search'))
+                        No results found for "{{ request('search') }}"
+                    @elseif(request('filter') && request('filter') !== 'all')
+                        No accepted interns for section {{ request('filter') }}
+                    @else
+                        No accepted interns available at the moment
+                    @endif
+                </p>
+            </div>
+        @endif
+    </div>
 
-        Swal.fire({
-            title: 'Archive Intern?',
-            html,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Archive',
-            cancelButtonText: 'Cancel',
-        }).then(res => {
-            if (res.isConfirmed) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/interns/${id}/archive`;
-                form.innerHTML = `
-                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                `;
-                document.body.appendChild(form);
-                form.submit();
+    <script>
+        // Real-time search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const tableRows = document.querySelectorAll('tbody tr');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase().trim();
+                    
+                    tableRows.forEach(row => {
+                        const nameCell = row.querySelector('td:first-child');
+                        const sectionCell = row.querySelector('td:nth-child(2)');
+                        
+                        if (nameCell && sectionCell) {
+                            const name = nameCell.textContent.toLowerCase();
+                            const section = sectionCell.textContent.toLowerCase();
+                            
+                            if (name.includes(searchTerm) || section.includes(searchTerm)) {
+                                row.style.display = '';
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        }
+                    });
+
+                    // Show/hide empty state
+                    const visibleRows = Array.from(tableRows).filter(row => row.style.display !== 'none');
+                    if (visibleRows.length === 0 && searchTerm) {
+                        showEmptyState();
+                    } else {
+                        hideEmptyState();
+                    }
+                });
+            }
+
+            // Add smooth scroll to top on filter change
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+
+            function showEmptyState() {
+                const tableContainer = document.querySelector('.table-container');
+                if (tableContainer && !document.querySelector('.search-empty-state')) {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'empty-state search-empty-state';
+                    emptyState.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No Results Found</h3>
+                        <p>Try adjusting your search terms</p>
+                    `;
+                    tableContainer.style.display = 'none';
+                    tableContainer.parentElement.appendChild(emptyState);
+                }
+            }
+
+            function hideEmptyState() {
+                const emptyState = document.querySelector('.search-empty-state');
+                const tableContainer = document.querySelector('.table-container');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+                if (tableContainer) {
+                    tableContainer.style.display = 'block';
+                }
             }
         });
-    }
 
-    // Delete confirmation
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            let form = this.closest('.delete-form');
+        function openArchiveModal(id, fullName, appUrl, parentUrl, acceptUrl) {
+            const links = [];
+            if (appUrl) links.push(`<a href="${appUrl}" target="_blank">Application Letter</a>`);
+            if (parentUrl) links.push(`<a href="${parentUrl}" target="_blank">Parent's Waiver</a>`);
+            if (acceptUrl) links.push(`<a href="${acceptUrl}" target="_blank">Acceptance Letter</a>`);
+
+            const html = `
+                <div style="text-align:left">
+                    <p><strong>Intern:</strong> ${fullName}</p>
+                    ${links.length ? `<p><strong>Documents:</strong></p><ul style="padding-left:18px;">${links.map(l=>`<li>${l}</li>`).join('')}</ul>` : '<p><em>No document links available.</em></p>'}
+                    <p>Archiving will hide this intern from the Documents list but keep their data for future reference.</p>
+                </div>
+            `;
+
             Swal.fire({
-                title: 'Are you absolutely sure?',
-                text: "This will permanently delete the intern and ALL their data including time logs, journals, grades, messages, and documents. This action cannot be undone!",
-                icon: 'warning',
+                title: 'Archive Intern?',
+                html,
+                icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#e3342f',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, delete permanently!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
+                confirmButtonText: 'Archive',
+                cancelButtonText: 'Cancel',
+            }).then(res => {
+                if (res.isConfirmed) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/interns/${id}/archive`;
+                    form.innerHTML = `
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                    `;
+                    document.body.appendChild(form);
                     form.submit();
                 }
             });
-        });
-    });
+        }
 
-    @if(session('success'))
-        Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: "{{ session('success') }}"
-        });
-    @endif
-</script>
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: "{{ session('success') }}"
+            });
+        @endif
+    </script>
 @endsection
