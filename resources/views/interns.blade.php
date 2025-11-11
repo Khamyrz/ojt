@@ -1203,63 +1203,71 @@
                     return currentPhase === 'deployment' || depAccepted;
                 }
 
-                // Build document controls (only allowed phases)
+                // Build document controls (only allowed phases) in the exact required sequence
                 const docs = [];
                 const docEntries = []; // [{label, src}]
+                const groups = []; // to track start indexes by phase
+
+                // PRE-DEPLOYMENT SEQUENCE
                 if (canShowPre()) {
-                    if (intern.resume) { docs.push(docButton('Resume', intern.resume)); docEntries.push({label:'Resume', src: buildViewerSrc(intern.resume)}); }
-                    if (intern.application_letter) { docs.push(docButton('Application Letter', intern.application_letter)); docEntries.push({label:'Application Letter', src: buildViewerSrc(intern.application_letter)}); }
-                    if (intern.medical_certificate) { docs.push(docButton('Medical Certificate', intern.medical_certificate)); docEntries.push({label:'Medical Certificate', src: buildViewerSrc(intern.medical_certificate)}); }
-                    if (intern.insurance) { docs.push(docButton('Insurance', intern.insurance)); docEntries.push({label:'Insurance', src: buildViewerSrc(intern.insurance)}); }
-                    if (intern.parents_waiver) { docs.push(docButton("Parent's Waiver", intern.parents_waiver)); docEntries.push({label:"Parent's Waiver", src: buildViewerSrc(intern.parents_waiver)}); }
+                    const startIndex = docEntries.length;
+                    if (intern.resume) { docs.push(docButton('Resume', intern.resume)); docEntries.push({label:'Resume', src: buildViewerSrc(intern.resume), phase:'pre'}); }
+                    if (intern.application_letter) { docs.push(docButton('Application Letter', intern.application_letter)); docEntries.push({label:'Application Letter', src: buildViewerSrc(intern.application_letter), phase:'pre'}); }
+                    if (intern.medical_certificate) { docs.push(docButton('Medical Certificate', intern.medical_certificate)); docEntries.push({label:'Medical Certificate', src: buildViewerSrc(intern.medical_certificate), phase:'pre'}); }
+                    if (intern.insurance) { docs.push(docButton('Insurance', intern.insurance)); docEntries.push({label:'Insurance', src: buildViewerSrc(intern.insurance), phase:'pre'}); }
                     // Acceptance letter fallback via route if file not stored yet
                     const accSrc = intern.acceptance_letter ? buildViewerSrc(intern.acceptance_letter) : `{{ route('documents.acceptance', ':id') }}`.replace(':id', intern.id);
-                    docs.push(docButton('Acceptance Letter (Auto)', intern.acceptance_letter ? intern.acceptance_letter : accSrc));
-                    docEntries.push({label:'Acceptance Letter (Auto)', src: accSrc});
+                    docs.push(docButton('Acceptance Letter (Auto-generated)', intern.acceptance_letter ? intern.acceptance_letter : accSrc));
+                    docEntries.push({label:'Acceptance Letter (Auto-generated)', src: accSrc, phase:'pre'});
+                    if (intern.parents_waiver) { docs.push(docButton("Notarized Parent’s Waiver", intern.parents_waiver)); docEntries.push({label:"Notarized Parent’s Waiver", src: buildViewerSrc(intern.parents_waiver), phase:'pre'}); }
+                    groups.push({phase:'pre_deployment', start:startIndex, end:docEntries.length-1});
                 }
+
+                // MID-DEPLOYMENT SEQUENCE
                 if (canShowMid()) {
+                    const startIndex = docEntries.length;
                     const moaSrc = intern.memorandum_of_agreement ? buildViewerSrc(intern.memorandum_of_agreement) : `{{ route('documents.memorandum', ':id') }}`.replace(':id', intern.id);
-                    docs.push(docButton('Memorandum (Auto)', intern.memorandum_of_agreement ? intern.memorandum_of_agreement : moaSrc));
-                    docEntries.push({label:'Memorandum (Auto)', src: moaSrc});
+                    docs.push(docButton('Memorandum of Agreement (MOA) (Auto-generated)', intern.memorandum_of_agreement ? intern.memorandum_of_agreement : moaSrc));
+                    docEntries.push({label:'Memorandum of Agreement (MOA) (Auto-generated)', src: moaSrc, phase:'mid'});
                     const conSrc = intern.internship_contract ? buildViewerSrc(intern.internship_contract) : `{{ route('documents.contract', ':id') }}`.replace(':id', intern.id);
-                    docs.push(docButton('Internship Contract (Auto)', intern.internship_contract ? intern.internship_contract : conSrc));
-                    docEntries.push({label:'Internship Contract (Auto)', src: conSrc});
+                    docs.push(docButton('Internship Contract (Auto-generated)', intern.internship_contract ? intern.internship_contract : conSrc));
+                    docEntries.push({label:'Internship Contract (Auto-generated)', src: conSrc, phase:'mid'});
+                    groups.push({phase:'mid_deployment', start:startIndex, end:docEntries.length-1});
                 }
-                
-                // Endorsement (Auto) via route for this intern
-                const endorsementUrl = `{{ route('documents.endorsement', ':id') }}`.replace(':id', intern.id);
-                let endorsementBtn = '';
+
+                // DEPLOYMENT SEQUENCE
                 if (canShowDep()) {
-                    endorsementBtn = `
-                        <button type="button" class="btn btn-view" onclick="(function(){ 
-                            const frame = document.getElementById('docPreviewFrame'); 
-                            if (frame) { frame.src = '${endorsementUrl}'; } 
-                        })()">
-                            <i class="fas fa-eye"></i> Endorsement (Auto)
-                        </button>
-                        <a class="btn btn-edit" href="${endorsementUrl}" target="_blank">
-                            <i class="fas fa-external-link-alt"></i> Open
-                        </a>
-                    `;
-                    docEntries.push({label:'Endorsement (Auto)', src: endorsementUrl});
+                    const startIndex = docEntries.length;
+                    if (intern.recommendation_letter) { docs.push(docButton('Recommendation Letter', intern.recommendation_letter)); docEntries.push({label:'Recommendation Letter', src: buildViewerSrc(intern.recommendation_letter), phase:'dep'}); }
+                    const endorsementUrl = `{{ route('documents.endorsement', ':id') }}`.replace(':id', intern.id);
+                    docs.push(docButton('Endorsement Letter (Auto-generated)', endorsementUrl));
+                    docEntries.push({label:'Endorsement Letter (Auto-generated)', src: endorsementUrl, phase:'dep'});
+                    groups.push({phase:'deployment', start:startIndex, end:docEntries.length-1});
                 }
 
                 // Build the modal body with only docs + viewer
-                // Determine default preview: first available entry in allowed list
-                let defaultSrc = (docEntries.length > 0) ? docEntries[0].src : null;
+                // Determine default preview: focus on current phase group if available, else first available
+                let defaultIndex = 0;
+                const phaseOrder = ['pre_deployment','mid_deployment','deployment'];
+                const preferred = groups.find(g => g.phase === currentPhase) 
+                                || groups.find(g => g.phase === 'pre_deployment') 
+                                || groups[0];
+                if (preferred) {
+                    defaultIndex = preferred.start;
+                }
+                let defaultSrc = (docEntries.length > 0) ? docEntries[defaultIndex].src : null;
 
                 content.innerHTML = `
                     <div style="margin-top: 16px;">
                         <h3 style="font-size:16px; margin: 10px 0; color:#1e293b;"><i class="fas fa-folder-open"></i> Documents</h3>
                         <div class="action-buttons" style="justify-content:flex-start; flex-wrap:wrap; gap:8px;">
                             ${docs.join('')}
-                            ${endorsementBtn}
                         </div>
                     </div>
                 `;
 
                 // Initialize preview and navigation
-                let currentIndex = 0;
+                let currentIndex = defaultIndex;
                 function refreshNav() {
                     if (docEntries.length <= 1) {
                         nav.style.display = docEntries.length === 1 ? 'flex' : 'none';
