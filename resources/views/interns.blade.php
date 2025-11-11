@@ -724,6 +724,18 @@
                 <i class="fas fa-folder-open"></i> Documents
             </h2>
             <div id="internDetailsContent"></div>
+            <div id="docNav" style="display:none; margin: 10px 0; display:flex; align-items:center; gap:8px;">
+                <button type="button" id="docPrevBtn" class="btn btn-edit" style="padding:6px 12px;">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <span id="docCounter" style="font-size:12px; color:#64748b;"></span>
+                <button type="button" id="docNextBtn" class="btn btn-edit" style="padding:6px 12px;">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+            <div style="margin-top: 8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+                <iframe id="docPreviewFrame" title="Document Preview" style="width:100%; height:520px; border:0;"></iframe>
+            </div>
         </div>
     </div>
 
@@ -1131,6 +1143,11 @@
 
                 const intern = await response.json();
                 const content = document.getElementById('internDetailsContent');
+                const frame = document.getElementById('docPreviewFrame');
+                const nav = document.getElementById('docNav');
+                const prevBtn = document.getElementById('docPrevBtn');
+                const nextBtn = document.getElementById('docNextBtn');
+                const counter = document.getElementById('docCounter');
 
                 // Helper to build viewer src for different file types
                 function buildViewerSrc(path) {
@@ -1170,49 +1187,59 @@
                     `;
                 }
 
-                // Build document controls
+                // Phase gating: current phase docs visible; previous phases only if accepted
+                const currentPhase = intern.current_phase;
+                const preAccepted = intern.pre_deployment_status === 'accepted';
+                const midAccepted = intern.mid_deployment_status === 'accepted';
+                const depAccepted = intern.deployment_status === 'accepted';
+
+                function canShowPre() {
+                    return currentPhase === 'pre_deployment' || preAccepted;
+                }
+                function canShowMid() {
+                    return currentPhase === 'mid_deployment' || midAccepted;
+                }
+                function canShowDep() {
+                    return currentPhase === 'deployment' || depAccepted;
+                }
+
+                // Build document controls (only allowed phases)
                 const docs = [];
-                docs.push(docButton('Resume', intern.resume));
-                docs.push(docButton('Application Letter', intern.application_letter));
-                docs.push(docButton('Medical Certificate', intern.medical_certificate));
-                docs.push(docButton('Insurance', intern.insurance));
-                docs.push(docButton("Parent's Waiver", intern.parents_waiver));
-                docs.push(docButton('Acceptance Letter (Auto)', intern.acceptance_letter));
-                docs.push(docButton('Memorandum (Auto)', intern.memorandum_of_agreement));
-                docs.push(docButton('Internship Contract (Auto)', intern.internship_contract));
+                const docEntries = []; // [{label, src}]
+                if (canShowPre()) {
+                    if (intern.resume) { docs.push(docButton('Resume', intern.resume)); docEntries.push({label:'Resume', src: buildViewerSrc(intern.resume)}); }
+                    if (intern.application_letter) { docs.push(docButton('Application Letter', intern.application_letter)); docEntries.push({label:'Application Letter', src: buildViewerSrc(intern.application_letter)}); }
+                    if (intern.medical_certificate) { docs.push(docButton('Medical Certificate', intern.medical_certificate)); docEntries.push({label:'Medical Certificate', src: buildViewerSrc(intern.medical_certificate)}); }
+                    if (intern.insurance) { docs.push(docButton('Insurance', intern.insurance)); docEntries.push({label:'Insurance', src: buildViewerSrc(intern.insurance)}); }
+                    if (intern.parents_waiver) { docs.push(docButton("Parent's Waiver", intern.parents_waiver)); docEntries.push({label:"Parent's Waiver", src: buildViewerSrc(intern.parents_waiver)}); }
+                    if (intern.acceptance_letter) { docs.push(docButton('Acceptance Letter (Auto)', intern.acceptance_letter)); docEntries.push({label:'Acceptance Letter (Auto)', src: buildViewerSrc(intern.acceptance_letter)}); }
+                }
+                if (canShowMid()) {
+                    if (intern.memorandum_of_agreement) { docs.push(docButton('Memorandum (Auto)', intern.memorandum_of_agreement)); docEntries.push({label:'Memorandum (Auto)', src: buildViewerSrc(intern.memorandum_of_agreement)}); }
+                    if (intern.internship_contract) { docs.push(docButton('Internship Contract (Auto)', intern.internship_contract)); docEntries.push({label:'Internship Contract (Auto)', src: buildViewerSrc(intern.internship_contract)}); }
+                }
                 
                 // Endorsement (Auto) via route for this intern
                 const endorsementUrl = `{{ route('documents.endorsement', ':id') }}`.replace(':id', intern.id);
-                const endorsementBtn = `
-                    <button type="button" class="btn btn-view" onclick="(function(){ 
-                        const frame = document.getElementById('docPreviewFrame'); 
-                        if (frame) { frame.src = '${endorsementUrl}'; } 
-                    })()">
-                        <i class="fas fa-eye"></i> Endorsement (Auto)
-                    </button>
-                    <a class="btn btn-edit" href="${endorsementUrl}" target="_blank">
-                        <i class="fas fa-external-link-alt"></i> Open
-                    </a>
-                `;
+                let endorsementBtn = '';
+                if (canShowDep()) {
+                    endorsementBtn = `
+                        <button type="button" class="btn btn-view" onclick="(function(){ 
+                            const frame = document.getElementById('docPreviewFrame'); 
+                            if (frame) { frame.src = '${endorsementUrl}'; } 
+                        })()">
+                            <i class="fas fa-eye"></i> Endorsement (Auto)
+                        </button>
+                        <a class="btn btn-edit" href="${endorsementUrl}" target="_blank">
+                            <i class="fas fa-external-link-alt"></i> Open
+                        </a>
+                    `;
+                    docEntries.push({label:'Endorsement (Auto)', src: endorsementUrl});
+                }
 
                 // Build the modal body with only docs + viewer
-                // Determine default preview: first available document or endorsement
-                const orderedPaths = [
-                    intern.resume,
-                    intern.application_letter,
-                    intern.medical_certificate,
-                    intern.insurance,
-                    intern.parents_waiver,
-                    intern.acceptance_letter,
-                    intern.memorandum_of_agreement,
-                    intern.internship_contract
-                ].filter(Boolean);
-                let defaultSrc = null;
-                if (orderedPaths.length > 0) {
-                    defaultSrc = buildViewerSrc(orderedPaths[0]);
-                } else {
-                    defaultSrc = endorsementUrl;
-                }
+                // Determine default preview: first available entry in allowed list
+                let defaultSrc = (docEntries.length > 0) ? docEntries[0].src : null;
 
                 content.innerHTML = `
                     <div style="margin-top: 16px;">
@@ -1222,10 +1249,40 @@
                             ${endorsementBtn}
                         </div>
                     </div>
-                    <div style="margin-top: 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
-                        <iframe id="docPreviewFrame" title="Document Preview" style="width:100%; height:520px; border:0;" src="${defaultSrc}"></iframe>
-                    </div>
                 `;
+
+                // Initialize preview and navigation
+                let currentIndex = 0;
+                function refreshNav() {
+                    if (docEntries.length <= 1) {
+                        nav.style.display = docEntries.length === 1 ? 'flex' : 'none';
+                    } else {
+                        nav.style.display = 'flex';
+                    }
+                    prevBtn.disabled = currentIndex <= 0;
+                    nextBtn.disabled = currentIndex >= (docEntries.length - 1);
+                    counter.textContent = docEntries.length ? `${currentIndex + 1} / ${docEntries.length} — ${docEntries[currentIndex].label}` : 'No documents available';
+                }
+                prevBtn.onclick = function() {
+                    if (currentIndex > 0) {
+                        currentIndex -= 1;
+                        frame.src = docEntries[currentIndex].src;
+                        refreshNav();
+                    }
+                };
+                nextBtn.onclick = function() {
+                    if (currentIndex < docEntries.length - 1) {
+                        currentIndex += 1;
+                        frame.src = docEntries[currentIndex].src;
+                        refreshNav();
+                    }
+                };
+                if (defaultSrc) {
+                    frame.src = defaultSrc;
+                } else {
+                    frame.removeAttribute('src');
+                }
+                refreshNav();
 
                 document.getElementById('viewInternModal').style.display = 'block';
             } catch (error) {
