@@ -906,16 +906,29 @@
                 reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                    if (!csrfToken) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'CSRF token not found. Please refresh the page and try again.',
+                            confirmButtonColor: '#ef4444',
+                        });
+                        return;
+                    }
+
                     const form = document.createElement('form');
                     form.method = 'POST';
-                    form.action = `/interns/${internId}/accept`;
+                    const baseUrl = '{{ url("/") }}';
+                    form.action = `${baseUrl}/interns/${internId}/accept`;
+                    form.style.display = 'none';
                     
-                    const csrfToken = document.createElement('input');
-                    csrfToken.type = 'hidden';
-                    csrfToken.name = '_token';
-                    csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '_token';
+                    tokenInput.value = csrfToken.getAttribute('content');
                     
-                    form.appendChild(csrfToken);
+                    form.appendChild(tokenInput);
                     document.body.appendChild(form);
                     form.submit();
                 }
