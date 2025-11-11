@@ -492,18 +492,24 @@ class InternController extends Controller
      */
     public function viewDocument($filename)
     {
-        $filePath = storage_path('app/public/documents/' . $filename);
+        // Allow passing either a bare filename or a path like "documents/xyz.ext"
+        $cleanFilename = basename($filename);
+        $filePath = storage_path('app/public/documents/' . $cleanFilename);
         
         if (!file_exists($filePath)) {
             abort(404, 'Document not found.');
         }
 
-        $fileExtension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $fileExtension = strtolower(pathinfo($cleanFilename, PATHINFO_EXTENSION));
         
         // Set appropriate content-type headers based on file extension
         switch ($fileExtension) {
             case 'pdf':
                 $contentType = 'application/pdf';
+                break;
+            case 'html':
+            case 'htm':
+                $contentType = 'text/html; charset=UTF-8';
                 break;
             case 'docx':
                 $contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -527,7 +533,7 @@ class InternController extends Controller
 
         return response()->file($filePath, [
             'Content-Type' => $contentType,
-            'Content-Disposition' => 'inline; filename="' . $filename . '"'
+            'Content-Disposition' => 'inline; filename="' . $cleanFilename . '"'
         ]);
     }
 

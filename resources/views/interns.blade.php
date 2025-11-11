@@ -1127,7 +1127,94 @@
 
                 const intern = await response.json();
                 const content = document.getElementById('internDetailsContent');
+
+                // Helper to build viewer src for different file types
+                function buildViewerSrc(path) {
+                    if (!path) return null;
+                    const filePath = String(path);
+                    const lower = filePath.toLowerCase();
+                    const origin = window.location.origin;
+                    if (lower.endsWith('.pdf') || lower.endsWith('.html') || lower.endsWith('.htm')) {
+                        // Use backend streaming to force inline view for PDF/HTML
+                        const fname = filePath.split('/').pop();
+                        return `{{ route('documents.view', ':fname') }}`.replace(':fname', encodeURIComponent(fname));
+                    }
+                    if (lower.endsWith('.doc') || lower.endsWith('.docx')) {
+                        // Try Office web viewer
+                        const publicUrl = origin + (filePath.startsWith('documents') ? `/storage/${filePath}` : filePath);
+                        return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(publicUrl)}`;
+                    }
+                    // Fallback to public storage direct
+                    return origin + (filePath.startsWith('documents') ? `/storage/${filePath}` : filePath);
+                }
+
+                function docButton(label, path) {
+                    if (!path) return '';
+                    const src = buildViewerSrc(path);
+                    const safeLabel = label.replace(/</g, '&lt;');
+                    const downloadUrl = (path && path.startsWith('documents')) ? (`/storage/${path}`) : path;
+                    return `
+                        <button type="button" class="btn btn-view" onclick="(function(){ 
+                            const frame = document.getElementById('docPreviewFrame'); 
+                            if (frame) { frame.src = '${src}'; } 
+                        })()">
+                            <i class="fas fa-eye"></i> ${safeLabel}
+                        </button>
+                        <a class="btn btn-edit" href="${downloadUrl}" target="_blank">
+                            <i class="fas fa-external-link-alt"></i> Open
+                        </a>
+                    `;
+                }
+
+                // Build document controls
+                const docs = [];
+                docs.push(docButton('Resume', intern.resume));
+                docs.push(docButton('Application Letter', intern.application_letter));
+                docs.push(docButton('Medical Certificate', intern.medical_certificate));
+                docs.push(docButton('Insurance', intern.insurance));
+                docs.push(docButton("Parent's Waiver", intern.parents_waiver));
+                docs.push(docButton('Acceptance Letter (Auto)', intern.acceptance_letter));
+                docs.push(docButton('Memorandum (Auto)', intern.memorandum_of_agreement));
+                docs.push(docButton('Internship Contract (Auto)', intern.internship_contract));
                 
+                // Endorsement (Auto) via route for this intern
+                const endorsementUrl = `{{ route('documents.endorsement', ':id') }}`.replace(':id', intern.id);
+                const endorsementBtn = `
+                    <button type="button" class="btn btn-view" onclick="(function(){ 
+                        const frame = document.getElementById('docPreviewFrame'); 
+                        if (frame) { frame.src = '${endorsementUrl}'; } 
+                    })()">
+                        <i class="fas fa-eye"></i> Endorsement (Auto)
+                    </button>
+                    <a class="btn btn-edit" href="${endorsementUrl}" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Open
+                    </a>
+                `;
+
+                // DTR and Journal quick views if needed
+                const dtrUrl = `{{ route('documents.dtr', ':id') }}`.replace(':id', intern.id);
+                const journalUrl = `{{ route('admin.journal', ':id') }}`.replace(':id', intern.id);
+                const extras = `
+                    <button type="button" class="btn btn-view" onclick="(function(){ 
+                        const frame = document.getElementById('docPreviewFrame'); 
+                        if (frame) { frame.src = '${dtrUrl}'; } 
+                    })()">
+                        <i class="fas fa-calendar-alt"></i> DTR
+                    </button>
+                    <a class="btn btn-edit" href="${dtrUrl}" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Open DTR
+                    </a>
+                    <button type="button" class="btn btn-view" onclick="(function(){ 
+                        const frame = document.getElementById('docPreviewFrame'); 
+                        if (frame) { frame.src = '${journalUrl}'; } 
+                    })()">
+                        <i class="fas fa-book"></i> Journal
+                    </button>
+                    <a class="btn btn-edit" href="${journalUrl}" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Open Journal
+                    </a>
+                `;
+
                 content.innerHTML = `
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
                         <div class="detail-item">
@@ -1172,13 +1259,24 @@
                                 ${intern.status === 'pending' ? '<span style="color: #f59e0b; font-weight: 600;">Pending</span>' : 
                                   intern.status === 'accepted' ? '<span style="color: #10b981; font-weight: 600;">Accepted</span>' : 
                                   intern.status === 'rejected' ? '<span style="color: #ef4444; font-weight: 600;">Rejected</span>' : 
-                                  intern.status || 'N/A'}
+                                  (intern.status || 'N/A')}
                             </div>
                         </div>
                         <div class="detail-item">
                             <label>Current Phase</label>
                             <div class="value">${intern.current_phase ? intern.current_phase.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A'}</div>
                         </div>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <h3 style="font-size:16px; margin: 10px 0; color:#1e293b;"><i class="fas fa-folder-open"></i> Documents</h3>
+                        <div class="action-buttons" style="justify-content:flex-start; flex-wrap:wrap; gap:8px;">
+                            ${docs.join('')}
+                            ${endorsementBtn}
+                            ${extras}
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+                        <iframe id="docPreviewFrame" title="Document Preview" style="width:100%; height:520px; border:0;"></iframe>
                     </div>
                 `;
 

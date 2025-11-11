@@ -105,19 +105,20 @@ class MessageController extends Controller
 
         $admin = Auth::user();
         $interns = Intern::where('status', 'accepted')
-            ->where('current_phase', 'completed')
             ->where('invited_by_user_id', $admin->id)
             ->get();
 
-        // Create a single broadcast message
-        Message::create([
-            'sender_id' => $admin->id,
-            'receiver_id' => null, // No specific receiver for broadcast
-            'sender_type' => 'admin',
-            'receiver_type' => 'all', // Indicates broadcast to all interns
-            'content' => $request->content,
-            'is_read' => false,
-        ]);
+        // Send individual messages to each intern to avoid schema and enum constraints
+        foreach ($interns as $intern) {
+            Message::create([
+                'sender_id' => $admin->id,
+                'receiver_id' => $intern->id,
+                'sender_type' => 'admin',
+                'receiver_type' => 'intern',
+                'content' => $request->content,
+                'is_read' => false,
+            ]);
+        }
 
         return back()->with('success', '📢 Broadcast message sent to all your interns.');
     }
