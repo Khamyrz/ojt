@@ -557,6 +557,50 @@ class InternController extends Controller
     }
 
     /**
+     * Admin view: Render Acceptance Letter for an intern.
+     */
+    public function viewAcceptance($id)
+    {
+        $intern = Intern::findOrFail($id);
+        $start = now('Asia/Manila');
+        $end = (clone $start)->addHours(486);
+        return view('Acceptance-Letter', [
+            'intern' => $intern,
+            'startDate' => $start,
+            'endDate' => $end,
+        ]);
+    }
+
+    /**
+     * Admin view: Render Memorandum of Agreement for an intern.
+     */
+    public function viewMemorandum($id)
+    {
+        $intern = Intern::findOrFail($id);
+        $now = now('Asia/Manila');
+        return view('memorandum', [
+            'intern' => $intern,
+            'today' => $now,
+        ]);
+    }
+
+    /**
+     * Admin view: Render Internship Contract for an intern.
+     */
+    public function viewContract($id)
+    {
+        $intern = Intern::findOrFail($id);
+        $start = now('Asia/Manila');
+        $end = (clone $start)->addHours(486);
+        return view('internship-contract', [
+            'intern' => $intern,
+            'startDate' => $start,
+            'endDate' => $end,
+            'today' => $start,
+        ]);
+    }
+
+    /**
      * Verify OTP for intern registration
      */
     public function verifyOtp(Request $request)

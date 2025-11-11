@@ -100,6 +100,10 @@ Route::middleware(['auth'])->group(function () {
     // Document Viewing
     Route::get('/documents/view/{filename}', [InternController::class, 'viewDocument'])->name('documents.view');
     Route::get('/documents/{id}/endorsement', [InternController::class, 'viewEndorsement'])->name('documents.endorsement');
+    // Admin view for other auto-generated documents
+    Route::get('/documents/{id}/acceptance', [InternController::class, 'viewAcceptance'])->name('documents.acceptance');
+    Route::get('/documents/{id}/memorandum', [InternController::class, 'viewMemorandum'])->name('documents.memorandum');
+    Route::get('/documents/{id}/contract', [InternController::class, 'viewContract'])->name('documents.contract');
 
     // Grades
     Route::get('/grades', [DashboardController::class, 'grades'])->name('grades');

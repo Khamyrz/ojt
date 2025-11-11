@@ -1212,11 +1212,18 @@
                     if (intern.medical_certificate) { docs.push(docButton('Medical Certificate', intern.medical_certificate)); docEntries.push({label:'Medical Certificate', src: buildViewerSrc(intern.medical_certificate)}); }
                     if (intern.insurance) { docs.push(docButton('Insurance', intern.insurance)); docEntries.push({label:'Insurance', src: buildViewerSrc(intern.insurance)}); }
                     if (intern.parents_waiver) { docs.push(docButton("Parent's Waiver", intern.parents_waiver)); docEntries.push({label:"Parent's Waiver", src: buildViewerSrc(intern.parents_waiver)}); }
-                    if (intern.acceptance_letter) { docs.push(docButton('Acceptance Letter (Auto)', intern.acceptance_letter)); docEntries.push({label:'Acceptance Letter (Auto)', src: buildViewerSrc(intern.acceptance_letter)}); }
+                    // Acceptance letter fallback via route if file not stored yet
+                    const accSrc = intern.acceptance_letter ? buildViewerSrc(intern.acceptance_letter) : `{{ route('documents.acceptance', ':id') }}`.replace(':id', intern.id);
+                    docs.push(docButton('Acceptance Letter (Auto)', intern.acceptance_letter ? intern.acceptance_letter : accSrc));
+                    docEntries.push({label:'Acceptance Letter (Auto)', src: accSrc});
                 }
                 if (canShowMid()) {
-                    if (intern.memorandum_of_agreement) { docs.push(docButton('Memorandum (Auto)', intern.memorandum_of_agreement)); docEntries.push({label:'Memorandum (Auto)', src: buildViewerSrc(intern.memorandum_of_agreement)}); }
-                    if (intern.internship_contract) { docs.push(docButton('Internship Contract (Auto)', intern.internship_contract)); docEntries.push({label:'Internship Contract (Auto)', src: buildViewerSrc(intern.internship_contract)}); }
+                    const moaSrc = intern.memorandum_of_agreement ? buildViewerSrc(intern.memorandum_of_agreement) : `{{ route('documents.memorandum', ':id') }}`.replace(':id', intern.id);
+                    docs.push(docButton('Memorandum (Auto)', intern.memorandum_of_agreement ? intern.memorandum_of_agreement : moaSrc));
+                    docEntries.push({label:'Memorandum (Auto)', src: moaSrc});
+                    const conSrc = intern.internship_contract ? buildViewerSrc(intern.internship_contract) : `{{ route('documents.contract', ':id') }}`.replace(':id', intern.id);
+                    docs.push(docButton('Internship Contract (Auto)', intern.internship_contract ? intern.internship_contract : conSrc));
+                    docEntries.push({label:'Internship Contract (Auto)', src: conSrc});
                 }
                 
                 // Endorsement (Auto) via route for this intern
