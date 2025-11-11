@@ -640,7 +640,7 @@
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <button type="button" class="btn btn-view" onclick="showInternDetails({{ $intern->id }})">
+                                        <button type="button" class="btn btn-view" onclick="showInternFiles({{ $intern->id }})">
                                             <i class="fas fa-eye"></i>
                                             View
                                         </button>
@@ -716,12 +716,12 @@
         @endif
     </div>
 
-    <!-- View Intern Details Modal -->
+    <!-- View Intern Files Modal -->
     <div id="viewInternModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 800px;">
             <span class="close" onclick="closeViewInternModal()">&times;</span>
             <h2 style="margin-bottom: 20px; color: #1e293b;">
-                <i class="fas fa-user"></i> Intern Details
+                <i class="fas fa-folder-open"></i> Documents
             </h2>
             <div id="internDetailsContent"></div>
         </div>
@@ -734,6 +734,10 @@
             <h2 style="margin-bottom: 20px; color: #1e293b;">
                 <i class="fas fa-edit"></i> Edit Intern
             </h2>
+            <div id="editInternDetails" class="detail-item" style="margin-bottom: 16px; display:none;">
+                <label>Intern Details</label>
+                <div class="value" id="editInternDetailsContent"></div>
+            </div>
             <form id="editInternForm" method="POST">
                 @csrf
                 @method('PUT')
@@ -1111,8 +1115,8 @@
             });
         @endif
 
-        // Show intern details modal
-        async function showInternDetails(internId) {
+        // Show intern documents-only modal
+        async function showInternFiles(internId) {
             try {
                 const response = await fetch(`{{ url('/interns') }}/${internId}`, {
                     headers: {
@@ -1122,7 +1126,7 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to load intern details');
+                    throw new Error('Failed to load intern');
                 }
 
                 const intern = await response.json();
@@ -1191,102 +1195,45 @@
                     </a>
                 `;
 
-                // DTR and Journal quick views if needed
-                const dtrUrl = `{{ route('documents.dtr', ':id') }}`.replace(':id', intern.id);
-                const journalUrl = `{{ route('admin.journal', ':id') }}`.replace(':id', intern.id);
-                const extras = `
-                    <button type="button" class="btn btn-view" onclick="(function(){ 
-                        const frame = document.getElementById('docPreviewFrame'); 
-                        if (frame) { frame.src = '${dtrUrl}'; } 
-                    })()">
-                        <i class="fas fa-calendar-alt"></i> DTR
-                    </button>
-                    <a class="btn btn-edit" href="${dtrUrl}" target="_blank">
-                        <i class="fas fa-external-link-alt"></i> Open DTR
-                    </a>
-                    <button type="button" class="btn btn-view" onclick="(function(){ 
-                        const frame = document.getElementById('docPreviewFrame'); 
-                        if (frame) { frame.src = '${journalUrl}'; } 
-                    })()">
-                        <i class="fas fa-book"></i> Journal
-                    </button>
-                    <a class="btn btn-edit" href="${journalUrl}" target="_blank">
-                        <i class="fas fa-external-link-alt"></i> Open Journal
-                    </a>
-                `;
+                // Build the modal body with only docs + viewer
+                // Determine default preview: first available document or endorsement
+                const orderedPaths = [
+                    intern.resume,
+                    intern.application_letter,
+                    intern.medical_certificate,
+                    intern.insurance,
+                    intern.parents_waiver,
+                    intern.acceptance_letter,
+                    intern.memorandum_of_agreement,
+                    intern.internship_contract
+                ].filter(Boolean);
+                let defaultSrc = null;
+                if (orderedPaths.length > 0) {
+                    defaultSrc = buildViewerSrc(orderedPaths[0]);
+                } else {
+                    defaultSrc = endorsementUrl;
+                }
 
                 content.innerHTML = `
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-                        <div class="detail-item">
-                            <label>First Name</label>
-                            <div class="value">${intern.first_name || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <label>Last Name</label>
-                            <div class="value">${intern.last_name || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <label>Email</label>
-                            <div class="value">${intern.email || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <label>Phone</label>
-                            <div class="value">${intern.phone || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <label>Course</label>
-                            <div class="value">${intern.course || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <label>Section</label>
-                            <div class="value">${intern.section || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <label>Company Name</label>
-                            <div class="value">${intern.company_name || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <label>Supervisor Name</label>
-                            <div class="value">${intern.supervisor_name || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <label>Supervisor Email</label>
-                            <div class="value">${intern.supervisor_email || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <label>Status</label>
-                            <div class="value">
-                                ${intern.status === 'pending' ? '<span style="color: #f59e0b; font-weight: 600;">Pending</span>' : 
-                                  intern.status === 'accepted' ? '<span style="color: #10b981; font-weight: 600;">Accepted</span>' : 
-                                  intern.status === 'rejected' ? '<span style="color: #ef4444; font-weight: 600;">Rejected</span>' : 
-                                  (intern.status || 'N/A')}
-                            </div>
-                        </div>
-                        <div class="detail-item">
-                            <label>Current Phase</label>
-                            <div class="value">${intern.current_phase ? intern.current_phase.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A'}</div>
-                        </div>
-                    </div>
                     <div style="margin-top: 16px;">
                         <h3 style="font-size:16px; margin: 10px 0; color:#1e293b;"><i class="fas fa-folder-open"></i> Documents</h3>
                         <div class="action-buttons" style="justify-content:flex-start; flex-wrap:wrap; gap:8px;">
                             ${docs.join('')}
                             ${endorsementBtn}
-                            ${extras}
                         </div>
                     </div>
                     <div style="margin-top: 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
-                        <iframe id="docPreviewFrame" title="Document Preview" style="width:100%; height:520px; border:0;"></iframe>
+                        <iframe id="docPreviewFrame" title="Document Preview" style="width:100%; height:520px; border:0;" src="${defaultSrc}"></iframe>
                     </div>
                 `;
 
                 document.getElementById('viewInternModal').style.display = 'block';
             } catch (error) {
-                console.error('Error loading intern details:', error);
+                console.error('Error loading intern files:', error);
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: 'Failed to load intern details. Please try again.',
+                    text: 'Failed to load documents. Please try again.',
                     confirmButtonColor: '#ef4444',
                 });
             }
@@ -1320,6 +1267,21 @@
                 
                 const form = document.getElementById('editInternForm');
                 form.action = `{{ url('/interns') }}/${internId}`;
+
+                // Populate read-only details in the edit modal
+                const detailsContainer = document.getElementById('editInternDetails');
+                const detailsContent = document.getElementById('editInternDetailsContent');
+                detailsContent.innerHTML = `
+                    <div style="display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px;">
+                        <div><strong>Email:</strong> ${intern.email || 'N/A'}</div>
+                        <div><strong>Phone:</strong> ${intern.phone || 'N/A'}</div>
+                        <div><strong>Status:</strong> ${intern.status || 'N/A'}</div>
+                        <div><strong>Current Phase:</strong> ${intern.current_phase ? intern.current_phase.replace(/_/g,' ') : 'N/A'}</div>
+                        <div><strong>Company:</strong> ${intern.company_name || 'N/A'}</div>
+                        <div><strong>Supervisor:</strong> ${intern.supervisor_name || 'N/A'}</div>
+                    </div>
+                `;
+                detailsContainer.style.display = 'block';
                 
                 document.getElementById('editInternModal').style.display = 'block';
             } catch (error) {
