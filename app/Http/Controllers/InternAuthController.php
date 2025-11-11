@@ -173,6 +173,22 @@ class InternAuthController extends Controller
         return view('phase-submission', compact('intern'));
     }
 
+    /**
+     * API endpoint to check current phase status for auto-refresh
+     */
+    public function checkPhaseStatus()
+    {
+        $intern = Auth::guard('intern')->user();
+        
+        return response()->json([
+            'current_phase' => $intern->current_phase,
+            'pre_deployment_status' => $intern->pre_deployment_status,
+            'mid_deployment_status' => $intern->mid_deployment_status,
+            'deployment_status' => $intern->deployment_status,
+            'status' => $intern->status,
+        ]);
+    }
+
     public function uploadDocx(Request $request)
     {
         $request->validate([

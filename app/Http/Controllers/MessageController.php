@@ -13,6 +13,7 @@ class MessageController extends Controller
     public function index()
     {
         $interns = Intern::where('status', 'accepted')
+            ->where('current_phase', 'completed')
             ->where('invited_by_user_id', Auth::id())
             ->get();
 
@@ -104,6 +105,7 @@ class MessageController extends Controller
 
         $admin = Auth::user();
         $interns = Intern::where('status', 'accepted')
+            ->where('current_phase', 'completed')
             ->where('invited_by_user_id', $admin->id)
             ->get();
 

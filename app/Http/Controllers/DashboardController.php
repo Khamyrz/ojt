@@ -223,6 +223,7 @@ class DashboardController extends Controller
         $search = $request->input('search');
 
         $query = Intern::where('status', 'accepted')
+            ->where('current_phase', 'completed')
             ->whereNull('archived_at')
             ->where('invited_by_user_id', Auth::id())
             ->with(['timeLogs', 'documents', 'journals']);
@@ -259,8 +260,9 @@ class DashboardController extends Controller
         // Preserve query parameters in pagination links
         $interns->appends($request->all());
 
-        // Get section counts for accepted (unarchived) interns
+        // Get section counts for accepted (unarchived) interns with all phases completed
         $sectionCounts = Intern::where('status', 'accepted')
+            ->where('current_phase', 'completed')
             ->whereNull('archived_at')
             ->where('invited_by_user_id', Auth::id())
             ->selectRaw('section, COUNT(*) as count')
@@ -316,6 +318,7 @@ class DashboardController extends Controller
     public function messages()
     {
         $interns = Intern::where('status', 'accepted')
+            ->where('current_phase', 'completed')
             ->where('invited_by_user_id', Auth::id())
             ->select('id', 'first_name', 'last_name', 'email')
             ->get();
@@ -329,6 +332,7 @@ class DashboardController extends Controller
         $search = $request->input('search');
 
         $query = Intern::where('status', 'accepted')
+            ->where('current_phase', 'completed')
             ->where('invited_by_user_id', Auth::id());
 
         // Apply section filter
@@ -350,6 +354,7 @@ class DashboardController extends Controller
             ->get();
 
         $sectionCounts = Intern::where('status', 'accepted')
+            ->where('current_phase', 'completed')
             ->where('invited_by_user_id', Auth::id())
             ->selectRaw('section, COUNT(*) as count')
             ->groupBy('section')

@@ -166,8 +166,6 @@ Route::post('/intern/password/forgot', [InternController::class, 'forgotPassword
 Route::post('/intern/password/verify-otp', [InternController::class, 'verifyForgotPasswordOtp'])->name('intern.password.verify-otp');
 Route::post('/intern/password/resend-otp', [InternController::class, 'resendForgotPasswordOtp'])->name('intern.password.resend-otp');
 Route::post('/intern/password/reset', [InternController::class, 'resetPassword'])->name('intern.password.reset.submit');
-Route::get('/intern/phase-submission', [InternAuthController::class, 'phaseSubmission'])->name('intern.phase-submission');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -216,6 +214,9 @@ Route::middleware(['auth:intern'])->group(function () {
     
     // Phase Submission Page
     Route::get('/intern/phase-submission', [InternAuthController::class, 'phaseSubmission'])->name('intern.phase-submission');
+    
+    // API endpoint to check phase status for auto-refresh
+    Route::get('/intern/check-phase-status', [InternAuthController::class, 'checkPhaseStatus'])->name('intern.check-phase-status');
 });
 
 // Supervisor Registration

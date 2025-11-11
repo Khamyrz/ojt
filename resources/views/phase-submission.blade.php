@@ -238,5 +238,70 @@
 	</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+	<script>
+		// Auto-refresh functionality to check for phase status updates
+		(function() {
+			// Store initial phase status
+			let lastPhaseStatus = {
+				current_phase: '{{ $intern->current_phase }}',
+				pre_deployment_status: '{{ $intern->pre_deployment_status }}',
+				mid_deployment_status: '{{ $intern->mid_deployment_status }}',
+				deployment_status: '{{ $intern->deployment_status }}',
+				status: '{{ $intern->status }}'
+			};
+
+			// Function to check phase status
+			async function checkPhaseStatus() {
+				try {
+					const response = await fetch('{{ route("intern.check-phase-status") }}', {
+						method: 'GET',
+						headers: {
+							'Accept': 'application/json',
+							'X-Requested-With': 'XMLHttpRequest'
+						},
+						credentials: 'same-origin'
+					});
+
+					if (!response.ok) {
+						throw new Error('Failed to check phase status');
+					}
+
+					const data = await response.json();
+
+					// Check if any phase status has changed
+					const hasChanged = 
+						data.current_phase !== lastPhaseStatus.current_phase ||
+						data.pre_deployment_status !== lastPhaseStatus.pre_deployment_status ||
+						data.mid_deployment_status !== lastPhaseStatus.mid_deployment_status ||
+						data.deployment_status !== lastPhaseStatus.deployment_status ||
+						data.status !== lastPhaseStatus.status;
+
+					if (hasChanged) {
+						// Phase status has changed, reload the page
+						console.log('Phase status updated. Reloading page...');
+						window.location.reload();
+					}
+				} catch (error) {
+					console.error('Error checking phase status:', error);
+					// Silently fail - don't interrupt user experience
+				}
+			}
+
+			// Check phase status every 5 seconds
+			const checkInterval = setInterval(checkPhaseStatus, 5000);
+
+			// Also check when page becomes visible (user switches back to tab)
+			document.addEventListener('visibilitychange', function() {
+				if (!document.hidden) {
+					checkPhaseStatus();
+				}
+			});
+
+			// Clean up interval when page is unloaded
+			window.addEventListener('beforeunload', function() {
+				clearInterval(checkInterval);
+			});
+		})();
+	</script>
 </body>
 </html>
