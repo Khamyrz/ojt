@@ -192,7 +192,7 @@ Route::middleware(['auth:intern'])->group(function () {
     Route::get('/api/intern/message/stats', [MessageController::class, 'getInternMessageStats'])->name('api.intern.message.stats');
 
     // Time In / Time Out (DTR)
-    Route::get('/intern/dtr', [InternAuthController::class, 'dtr'])->name('intern.dtr');
+    Route::get('/intern/dtr', [TimeLogController::class, 'showOwnDTR'])->name('intern.dtr');
     Route::post('/intern/time-in', [TimeLogController::class, 'timeIn'])->name('intern.timein');
     Route::post('/intern/time-out', [TimeLogController::class, 'timeOut'])->name('intern.timeout');
     

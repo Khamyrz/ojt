@@ -475,49 +475,12 @@
             </div>
         @endif
 
-        <!-- Attendance Notification -->
-        @if($intern->isAttendanceReleased())
-            @if($intern->hasAttended())
-                <div class="attendance-notification">
-                    <h3>✅ Attendance Marked!</h3>
-                    <p>You have successfully marked your attendance for today.</p>
-                    <span class="attendance-status status-present">Present</span>
-                    <p style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
-                        Time: {{ $intern->attendance_time->format('g:i A') }}
-                        @if($intern->attendance_notes)
-                            | Notes: {{ $intern->attendance_notes }}
-                        @endif
-                    </p>
-                </div>
-            @elseif($intern->attendance_status === 'absent')
-                <div class="attendance-notification" style="background: linear-gradient(135deg, #f56565, #c53030 100%);">
-                    <h3>❌ Marked Absent</h3>
-                    <p>You have been marked as absent for today.</p>
-                    <span class="attendance-status status-absent">Absent</span>
-                    @if($intern->attendance_notes)
-                        <p style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
-                            Notes: {{ $intern->attendance_notes }}
-                        </p>
-                    @endif
-                </div>
-            @elseif($intern->shouldReceiveAttendanceNotification())
-                <div class="attendance-notification">
-                    <h3>⏰ Time In Available!</h3>
-                    <p>Your supervisor has released Time In for today. Click the button below to mark your attendance.</p>
-                    <span class="attendance-status status-released">Released</span>
-                    <br><br>
-                    <a href="{{ route('intern.attendance') }}" class="attendance-btn">
-                        ⏰ Time In Now
-                    </a>
-                </div>
-            @endif
-        @else
-            <div class="attendance-notification" style="background: linear-gradient(135deg, #a0aec0, #718096 100%);">
-                <h3>⏰ Waiting for Attendance</h3>
-                <p>Your supervisor has not released attendance yet. Please wait for the notification.</p>
-                <span class="attendance-status status-not-released">Not Released</span>
-            </div>
-        @endif
+        <!-- Attendance Notice (self-service) -->
+        <div class="attendance-notification" id="selfAttendanceNotice" style="display:none;">
+            <h3>⏰ Working Hours</h3>
+            <p>Time In/Out is available Monday to Saturday, 8:00 AM to 5:00 PM. Time Out is auto-recorded at 5:00 PM.</p>
+            <span class="attendance-status status-released">Self Service</span>
+        </div>
 
         <!-- Dashboard Cards -->
         <div class="dashboard-grid">
@@ -696,7 +659,13 @@
                     const timeInBtn = document.getElementById('timeInBtn');
                     const timeOutBtn = document.getElementById('timeOutBtn');
                     
-                    if (data.today_status === 'not_started') {
+                    const withinHours = !!data.is_working_hours && !!data.is_workday;
+                    document.getElementById('selfAttendanceNotice').style.display = 'block';
+
+                    if (!withinHours) {
+                        timeInBtn.disabled = true;
+                        timeOutBtn.disabled = true;
+                    } else if (data.today_status === 'not_started') {
                         timeInBtn.disabled = false;
                         timeOutBtn.disabled = true;
                     } else if (data.today_status === 'working') {

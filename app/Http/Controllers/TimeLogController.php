@@ -16,7 +16,24 @@ class TimeLogController extends Controller
     public function timeIn()
     {
         $intern = Auth::guard('intern')->user();
-        $today = now('Asia/Manila')->toDateString();
+        $now = now('Asia/Manila');
+        $today = $now->toDateString();
+
+        // Allow Monday to Saturday only
+        if ($now->isSunday()) {
+            return request()->expectsJson()
+                ? response()->json(['success' => false, 'message' => 'Attendance is closed on Sundays.'], 400)
+                : back()->with('error', 'Attendance is closed on Sundays.');
+        }
+
+        // Allow time-in only between 8:00 AM and 5:00 PM
+        $start = \Carbon\Carbon::createFromTime(8, 0, 0, 'Asia/Manila');
+        $end = \Carbon\Carbon::createFromTime(17, 0, 0, 'Asia/Manila');
+        if (!$now->betweenIncluded($start, $end)) {
+            return request()->expectsJson()
+                ? response()->json(['success' => false, 'message' => 'Time In is available from 8:00 AM to 5:00 PM (Mon-Sat).'], 400)
+                : back()->with('error', 'Time In is available from 8:00 AM to 5:00 PM (Mon-Sat).');
+        }
 
         $existing = TimeLog::where('intern_id', $intern->id)
             ->where('date', $today)
@@ -35,7 +52,7 @@ class TimeLogController extends Controller
         TimeLog::create([
             'intern_id' => $intern->id,
             'date' => $today,
-            'time_in' => now('Asia/Manila')->toTimeString(),
+            'time_in' => $now->toTimeString(),
         ]);
 
         if (request()->expectsJson()) {
@@ -54,7 +71,8 @@ class TimeLogController extends Controller
     public function timeOut()
     {
         $intern = Auth::guard('intern')->user();
-        $today = now('Asia/Manila')->toDateString();
+        $now = now('Asia/Manila');
+        $today = $now->toDateString();
 
         $log = TimeLog::where('intern_id', $intern->id)
             ->where('date', $today)
@@ -79,8 +97,6 @@ class TimeLogController extends Controller
             }
             return back()->with('error', '⏳ You already timed out today.');
         }
-
-        $now = now('Asia/Manila');
 
         // If time out is after 5:00 PM, record exactly 5:00 PM
         $timeOut = $now->greaterThan(Carbon::createFromTime(17, 0, 0, 'Asia/Manila'))
@@ -120,7 +136,8 @@ class TimeLogController extends Controller
     public function getRealTimeDTR()
     {
         $intern = Auth::guard('intern')->user();
-        $currentMonth = now('Asia/Manila')->format('Y-m');
+        $now = now('Asia/Manila');
+        $currentMonth = $now->format('Y-m');
         
         $logs = TimeLog::where('intern_id', $intern->id)
             ->whereRaw("DATE_FORMAT(date, '%Y-%m') = ?", [$currentMonth])
@@ -140,20 +157,30 @@ class TimeLogController extends Controller
             }
             
             // Get current day's log
-            if ($log->date === now('Asia/Manila')->toDateString()) {
+            if ($log->date === $now->toDateString()) {
                 $currentDayLog = $log;
             }
         }
+
+        // Auto-timeout at 5PM if not yet timed out
+        if ($currentDayLog && $currentDayLog->time_in && !$currentDayLog->time_out && $now->greaterThan(Carbon::createFromTime(17, 0, 0, 'Asia/Manila'))) {
+            $currentDayLog->update(['time_out' => '17:00:00']);
+            $currentDayLog = $currentDayLog->fresh();
+        }
+
+        $isWorkingHours = $now->between(
+            Carbon::createFromTime(8, 0, 0, 'Asia/Manila'),
+            Carbon::createFromTime(17, 0, 0, 'Asia/Manila')
+        );
+        $isWorkday = !$now->isSunday();
 
         return response()->json([
             'total_hours' => $totalHours,
             'total_days' => $totalDays,
             'current_day_log' => $currentDayLog,
-            'current_time' => now('Asia/Manila')->format('H:i:s'),
-            'is_working_hours' => now('Asia/Manila')->between(
-                Carbon::createFromTime(8, 0, 0, 'Asia/Manila'),
-                Carbon::createFromTime(17, 0, 0, 'Asia/Manila')
-            )
+            'current_time' => $now->format('H:i:s'),
+            'is_working_hours' => $isWorkingHours,
+            'is_workday' => $isWorkday
         ]);
     }
 
@@ -163,12 +190,19 @@ class TimeLogController extends Controller
     public function getDTRSummary()
     {
         $intern = Auth::guard('intern')->user();
-        $today = now('Asia/Manila')->toDateString();
-        $currentMonth = now('Asia/Manila')->format('Y-m');
+        $now = now('Asia/Manila');
+        $today = $now->toDateString();
+        $currentMonth = $now->format('Y-m');
         
         $todayLog = TimeLog::where('intern_id', $intern->id)
             ->where('date', $today)
             ->first();
+
+        // Auto-timeout at 5 PM if needed
+        if ($todayLog && $todayLog->time_in && !$todayLog->time_out && $now->greaterThan(Carbon::createFromTime(17, 0, 0, 'Asia/Manila'))) {
+            $todayLog->update(['time_out' => '17:00:00']);
+            $todayLog = $todayLog->fresh();
+        }
 
         $monthlyLogs = TimeLog::where('intern_id', $intern->id)
             ->whereRaw("DATE_FORMAT(date, '%Y-%m') = ?", [$currentMonth])
@@ -193,7 +227,24 @@ class TimeLogController extends Controller
             'monthly_hours' => $monthlyHours,
             'monthly_days' => $monthlyDays,
             'target_hours' => 486,
-            'progress_percent' => min(100, round(($monthlyHours / 486) * 100))
+            'progress_percent' => min(100, round(($monthlyHours / 486) * 100)),
+            'is_working_hours' => $now->between(
+                Carbon::createFromTime(8, 0, 0, 'Asia/Manila'),
+                Carbon::createFromTime(17, 0, 0, 'Asia/Manila')
+            ),
+            'is_workday' => !$now->isSunday()
         ]);
+    }
+
+    /**
+     * Show DTR for the authenticated intern (intern view).
+     */
+    public function showOwnDTR()
+    {
+        $intern = Auth::guard('intern')->user();
+        $logs = TimeLog::where('intern_id', $intern->id)
+            ->orderBy('date', 'asc')
+            ->get();
+        return view('dtr', compact('intern', 'logs'));
     }
 }
