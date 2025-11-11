@@ -906,7 +906,18 @@
                 reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = `/interns/${internId}/accept`;
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/interns/${internId}/accept`;
+                    
+                    const csrfToken = document.createElement('input');
+                    csrfToken.type = 'hidden';
+                    csrfToken.name = '_token';
+                    csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    
+                    form.appendChild(csrfToken);
+                    document.body.appendChild(form);
+                    form.submit();
                 }
             });
         }
@@ -944,13 +955,28 @@
                 reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
+                    let actionUrl = '';
                     if (phase === 'pre-deployment') {
-                        
-                        window.location.href = `/interns/${internId}/accept-pre-deployment`;
+                        actionUrl = `/interns/${internId}/accept-pre-deployment`;
                     } else if (phase === 'mid-deployment') {
-                        window.location.href = `/interns/${internId}/accept-mid-deployment`;
+                        actionUrl = `/interns/${internId}/accept-mid-deployment`;
                     } else if (phase === 'deployment') {
-                        window.location.href = `/interns/${internId}/accept-deployment`;
+                        actionUrl = `/interns/${internId}/accept-deployment`;
+                    }
+                    
+                    if (actionUrl) {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = actionUrl;
+                        
+                        const csrfToken = document.createElement('input');
+                        csrfToken.type = 'hidden';
+                        csrfToken.name = '_token';
+                        csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        
+                        form.appendChild(csrfToken);
+                        document.body.appendChild(form);
+                        form.submit();
                     }
                 }
             });
@@ -970,12 +996,28 @@
                 reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
+                    let actionUrl = '';
                     if (phase === 'pre-deployment') {
-                        window.location.href = `/interns/${internId}/reject-pre-deployment`;
+                        actionUrl = `/interns/${internId}/reject-pre-deployment`;
                     } else if (phase === 'mid-deployment') {
-                        window.location.href = `/interns/${internId}/reject-mid-deployment`;
+                        actionUrl = `/interns/${internId}/reject-mid-deployment`;
                     } else if (phase === 'deployment') {
-                        window.location.href = `/interns/${internId}/reject-deployment`;
+                        actionUrl = `/interns/${internId}/reject-deployment`;
+                    }
+                    
+                    if (actionUrl) {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = actionUrl;
+                        
+                        const csrfToken = document.createElement('input');
+                        csrfToken.type = 'hidden';
+                        csrfToken.name = '_token';
+                        csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        
+                        form.appendChild(csrfToken);
+                        document.body.appendChild(form);
+                        form.submit();
                     }
                 }
             });
