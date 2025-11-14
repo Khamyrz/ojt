@@ -639,38 +639,63 @@
             fetch('{{ route("intern.dtr.summary") }}')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('todayStatus').textContent = data.today_status.replace('_', ' ').toUpperCase();
-                    document.getElementById('todayTimeIn').textContent = data.today_time_in || '-';
-                    document.getElementById('todayTimeOut').textContent = data.today_time_out || '-';
+                    // Format time display
+                    const formatTime = (timeString) => {
+                        if (!timeString || timeString === '-') return '-';
+                        try {
+                            const [hours, minutes, seconds] = timeString.split(':');
+                            const hour = parseInt(hours);
+                            const ampm = hour >= 12 ? 'PM' : 'AM';
+                            const displayHour = hour % 12 || 12;
+                            return `${displayHour}:${minutes} ${ampm}`;
+                        } catch (e) {
+                            return timeString;
+                        }
+                    };
 
-                    const monthlyHours = parseFloat(data.monthly_hours ?? 0);
-                    const totalHours = parseFloat(data.total_hours ?? 0);
-                    const remainingHours = parseFloat(data.remaining_hours ?? 0);
-
-                    document.getElementById('monthlyHours').textContent = monthlyHours.toFixed(2) + ' hrs';
-                    document.getElementById('totalHoursLogged').textContent = totalHours.toFixed(2) + ' hrs';
-                    document.getElementById('remainingHours').textContent = remainingHours.toFixed(2) + ' hrs';
-                    document.getElementById('progressPercent').textContent = data.progress_percent + '%';
+                    const timeInElement = document.getElementById('todayTimeIn');
+                    const timeOutElement = document.getElementById('todayTimeOut');
+                    
+                    if (timeInElement) {
+                        timeInElement.textContent = formatTime(data.today_time_in);
+                    }
+                    if (timeOutElement) {
+                        timeOutElement.textContent = formatTime(data.today_time_out);
+                    }
                     
                     // Update button states
                     const timeInBtn = document.getElementById('timeInBtn');
                     const timeOutBtn = document.getElementById('timeOutBtn');
                     
+                    const now = new Date();
+                    const currentHour = now.getHours();
+                    // Time In is only available from 8:00 AM to 4:59 PM
+                    const canTimeIn = currentHour >= 8 && currentHour < 17;
+                    // Time Out can be done manually until 4:59 PM, then auto-timeout at 5:00 PM
+                    const canTimeOut = currentHour < 17;
+                    
                     const withinHours = !!data.is_working_hours && !!data.is_workday;
-                    document.getElementById('selfAttendanceNotice').style.display = 'block';
+                    const selfAttendanceNotice = document.getElementById('selfAttendanceNotice');
+                    if (selfAttendanceNotice) {
+                        selfAttendanceNotice.style.display = 'block';
+                    }
 
-                    if (!withinHours) {
-                        timeInBtn.disabled = true;
-                        timeOutBtn.disabled = true;
-                    } else if (data.today_status === 'not_started') {
-                        timeInBtn.disabled = false;
-                        timeOutBtn.disabled = true;
-                    } else if (data.today_status === 'working') {
-                        timeInBtn.disabled = true;
-                        timeOutBtn.disabled = false;
-                    } else {
-                        timeInBtn.disabled = true;
-                        timeOutBtn.disabled = true;
+                    if (timeInBtn && timeOutBtn) {
+                        if (!withinHours) {
+                            timeInBtn.disabled = true;
+                            timeOutBtn.disabled = true;
+                        } else if (data.today_status === 'not_started') {
+                            // Can only time in from 8:00 AM to 4:59 PM
+                            timeInBtn.disabled = !canTimeIn;
+                            timeOutBtn.disabled = true;
+                        } else if (data.today_status === 'working') {
+                            timeInBtn.disabled = true;
+                            // Can time out until 5:00 PM (auto-timeout happens at 5:00 PM)
+                            timeOutBtn.disabled = !canTimeOut;
+                        } else {
+                            timeInBtn.disabled = true;
+                            timeOutBtn.disabled = true;
+                        }
                     }
                 })
                 .catch(error => {
@@ -678,50 +703,219 @@
                 });
         }
 
-        // Time In/Out Handlers
-        document.getElementById('timeInBtn').addEventListener('click', function() {
-            fetch('{{ route("intern.timein") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                }
+        // Time In/Out Handlers - Fully Functional with SweetAlert
+        function handleTimeIn() {
+            const btn = document.getElementById('timeInBtn');
+            if (!btn || btn.disabled) return;
+            
+            // Disable button and show processing
+            btn.disabled = true;
+            const originalText = btn.textContent;
+            btn.textContent = 'Processing...';
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+            
+            // Make request
+                    fetch('{{ route("intern.timein") }}', {
+                        method: 'POST',
+                        headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Time In recorded successfully!');
-                    updateDTRStatus();
+            .then(response => {
+                // Handle both JSON and non-JSON responses
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(data => ({ ok: response.ok, status: response.status, data: data }));
                 } else {
-                    alert('Error: ' + data.message);
+                    return response.text().then(text => {
+                        try {
+                            const data = JSON.parse(text);
+                            return { ok: response.ok, status: response.status, data: data };
+                        } catch (e) {
+                            return { ok: false, status: response.status, data: { success: false, message: text || 'Server error occurred' } };
+                        }
+                    });
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error recording Time In. Please try again.');
+            .then(result => {
+                if (result.ok && result.data && result.data.success) {
+                    // Success
+                            Swal.fire({
+                                icon: 'success',
+                        title: '✅ Time In Successful!',
+                        text: result.data.message || 'Time In recorded successfully!',
+                        timer: 3000,
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                            updateDTRStatus();
+                    });
+                    setTimeout(() => updateDTRStatus(), 500);
+                        } else {
+                    // Error/Warning
+                    const message = result.data?.message || 'Failed to record Time In';
+                    const isWarning = result.status === 400 && (message.includes('already') || message.includes('available') || message.includes('8:00 AM'));
+                    
+                            Swal.fire({
+                        icon: isWarning ? 'warning' : 'error',
+                        title: isWarning ? '⚠️ Warning' : '❌ Time In Failed',
+                        text: message,
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK'
+                    });
+                    
+                    // Re-enable button if it's not a permanent state
+                    if (!isWarning || !message.includes('already')) {
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                        }
+                    })
+                    .catch(error => {
+                console.error('Time In Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                    title: '❌ Connection Error',
+                    text: 'Failed to connect to server. Please check your connection and try again.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK'
+                });
+                btn.disabled = false;
+                btn.textContent = originalText;
             });
-        });
-
-        document.getElementById('timeOutBtn').addEventListener('click', function() {
-            fetch('{{ route("intern.timeout") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                }
+        }
+        
+        function handleTimeOut() {
+            const btn = document.getElementById('timeOutBtn');
+            if (!btn || btn.disabled) return;
+            
+            // Disable button and show processing
+            btn.disabled = true;
+            const originalText = btn.textContent;
+            btn.textContent = 'Processing...';
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+            
+            // Make request
+                    fetch('{{ route("intern.timeout") }}', {
+                        method: 'POST',
+                        headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Time Out recorded successfully!');
-                    updateDTRStatus();
+            .then(response => {
+                // Handle both JSON and non-JSON responses
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(data => ({ ok: response.ok, status: response.status, data: data }));
                 } else {
-                    alert('Error: ' + data.message);
+                    return response.text().then(text => {
+                        try {
+                            const data = JSON.parse(text);
+                            return { ok: response.ok, status: response.status, data: data };
+                        } catch (e) {
+                            return { ok: false, status: response.status, data: { success: false, message: text || 'Server error occurred' } };
+                        }
+                    });
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error recording Time Out. Please try again.');
+            .then(result => {
+                if (result.ok && result.data && result.data.success) {
+                    // Success
+                            Swal.fire({
+                                icon: 'success',
+                        title: '✅ Time Out Successful!',
+                        text: result.data.message || 'Time Out recorded successfully!',
+                        timer: 3000,
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                            updateDTRStatus();
+                    });
+                    setTimeout(() => updateDTRStatus(), 500);
+                        } else {
+                    // Error/Warning
+                    const message = result.data?.message || 'Failed to record Time Out';
+                    const isWarning = result.status === 400 && (message.includes('already') || message.includes('must time in'));
+                    
+                            Swal.fire({
+                        icon: isWarning ? 'warning' : 'error',
+                        title: isWarning ? '⚠️ Warning' : '❌ Time Out Failed',
+                        text: message,
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK'
+                    });
+                    
+                    // Re-enable button if it's not a permanent state
+                    if (!isWarning || !message.includes('already')) {
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                        }
+                    })
+                    .catch(error => {
+                console.error('Time Out Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                    title: '❌ Connection Error',
+                    text: 'Failed to connect to server. Please check your connection and try again.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK'
+                });
+                btn.disabled = false;
+                btn.textContent = originalText;
             });
-        });
+        }
+        
+        // Attach event listeners when DOM is ready
+        function attachTimeHandlers() {
+            const timeInBtn = document.getElementById('timeInBtn');
+            const timeOutBtn = document.getElementById('timeOutBtn');
+            
+            if (timeInBtn) {
+                // Remove existing listeners
+                const newTimeInBtn = timeInBtn.cloneNode(true);
+                timeInBtn.parentNode.replaceChild(newTimeInBtn, timeInBtn);
+                newTimeInBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleTimeIn();
+                });
+            }
+            
+            if (timeOutBtn) {
+                // Remove existing listeners
+                const newTimeOutBtn = timeOutBtn.cloneNode(true);
+                timeOutBtn.parentNode.replaceChild(newTimeOutBtn, timeOutBtn);
+                newTimeOutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleTimeOut();
+                });
+            }
+        }
+        
+        // Initialize handlers
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', attachTimeHandlers);
+                } else {
+            attachTimeHandlers();
+        }
+        
+        // Fallback initialization
+        setTimeout(attachTimeHandlers, 100);
+        window.addEventListener('load', () => setTimeout(attachTimeHandlers, 100));
 
         // Initialize DTR functionality
         updateCurrentTime();
