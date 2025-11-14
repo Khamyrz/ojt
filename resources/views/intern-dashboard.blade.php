@@ -452,6 +452,12 @@
             </div>
         @endif
 
+        <!-- Holiday Notification -->
+        <div id="holidayNotification" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 25px; border-radius: 15px; margin-bottom: 30px; text-align: center; box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);">
+            <h3>🎉 Holiday Notice</h3>
+            <p>Today is a holiday. Attendance is not required. Enjoy your day off!</p>
+        </div>
+
         <!-- Friday Journal Reminder -->
         @if(now()->isFriday() && !$intern->hasSubmittedJournalThisWeek())
             <div class="journal-reminder" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 25px; border-radius: 15px; margin-bottom: 30px; text-align: center; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);">
@@ -668,24 +674,59 @@
                         progressPercentElement.textContent = data.progress_percent.toFixed(1);
                     }
                     
+                    // Show/hide holiday notification
+                    const holidayNotification = document.getElementById('holidayNotification');
+                    if (holidayNotification) {
+                        if (data.is_holiday) {
+                            holidayNotification.style.display = 'block';
+                        } else {
+                            holidayNotification.style.display = 'none';
+                        }
+                    }
+                    
                     // Update button states
                     const timeInBtn = document.getElementById('timeInBtn');
                     const timeOutBtn = document.getElementById('timeOutBtn');
                     
-                    const withinHours = !!data.is_working_hours && !!data.is_workday;
+                    const withinHours = !!data.is_working_hours && !!data.is_workday && !data.is_holiday;
 
                     if (timeInBtn && timeOutBtn) {
                         // Reset button states first
                         timeInBtn.style.cursor = 'pointer';
                         timeOutBtn.style.cursor = 'pointer';
                         
-                        if (!withinHours) {
+                        if (data.is_holiday) {
+                            // Holiday - disable time in, but allow time out if already timed in
                             timeInBtn.disabled = true;
-                            timeOutBtn.disabled = true;
                             timeInBtn.style.opacity = '0.5';
-                            timeOutBtn.style.opacity = '0.5';
                             timeInBtn.style.cursor = 'not-allowed';
-                            timeOutBtn.style.cursor = 'not-allowed';
+                            timeInBtn.title = 'Time In is not available on holidays';
+                            
+                            if (data.today_status === 'working') {
+                                timeOutBtn.disabled = false;
+                                timeOutBtn.style.opacity = '1';
+                                timeOutBtn.style.cursor = 'pointer';
+                            } else {
+                                timeOutBtn.disabled = true;
+                                timeOutBtn.style.opacity = '0.5';
+                                timeOutBtn.style.cursor = 'not-allowed';
+                            }
+                        } else if (!withinHours) {
+                            timeInBtn.disabled = true;
+                            timeInBtn.style.opacity = '0.5';
+                            timeInBtn.style.cursor = 'not-allowed';
+                            timeInBtn.title = 'Time In is only available from 8:00 AM to 4:59 PM';
+                            
+                            // Time out can still work if already timed in
+                            if (data.today_status === 'working') {
+                                timeOutBtn.disabled = false;
+                                timeOutBtn.style.opacity = '1';
+                                timeOutBtn.style.cursor = 'pointer';
+                            } else {
+                                timeOutBtn.disabled = true;
+                                timeOutBtn.style.opacity = '0.5';
+                                timeOutBtn.style.cursor = 'not-allowed';
+                            }
                         } else if (data.today_status === 'not_started') {
                             timeInBtn.disabled = false;
                             timeOutBtn.disabled = true;
@@ -693,6 +734,7 @@
                             timeOutBtn.style.opacity = '0.5';
                             timeInBtn.style.cursor = 'pointer';
                             timeOutBtn.style.cursor = 'not-allowed';
+                            timeInBtn.title = '';
                         } else if (data.today_status === 'working') {
                             timeInBtn.disabled = true;
                             timeOutBtn.disabled = false;
@@ -700,6 +742,7 @@
                             timeOutBtn.style.opacity = '1';
                             timeInBtn.style.cursor = 'not-allowed';
                             timeOutBtn.style.cursor = 'pointer';
+                            timeOutBtn.title = '';
                         } else {
                             timeInBtn.disabled = true;
                             timeOutBtn.disabled = true;
@@ -798,9 +841,15 @@
                         if (message.includes('already') || message.includes('already timed in')) {
                             alertType = 'warning';
                             alertTitle = '⚠️ Already Timed In';
+                        } else if (message.includes('holiday')) {
+                            alertType = 'info';
+                            alertTitle = '🎉 Holiday Notice';
                         } else if (message.includes('Saturday') || message.includes('Sunday') || message.includes('weekend')) {
                             alertType = 'warning';
                             alertTitle = '⚠️ Weekend - Time In Not Available';
+                        } else if (message.includes('8:00 AM') || message.includes('4:59 PM') || message.includes('only available')) {
+                            alertType = 'warning';
+                            alertTitle = '⚠️ Time In Not Available';
                         } else if (message.includes('5:00 PM') || message.includes('5:00PM') || message.includes('17:00')) {
                             alertType = 'warning';
                             alertTitle = '⚠️ Time In Not Available';

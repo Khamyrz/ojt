@@ -489,6 +489,9 @@ class DashboardController extends Controller
         $type = $typeMap[$normalized] ?? null;
 
         if (!$type) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Invalid document type.'], 400);
+            }
             return back()->with('error', 'Invalid document type.');
         }
 
@@ -496,6 +499,10 @@ class DashboardController extends Controller
             ['intern_id' => $request->intern_id, 'type' => $type],
             ['requested_at' => now()]
         );
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Document request sent successfully.']);
+        }
 
         return redirect()->back()->with('success', 'Document request sent successfully.');
     }

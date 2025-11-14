@@ -725,7 +725,7 @@
                                                 Requested
                                             </span>
                                         @else
-                                            <form action="{{ route('grades.request') }}" method="POST" style="display: inline;">
+                                            <form action="{{ route('grades.request') }}" method="POST" style="display: inline;" onsubmit="event.preventDefault(); handleIndividualRequest(this);">
                                                 @csrf
                                                 <input type="hidden" name="intern_id" value="{{ $intern->id }}">
                                                 <input type="hidden" name="type" value="{{ $type }}">
@@ -835,12 +835,15 @@
                     });
                     
                     // Update button state
-                    btnText.textContent = 'Request sent';
+                    btnText.textContent = 'Requested';
                     btn.classList.remove('btn-certificate', 'btn-evaluation');
                     btn.style.background = '#64748b';
                     btn.style.color = 'white';
                     btn.style.borderColor = '#64748b';
                     icon.className = 'fas fa-check-circle';
+                    
+                    // Update all individual request buttons in the table
+                    updateRequestButtons(type);
                 } else {
                     // Error/Warning
                     const message = result.data?.message || `Failed to send request for ${type === 'certificate' ? 'Certificate' : 'Evaluation Form'}`;
@@ -876,6 +879,91 @@
                 btn.style.opacity = '1';
                 btn.style.cursor = 'pointer';
                 btnText.textContent = originalText;
+            });
+        }
+        
+        // Function to update individual request buttons after broadcast
+        function updateRequestButtons(type) {
+            const typeMap = {
+                'certificate': 'certificate',
+                'evaluation': 'evaluation'
+            };
+            const targetType = typeMap[type];
+            
+            // Find all request buttons for this type and update them
+            document.querySelectorAll('form[action*="grades.request"]').forEach(form => {
+                const typeInput = form.querySelector('input[name="type"]');
+                if (typeInput && typeInput.value === targetType) {
+                    const button = form.querySelector('button[type="submit"]');
+                    if (button && button.classList.contains('btn-request')) {
+                        // Replace button with "Requested" status
+                        const statusLabel = document.createElement('span');
+                        statusLabel.className = 'status-label status-requested';
+                        statusLabel.innerHTML = '<i class="fas fa-clock"></i> Requested';
+                        form.parentElement.replaceChild(statusLabel, form);
+                    }
+                }
+            });
+        }
+        
+        // Function to handle individual request button clicks
+        function handleIndividualRequest(form) {
+            const button = form.querySelector('button[type="submit"]');
+            if (!button) return;
+            
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            // Submit form via AJAX
+            const formData = new FormData(form);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+            
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Replace button with "Requested" status
+                    const statusLabel = document.createElement('span');
+                    statusLabel.className = 'status-label status-requested';
+                    statusLabel.innerHTML = '<i class="fas fa-clock"></i> Requested';
+                    form.parentElement.replaceChild(statusLabel, form);
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: '✅ Request Sent!',
+                        text: 'Document request sent successfully.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                    Swal.fire({
+                        icon: 'error',
+                        title: '❌ Request Failed',
+                        text: 'Failed to send request. Please try again.',
+                        showConfirmButton: true
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Request Error:', error);
+                button.disabled = false;
+                button.innerHTML = originalText;
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Connection Error',
+                    text: 'Failed to connect to server. Please try again.',
+                    showConfirmButton: true
+                });
             });
         }
 

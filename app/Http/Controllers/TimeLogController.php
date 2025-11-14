@@ -11,6 +11,24 @@ use Carbon\Carbon;
 class TimeLogController extends Controller
 {
     /**
+     * Check if a date is a holiday
+     */
+    private function isHoliday($date)
+    {
+        // You can extend this to check from a database table
+        // For now, we'll check common Philippine holidays
+        $holidays = [
+            // New Year
+            $date->format('Y') . '-01-01',
+            // Christmas
+            $date->format('Y') . '-12-25',
+            // Add more holidays as needed
+        ];
+        
+        return in_array($date->toDateString(), $holidays);
+    }
+
+    /**
      * Handle intern time in (only once per day).
      */
     public function timeIn()
@@ -18,6 +36,13 @@ class TimeLogController extends Controller
         $intern = Auth::guard('intern')->user();
         $now = now('Asia/Manila');
         $today = $now->toDateString();
+
+        // Check if it's a holiday
+        if ($this->isHoliday($now)) {
+            return request()->expectsJson()
+                ? response()->json(['success' => false, 'message' => 'Today is a holiday. Attendance is not required.'], 400)
+                : back()->with('error', 'Today is a holiday. Attendance is not required.');
+        }
 
         // Allow Monday to Friday only (not Saturday or Sunday)
         if ($now->isWeekend()) {
@@ -27,12 +52,22 @@ class TimeLogController extends Controller
                 : back()->with('error', "Attendance is closed on {$dayName}s. Time In/Out is available Monday to Friday only.");
         }
 
-        // Allow time-in anytime except exactly 5:00 PM (when auto-timeout happens)
-        // Block time-in only at 5:00 PM (hour 17, minute 0)
-        if ($now->hour == 17 && $now->minute == 0) {
+        // Restrict time-in to 8:00 AM to 4:59 PM only
+        $currentHour = $now->hour;
+        $currentMinute = $now->minute;
+        
+        // Check if before 8:00 AM
+        if ($currentHour < 8) {
             return request()->expectsJson()
-                ? response()->json(['success' => false, 'message' => 'Time In is not available at 5:00 PM. Time Out is automatically recorded at this time.'], 400)
-                : back()->with('error', 'Time In is not available at 5:00 PM. Time Out is automatically recorded at this time.');
+                ? response()->json(['success' => false, 'message' => 'Time In is only available from 8:00 AM to 4:59 PM.'], 400)
+                : back()->with('error', 'Time In is only available from 8:00 AM to 4:59 PM.');
+        }
+        
+        // Check if at or after 5:00 PM (17:00)
+        if ($currentHour >= 17) {
+            return request()->expectsJson()
+                ? response()->json(['success' => false, 'message' => 'Time In is only available from 8:00 AM to 4:59 PM.'], 400)
+                : back()->with('error', 'Time In is only available from 8:00 AM to 4:59 PM.');
         }
 
         $existing = TimeLog::where('intern_id', $intern->id)
@@ -111,8 +146,14 @@ class TimeLogController extends Controller
             ? '17:00:00'
             : $now->toTimeString();
 
+        // Calculate duration in minutes
+        $timeIn = Carbon::parse($log->date . ' ' . $log->time_in, 'Asia/Manila');
+        $timeOutCarbon = Carbon::parse($log->date . ' ' . $timeOut, 'Asia/Manila');
+        $duration = $timeIn->diffInMinutes($timeOutCarbon);
+
         $log->update([
             'time_out' => $timeOut,
+            'duration' => $duration,
         ]);
 
         if (request()->expectsJson()) {
@@ -172,7 +213,13 @@ class TimeLogController extends Controller
 
         // Auto-timeout at 5PM if not yet timed out
         if ($currentDayLog && $currentDayLog->time_in && !$currentDayLog->time_out && $now->greaterThan(Carbon::createFromTime(17, 0, 0, 'Asia/Manila'))) {
-            $currentDayLog->update(['time_out' => '17:00:00']);
+            $timeIn = Carbon::parse($currentDayLog->date . ' ' . $currentDayLog->time_in, 'Asia/Manila');
+            $timeOut = Carbon::parse($currentDayLog->date . ' 17:00:00', 'Asia/Manila');
+            $duration = $timeIn->diffInMinutes($timeOut);
+            $currentDayLog->update([
+                'time_out' => '17:00:00',
+                'duration' => $duration
+            ]);
             $currentDayLog = $currentDayLog->fresh();
         }
 
@@ -206,7 +253,13 @@ class TimeLogController extends Controller
 
         // Auto-timeout at 5 PM if needed
         if ($todayLog && $todayLog->time_in && !$todayLog->time_out && $now->greaterThan(Carbon::createFromTime(17, 0, 0, 'Asia/Manila'))) {
-            $todayLog->update(['time_out' => '17:00:00']);
+            $timeIn = Carbon::parse($todayLog->date . ' ' . $todayLog->time_in, 'Asia/Manila');
+            $timeOut = Carbon::parse($todayLog->date . ' 17:00:00', 'Asia/Manila');
+            $duration = $timeIn->diffInMinutes($timeOut);
+            $todayLog->update([
+                'time_out' => '17:00:00',
+                'duration' => $duration
+            ]);
             $todayLog = $todayLog->fresh();
         }
 
@@ -243,6 +296,12 @@ class TimeLogController extends Controller
         $targetHours = 486;
         $remainingHours = max(0, round($targetHours - $totalHours, 2));
 
+        // Check if today is a holiday
+        $isHoliday = $this->isHoliday($now);
+        
+        // Check if within working hours (8:00 AM to 4:59 PM)
+        $isWorkingHours = ($now->hour >= 8 && $now->hour < 17);
+        
         return response()->json([
             'today_status' => $todayLog ? ($todayLog->time_out ? 'completed' : 'working') : 'not_started',
             'today_time_in' => $todayLog?->time_in,
@@ -253,8 +312,9 @@ class TimeLogController extends Controller
             'total_hours' => $totalHours,
             'remaining_hours' => $remainingHours,
             'progress_percent' => min(100, round(($totalHours / $targetHours) * 100)),
-            'is_working_hours' => !($now->hour == 17 && $now->minute == 0), // Allow anytime except 5:00 PM
-            'is_workday' => !$now->isWeekend() // Monday to Friday only
+            'is_working_hours' => $isWorkingHours,
+            'is_workday' => !$now->isWeekend(), // Monday to Friday only
+            'is_holiday' => $isHoliday
         ]);
     }
 
