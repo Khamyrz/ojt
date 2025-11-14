@@ -803,18 +803,22 @@
             fetch('{{ route("intern.dtr.summary") }}')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('todayStatus').textContent = data.today_status.replace('_', ' ').toUpperCase();
-                    document.getElementById('todayTimeIn').textContent = data.today_time_in || '-';
-                    document.getElementById('todayTimeOut').textContent = data.today_time_out || '-';
+                    // Format time display
+                    const formatTime = (timeString) => {
+                        if (!timeString || timeString === '-') return '-';
+                        try {
+                            const [hours, minutes, seconds] = timeString.split(':');
+                            const hour = parseInt(hours);
+                            const ampm = hour >= 12 ? 'PM' : 'AM';
+                            const displayHour = hour % 12 || 12;
+                            return `${displayHour}:${minutes} ${ampm}`;
+                        } catch (e) {
+                            return timeString;
+                        }
+                    };
 
-                    const monthlyHours = parseFloat(data.monthly_hours ?? 0);
-                    const totalHours = parseFloat(data.total_hours ?? 0);
-                    const remainingHours = parseFloat(data.remaining_hours ?? 0);
-
-                    document.getElementById('monthlyHours').textContent = monthlyHours.toFixed(2) + ' hrs';
-                    document.getElementById('totalHoursLogged').textContent = totalHours.toFixed(2) + ' hrs';
-                    document.getElementById('remainingHours').textContent = remainingHours.toFixed(2) + ' hrs';
-                    document.getElementById('progressPercent').textContent = data.progress_percent + '%';
+                    document.getElementById('todayTimeIn').textContent = formatTime(data.today_time_in);
+                    document.getElementById('todayTimeOut').textContent = formatTime(data.today_time_out);
                     
                     // Update button states
                     const timeInBtn = document.getElementById('timeInBtn');
@@ -862,7 +866,14 @@
                             'Content-Type': 'application/json'
                         }
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.message || 'Failed to record Time In');
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.success) {
                             Swal.fire({
@@ -872,7 +883,10 @@
                                 timer: 2000,
                                 showConfirmButton: false
                             });
-                            updateDTRStatus();
+                            // Refresh status immediately
+                            setTimeout(() => {
+                                updateDTRStatus();
+                            }, 500);
                         } else {
                             Swal.fire({
                                 icon: 'error',
@@ -911,7 +925,14 @@
                             'Content-Type': 'application/json'
                         }
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.message || 'Failed to record Time Out');
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.success) {
                             Swal.fire({
@@ -921,7 +942,10 @@
                                 timer: 2000,
                                 showConfirmButton: false
                             });
-                            updateDTRStatus();
+                            // Refresh status immediately
+                            setTimeout(() => {
+                                updateDTRStatus();
+                            }, 500);
                         } else {
                             Swal.fire({
                                 icon: 'error',
