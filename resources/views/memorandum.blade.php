@@ -97,7 +97,7 @@
             <li>The COMPANY is not obliged to employ the Student-Trainee upon completion of the training;</li>
             <li>The Student-Trainee shall be personally responsible for any and all liabilities arising from negligence in the performance of his/her duties and functions while under training;</li>
             <li>There is no employer-employee relationship between the COMPANY and the Student-Trainee;</li>
-            <li>The duration of the program shall be equivalent to five hundred forty (540) working hours unless otherwise agreed upon by the COMPANY and the COLLEGE;</li>
+            <li>The duration of the program shall be equivalent to five hundred forty (486) working hours unless otherwise agreed upon by the COMPANY and the COLLEGE;</li>
             <li>Any violation of the foregoing covenants will warrant the cancellation of the Memorandum of Agreement by the COMPANY within thirty (30) days upon notice to the COLLEGE;</li>
             <li>This Memorandum of Agreement shall become effective upon signature of both parties and implementation will begin immediately and shall continue to be valid hereafter until written notice is given by either party thirty (30) days prior to the date of intended termination.</li>
         </ol>

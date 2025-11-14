@@ -137,6 +137,89 @@ class DashboardController extends Controller
         ));
     }
 
+    /**
+     * Get notification counts for popup notifications
+     */
+    public function getNotifications()
+    {
+        $adminId = Auth::id();
+        
+        // Pending acceptance
+        $pendingAcceptance = Intern::where('status', 'pending')
+            ->where('invited_by_user_id', $adminId)
+            ->count();
+        
+        // Pending phase submissions
+        $pendingPreDeployment = Intern::where('status', 'accepted')
+            ->where('current_phase', 'pre_deployment')
+            ->where(function($q) {
+                $q->whereNull('pre_deployment_status')
+                  ->orWhere('pre_deployment_status', 'pending');
+            })
+            ->where('invited_by_user_id', $adminId)
+            ->count();
+        
+        $pendingMidDeployment = Intern::where('status', 'accepted')
+            ->where('current_phase', 'mid_deployment')
+            ->where(function($q) {
+                $q->whereNull('mid_deployment_status')
+                  ->orWhere('mid_deployment_status', 'pending');
+            })
+            ->where('invited_by_user_id', $adminId)
+            ->count();
+        
+        $pendingDeployment = Intern::where('status', 'accepted')
+            ->where('current_phase', 'deployment')
+            ->where(function($q) {
+                $q->whereNull('deployment_status')
+                  ->orWhere('deployment_status', 'pending');
+            })
+            ->where('invited_by_user_id', $adminId)
+            ->count();
+        
+        // Unread messages
+        $unreadMessages = Message::where('receiver_id', $adminId)
+            ->where('receiver_type', 'admin')
+            ->where('sender_type', 'intern')
+            ->where('is_read', false)
+            ->count();
+        
+        // Pending grade submissions (files sent)
+        $pendingGrades = GradeSubmission::whereHas('intern', function($q) use ($adminId) {
+                $q->where('invited_by_user_id', $adminId);
+            })
+            ->whereNotNull('file_path')
+            ->whereNull('reviewed_at')
+            ->count();
+        
+        // New journal entries (submitted in last 24 hours)
+        $newJournals = Document::where('type', 'journal')
+            ->whereHas('intern', function($q) use ($adminId) {
+                $q->where('invited_by_user_id', $adminId);
+            })
+            ->where('submitted_at', '>=', now()->subDay())
+            ->count();
+        
+        // New documents (submitted in last 24 hours)
+        $newDocuments = Document::where('type', '!=', 'journal')
+            ->whereHas('intern', function($q) use ($adminId) {
+                $q->where('invited_by_user_id', $adminId);
+            })
+            ->where('submitted_at', '>=', now()->subDay())
+            ->count();
+        
+        return response()->json([
+            'pending_acceptance' => $pendingAcceptance,
+            'pending_pre_deployment' => $pendingPreDeployment,
+            'pending_mid_deployment' => $pendingMidDeployment,
+            'pending_deployment' => $pendingDeployment,
+            'unread_messages' => $unreadMessages,
+            'pending_grades' => $pendingGrades,
+            'new_journals' => $newJournals,
+            'new_documents' => $newDocuments
+        ]);
+    }
+
     public function interns(Request $request)
     {
         $filter = $request->get('filter');
@@ -176,9 +259,11 @@ class DashboardController extends Controller
                 'parents_waiver',
                 'memorandum_of_agreement',
                 'internship_contract',
-                'recommendation_letter'
+                'recommendation_letter',
+                'created_at'
             )
-            ->orderBy('section')
+            ->orderBy('created_at', 'asc') // First come first serve
+            ->orderBy('id', 'asc') // Secondary sort by ID for consistency
             ->paginate(10);
 
         $interns->appends($request->all());

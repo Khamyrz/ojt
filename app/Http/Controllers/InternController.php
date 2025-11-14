@@ -139,6 +139,14 @@ class InternController extends Controller
             ->where('invited_by_user_id', Auth::id())
             ->firstOrFail();
 
+        // Get DTR documents
+        $dtrDocuments = \App\Models\Document::where('intern_id', $intern->id)
+            ->where('type', 'dtr')
+            ->orderBy('submitted_at', 'desc')
+            ->get();
+
+        $intern->dtr_documents = $dtrDocuments;
+
         return response()->json($intern);
     }
 

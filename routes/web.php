@@ -113,6 +113,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/documents', [DashboardController::class, 'documents'])->name('documents');
     Route::get('/documents/archive', [DashboardController::class, 'documentsArchive'])->name('documents.archive');
     Route::get('/documents/{id}/dtr', [TimeLogController::class, 'showDTR'])->name('documents.dtr');
+    Route::get('/documents/{id}/dtr/filtered', [TimeLogController::class, 'getFilteredDTR'])->name('documents.dtr.filtered');
     Route::get('/documents/{id}/journal', [JournalController::class, 'adminView'])->name('admin.journal');
 
     // QR Code
@@ -120,6 +121,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/show-qr-code', [QrCodeController::class, 'display'])->name('show.qr');
 
     
+
+    // Notifications
+    Route::get('/api/notifications', [DashboardController::class, 'getNotifications'])->name('api.notifications');
 
     // Messaging
     Route::get('/messages', [MessageController::class, 'index'])->name('messages');

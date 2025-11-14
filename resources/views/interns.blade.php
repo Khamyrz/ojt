@@ -480,6 +480,109 @@
         .loading {
             animation: pulse 1.5s ease-in-out infinite;
         }
+
+        /* Pagination Styles */
+        .pagination-container {
+            margin-top: 24px;
+            padding: 20px;
+            background: var(--light);
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .pagination-info {
+            color: var(--secondary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .pagination-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pagination-links ul {
+            list-style: none;
+            display: flex;
+            gap: 8px;
+            margin: 0;
+            padding: 0;
+            align-items: center;
+        }
+
+        .pagination-links li {
+            margin: 0;
+        }
+
+        .pagination-links a,
+        .pagination-links span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .pagination-links a {
+            background: white;
+            color: var(--primary);
+            border-color: var(--border);
+        }
+
+        .pagination-links a:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .pagination-links span {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            cursor: default;
+        }
+
+        .pagination-links .disabled span {
+            background: var(--border);
+            color: var(--secondary);
+            border-color: var(--border);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 768px) {
+            .pagination-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .pagination-info {
+                text-align: center;
+            }
+
+            .pagination-links {
+                justify-content: center;
+            }
+
+            .pagination-links ul {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
     </style>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -488,11 +591,70 @@
     <div class="interns-container">
         <!-- Page Header -->
         <div class="page-header">
-            <h1>
-                <i class="fas fa-users"></i>
-                Intern Management
-            </h1>
-            <p>Manage intern applications, phases, and track progress</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h1>
+                        <i class="fas fa-users"></i>
+                        Intern Management
+                    </h1>
+                    <p>Manage intern applications, phases, and track progress</p>
+                </div>
+                <div class="notification-indicators" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    @php
+                        $pendingAcceptance = \App\Models\Intern::where('status', 'pending')
+                            ->where('invited_by_user_id', Auth::id())
+                            ->count();
+                        $pendingPreDeployment = \App\Models\Intern::where('status', 'accepted')
+                            ->where('current_phase', 'pre_deployment')
+                            ->where(function($q) {
+                                $q->whereNull('pre_deployment_status')
+                                  ->orWhere('pre_deployment_status', 'pending');
+                            })
+                            ->where('invited_by_user_id', Auth::id())
+                            ->count();
+                        $pendingMidDeployment = \App\Models\Intern::where('status', 'accepted')
+                            ->where('current_phase', 'mid_deployment')
+                            ->where(function($q) {
+                                $q->whereNull('mid_deployment_status')
+                                  ->orWhere('mid_deployment_status', 'pending');
+                            })
+                            ->where('invited_by_user_id', Auth::id())
+                            ->count();
+                        $pendingDeployment = \App\Models\Intern::where('status', 'accepted')
+                            ->where('current_phase', 'deployment')
+                            ->where(function($q) {
+                                $q->whereNull('deployment_status')
+                                  ->orWhere('deployment_status', 'pending');
+                            })
+                            ->where('invited_by_user_id', Auth::id())
+                            ->count();
+                    @endphp
+                    @if($pendingAcceptance > 0)
+                        <div class="notification-badge" style="background: var(--warning); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-user-clock"></i>
+                            <span>{{ $pendingAcceptance }} Pending Acceptance</span>
+                        </div>
+                    @endif
+                    @if($pendingPreDeployment > 0)
+                        <div class="notification-badge" style="background: var(--primary); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-file-upload"></i>
+                            <span>{{ $pendingPreDeployment }} Pre-Deployment</span>
+                        </div>
+                    @endif
+                    @if($pendingMidDeployment > 0)
+                        <div class="notification-badge" style="background: var(--purple); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-file-upload"></i>
+                            <span>{{ $pendingMidDeployment }} Mid-Deployment</span>
+                        </div>
+                    @endif
+                    @if($pendingDeployment > 0)
+                        <div class="notification-badge" style="background: var(--success); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-file-upload"></i>
+                            <span>{{ $pendingDeployment }} Deployment</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
 
         <!-- Alert Messages -->
@@ -707,6 +869,18 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Pagination -->
+            @if($interns->hasPages())
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Showing {{ $interns->firstItem() }} to {{ $interns->lastItem() }} of {{ $interns->total() }} interns
+                    </div>
+                    <div class="pagination-links">
+                        {{ $interns->links() }}
+                    </div>
+                </div>
+            @endif
         @else
             <div class="empty-state">
                 <i class="fas fa-user-slash"></i>
@@ -1181,9 +1355,7 @@
                         })()">
                             <i class="fas fa-eye"></i> ${safeLabel}
                         </button>
-                        <a class="btn btn-edit" href="${downloadUrl}" target="_blank">
-                            <i class="fas fa-external-link-alt"></i> Open
-                        </a>
+                        
                     `;
                 }
 
@@ -1243,6 +1415,17 @@
                     docs.push(docButton('Endorsement Letter (Auto-generated)', endorsementUrl));
                     docEntries.push({label:'Endorsement Letter (Auto-generated)', src: endorsementUrl, phase:'dep'});
                     groups.push({phase:'deployment', start:startIndex, end:docEntries.length-1});
+                }
+
+                // DTR DOCUMENTS (Auto-sent every Friday)
+                if (intern.dtr_documents && intern.dtr_documents.length > 0) {
+                    const startIndex = docEntries.length;
+                    intern.dtr_documents.forEach(dtr => {
+                        const dtrPath = dtr.path.startsWith('storage/') ? dtr.path : 'storage/' + dtr.path;
+                        docs.push(docButton(dtr.description || 'DTR', dtrPath));
+                        docEntries.push({label: dtr.description || 'DTR', src: buildViewerSrc(dtrPath), phase:'dtr'});
+                    });
+                    groups.push({phase:'dtr', start:startIndex, end:docEntries.length-1});
                 }
 
                 // Build the modal body with only docs + viewer

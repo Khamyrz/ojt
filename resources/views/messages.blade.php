@@ -427,10 +427,10 @@
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="{{ route('messages.conversation', $intern->id) }}" class="btn btn-chat">
+                                        <button type="button" class="btn btn-chat" onclick="openChatModal({{ $intern->id }}, '{{ $intern->first_name }}', '{{ $intern->last_name }}')">
                                             <i class="fas fa-comments"></i>
                                             Open Chat
-                                        </a>
+                                        </button>
                                         <form id="clear-form-{{ $intern->id }}" action="{{ route('messages.clear', $intern->id) }}" method="POST" style="display: inline;">
                                             @csrf
                                             @method('DELETE')
@@ -463,6 +463,344 @@
         @endif
     </div>
 
+    <!-- Chat Modal -->
+    <div id="chatModal" class="chat-modal" style="display: none;">
+        <div class="chat-modal-content">
+            <div class="chat-modal-header">
+                <div class="chat-header-info">
+                    <h2>
+                        <i class="fas fa-comments"></i>
+                        <span id="chatInternName">Chat</span>
+                    </h2>
+                    <span id="chatInternEmail" class="chat-email"></span>
+                </div>
+                <span class="chat-modal-close" onclick="closeChatModal()">&times;</span>
+            </div>
+            <div class="chat-messages-container" id="chatMessagesContainer">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Loading conversation...
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <textarea 
+                    id="chatMessageInput" 
+                    class="chat-input-field" 
+                    placeholder="Type your message..."
+                    rows="1"
+                ></textarea>
+                <button type="button" class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Chat Modal Styles */
+        .chat-modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .chat-modal-content {
+            background-color: white;
+            margin: 2% auto;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .chat-modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .chat-header-info {
+            flex: 1;
+        }
+
+        .chat-modal-header h2 {
+            margin: 0 0 4px 0;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-email {
+            font-size: 13px;
+            opacity: 0.9;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .chat-modal-close {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            line-height: 1;
+            margin-left: 20px;
+        }
+
+        .chat-modal-close:hover {
+            transform: scale(1.2);
+        }
+
+        .chat-messages-container {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #f9fbfd;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Custom Scrollbar */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        .chat-message {
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 75%;
+            word-wrap: break-word;
+            line-height: 1.5;
+            position: relative;
+            animation: messageSlideIn 0.3s ease;
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-message.admin {
+            background-color: var(--primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-message.broadcast {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: 2px solid #f59e0b;
+        }
+
+        .broadcast-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .chat-message.intern {
+            background-color: #e6e6e6;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-message .message-content {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .chat-message .message-timestamp {
+            font-size: 11px;
+            opacity: 0.7;
+            text-align: right;
+        }
+
+        .chat-message.intern .message-timestamp {
+            text-align: left;
+        }
+
+        .chat-loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--primary);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chat-loading i {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .chat-empty {
+            text-align: center;
+            padding: 40px;
+            color: var(--secondary);
+            font-size: 14px;
+        }
+
+        .chat-input-container {
+            padding: 16px 20px;
+            background-color: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            flex-shrink: 0;
+        }
+
+        .chat-input-field {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 24px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            max-height: 120px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .chat-input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .chat-send-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .chat-send-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 768px) {
+            .chat-modal-content {
+                width: 95%;
+                margin: 5% auto;
+                max-height: 95vh;
+            }
+
+            .chat-modal-header {
+                padding: 16px 20px;
+            }
+
+            .chat-modal-header h2 {
+                font-size: 18px;
+            }
+
+            .chat-messages {
+                padding: 16px;
+            }
+
+            .chat-message {
+                max-width: 85%;
+            }
+
+            .chat-input-container {
+                padding: 12px 16px;
+            }
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         function confirmClear(internId) {
             Swal.fire({
@@ -571,5 +909,224 @@
                 confirmButtonColor: '#ef4444',
             });
         @endif
+
+        // Chat Modal Functions
+        let currentInternId = null;
+        let lastMessageId = 0;
+        let messagePollInterval = null;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+
+        function openChatModal(internId, firstName, lastName) {
+            currentInternId = internId;
+            const modal = document.getElementById('chatModal');
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageInput = document.getElementById('chatMessageInput');
+            
+            // Update header
+            document.getElementById('chatInternName').textContent = `${firstName} ${lastName}`;
+            
+            // Reset state
+            lastMessageId = 0;
+            messageInput.value = '';
+            messagesContainer.innerHTML = '<div class="chat-loading"><i class="fas fa-spinner fa-spin"></i> Loading conversation...</div>';
+            
+            // Show modal
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Load conversation
+            loadConversation(internId);
+            
+            // Start polling for new messages
+            if (messagePollInterval) {
+                clearInterval(messagePollInterval);
+            }
+            messagePollInterval = setInterval(() => {
+                if (currentInternId) {
+                    fetchNewMessages();
+                }
+            }, 3000);
+        }
+
+        function closeChatModal() {
+            const modal = document.getElementById('chatModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            currentInternId = null;
+            
+            // Stop polling
+            if (messagePollInterval) {
+                clearInterval(messagePollInterval);
+                messagePollInterval = null;
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('chatModal');
+            if (event.target === modal) {
+                closeChatModal();
+            }
+        }
+
+        function loadConversation(internId) {
+            axios.get(`{{ url('/messages') }}/${internId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                const data = response.data;
+                const messagesContainer = document.getElementById('chatMessages');
+                
+                // Update email if available
+                if (data.intern && data.intern.email) {
+                    document.getElementById('chatInternEmail').textContent = data.intern.email;
+                }
+                
+                // Clear loading and render messages
+                messagesContainer.innerHTML = '';
+                
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(message => {
+                        appendMessage(message.content, message.sender_type, message.created_at, message.is_broadcast);
+                        lastMessageId = Math.max(lastMessageId, message.id);
+                    });
+                    scrollToBottom();
+                } else {
+                    messagesContainer.innerHTML = '<div class="chat-empty"><i class="fas fa-comments"></i><p>No messages yet. Start the conversation!</p></div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading conversation:', error);
+                document.getElementById('chatMessages').innerHTML = 
+                    '<div class="chat-empty"><i class="fas fa-exclamation-circle"></i><p>Error loading conversation. Please try again.</p></div>';
+            });
+        }
+
+        function appendMessage(content, senderType, timestamp, isBroadcast = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            let messageClass = `chat-message ${senderType}`;
+            
+            if (isBroadcast) {
+                messageClass += ' broadcast';
+            }
+            
+            messageDiv.className = messageClass;
+            
+            const broadcastLabel = isBroadcast 
+                ? '<div class="broadcast-label"><i class="fas fa-bullhorn"></i> Broadcasted</div>'
+                : '';
+            
+            messageDiv.innerHTML = `
+                ${broadcastLabel}
+                <div class="message-content">${escapeHtml(content)}</div>
+                <div class="message-timestamp">${timestamp}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function sendChatMessage() {
+            if (!currentInternId) return;
+            
+            const messageInput = document.getElementById('chatMessageInput');
+            const sendBtn = document.getElementById('chatSendBtn');
+            const content = messageInput.value.trim();
+            
+            if (!content) return;
+            
+            // Disable send button
+            sendBtn.disabled = true;
+            
+            axios.post('{{ route("messages.send") }}', {
+                receiver_id: currentInternId,
+                content: content
+            }, {
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                messageInput.value = '';
+                const message = response.data;
+                appendMessage(message.content, 'admin', new Date().toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                }), false); // Regular messages are not broadcasts
+                lastMessageId = Math.max(lastMessageId, message.id || 0);
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.message || 'Failed to send message. Please try again.',
+                    confirmButtonColor: '#ef4444',
+                });
+            })
+            .finally(() => {
+                sendBtn.disabled = false;
+            });
+        }
+
+        function fetchNewMessages() {
+            if (!currentInternId || lastMessageId === 0) return;
+            
+            axios.get(`{{ url('/api/messages') }}/${currentInternId}/new?last_message_id=${lastMessageId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                const messages = response.data.messages || [];
+                messages.forEach(message => {
+                    appendMessage(message.content, 'intern', message.created_at || new Date().toLocaleString(), false);
+                    lastMessageId = Math.max(lastMessageId, message.id);
+                });
+            })
+            .catch(error => {
+                // Silently fail for polling
+                console.error('Error fetching new messages:', error);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Handle Enter key in message input
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageInput = document.getElementById('chatMessageInput');
+            if (messageInput) {
+                messageInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendChatMessage();
+                    }
+                });
+                
+                // Auto-resize textarea
+                messageInput.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                });
+            }
+        });
     </script>
 @endsection

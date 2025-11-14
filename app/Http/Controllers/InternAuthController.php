@@ -191,10 +191,21 @@ class InternAuthController extends Controller
 
     public function uploadDocx(Request $request)
     {
-        $request->validate([
-            'semester'   => 'required|in:1st,2nd,3rd,4th',
-            'grade_doc'  => 'required|file|mimes:doc,docx|max:10240',
-        ]);
+        try {
+            $request->validate([
+                'semester'   => 'required|in:1st,2nd,3rd,4th',
+                'grade_doc'  => 'required|file|mimes:doc,docx|max:10240',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        }
 
         $intern = Auth::guard('intern')->user();
 
@@ -223,6 +234,10 @@ class InternAuthController extends Controller
             DocumentRequest::where('intern_id', $intern->id)
                 ->where('type', $matchedType)
                 ->delete();
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'File successfully uploaded.']);
         }
 
         return redirect()->route('intern.dashboard')->with('success', 'File successfully uploaded.');

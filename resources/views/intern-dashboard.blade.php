@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Intern Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -416,6 +418,117 @@
                 font-size: 20px;
             }
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 20px;
+            top: 15px;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .modal label {
+            display: block;
+            margin: 12px 0 6px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .modal input[type="file"],
+        .modal select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .modal button[type="submit"] {
+            margin-top: 20px;
+            background-color: #3490dc;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            font-size: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .modal button[type="submit"]:hover {
+            background-color: #2779bd;
+        }
+
+        .request-list {
+            margin-top: 20px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .request-list ul {
+            padding-left: 20px;
+        }
+
+        .request-list strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .alert {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
@@ -498,7 +611,7 @@
                     Submit your daily journal entries to document your learning experiences and tasks completed.
                 </div>
                 <div class="card-actions">
-                    <a href="{{ route('intern.journal') }}" class="card-btn">Write Journal</a>
+                    <button class="card-btn" onclick="openJournalModal()">Write Journal</button>
                 </div>
             </div>
 
@@ -535,7 +648,7 @@
                     Upload and manage your required documents including grades and evaluations.
                 </div>
                 <div class="card-actions">
-                    <a href="{{ route('intern.send-data') }}" class="card-btn">Upload Documents</a>
+                    <button class="card-btn" onclick="openUploadDocumentsModal()">Upload Documents</button>
                 </div>
             </div>
 
@@ -555,10 +668,7 @@
                 </div>
                 <div class="card-content">
                     <div class="dtr-status" id="dtrStatus">
-                        <div class="status-item">
-                            <span class="label">Today's Status:</span>
-                            <span class="value" id="todayStatus">Loading...</span>
-                        </div>
+                        
                         <div class="status-item">
                             <span class="label">Time In:</span>
                             <span class="value" id="todayTimeIn">-</span>
@@ -567,22 +677,66 @@
                             <span class="label">Time Out:</span>
                             <span class="value" id="todayTimeOut">-</span>
                         </div>
-                        <div class="status-item">
-                            <span class="label">Monthly Hours:</span>
-                            <span class="value" id="monthlyHours">0</span>
-                        </div>
-                        <div class="status-item">
-                            <span class="label">Progress:</span>
-                            <span class="value" id="progressPercent">0%</span>
-                        </div>
+                        
+                        
                     </div>
                     <div class="dtr-actions" style="margin-top: 15px;">
-                        <a href="{{ route('intern.dtr') }}" class="card-btn" style="margin-right: 10px;">View Full DTR</a>
+                       
                         <button id="timeInBtn" class="card-btn" style="background: #10b981; margin-right: 10px;">Time In</button>
                         <button id="timeOutBtn" class="card-btn" style="background: #f59e0b;">Time Out</button>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Upload Documents Modal -->
+    <div id="uploadDocumentsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeUploadDocumentsModal()">&times;</span>
+            <h2>📎 Send Grades</h2>
+            <div id="uploadDocumentsAlert"></div>
+            <form id="uploadDocumentsForm" enctype="multipart/form-data">
+                @csrf
+                <label for="grade_doc">Upload .doc or .docx file:</label>
+                <input type="file" name="grade_doc" id="grade_doc" accept=".doc,.docx" required>
+
+                <label for="semester">Select Document Type:</label>
+                <select name="semester" id="semester" required>
+                    <option value="">-- Choose --</option>
+                    <option value="3rd">Certificate</option>
+                    <option value="4th">Evaluation Form</option>
+                </select>
+
+                <button type="submit">✅ Submit Data</button>
+            </form>
+
+            @if(!empty($pendingRequests))
+                <div class="request-list">
+                    <strong>📢 Pending Document Requests:</strong>
+                    <ul>
+                        @foreach($pendingRequests as $req)
+                            <li>{{ ucfirst($req) }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Journal Modal -->
+    <div id="journalModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeJournalModal()">&times;</span>
+            <h2>📎 Upload Journal Entry (.docx)</h2>
+            <div id="journalAlert"></div>
+            <form id="journalForm" enctype="multipart/form-data">
+                @csrf
+                <label for="journal_file">Attach .docx File:</label>
+                <input type="file" name="journal_file" id="journal_file" accept=".docx" required>
+
+                <button type="submit">Upload Entry</button>
+            </form>
         </div>
     </div>
 
@@ -652,7 +806,14 @@
                     document.getElementById('todayStatus').textContent = data.today_status.replace('_', ' ').toUpperCase();
                     document.getElementById('todayTimeIn').textContent = data.today_time_in || '-';
                     document.getElementById('todayTimeOut').textContent = data.today_time_out || '-';
-                    document.getElementById('monthlyHours').textContent = data.monthly_hours + ' hrs';
+
+                    const monthlyHours = parseFloat(data.monthly_hours ?? 0);
+                    const totalHours = parseFloat(data.total_hours ?? 0);
+                    const remainingHours = parseFloat(data.remaining_hours ?? 0);
+
+                    document.getElementById('monthlyHours').textContent = monthlyHours.toFixed(2) + ' hrs';
+                    document.getElementById('totalHoursLogged').textContent = totalHours.toFixed(2) + ' hrs';
+                    document.getElementById('remainingHours').textContent = remainingHours.toFixed(2) + ' hrs';
                     document.getElementById('progressPercent').textContent = data.progress_percent + '%';
                     
                     // Update button states
@@ -682,48 +843,107 @@
         }
 
         // Time In/Out Handlers
-        document.getElementById('timeInBtn').addEventListener('click', function() {
-            fetch('{{ route("intern.timein") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Time In recorded successfully!');
-                    updateDTRStatus();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error recording Time In. Please try again.');
-            });
-        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const timeInBtn = document.getElementById('timeInBtn');
+            const timeOutBtn = document.getElementById('timeOutBtn');
+            
+            if (timeInBtn) {
+                timeInBtn.addEventListener('click', function() {
+                    if (timeInBtn.disabled) return;
+                    
+                    timeInBtn.disabled = true;
+                    timeInBtn.textContent = 'Processing...';
+                    
+                    fetch('{{ route("intern.timein") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: data.message || 'Time In recorded successfully!',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            updateDTRStatus();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message || 'Failed to record Time In'
+                            });
+                            timeInBtn.disabled = false;
+                            timeInBtn.textContent = 'Time In';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to record Time In. Please try again.'
+                        });
+                        timeInBtn.disabled = false;
+                        timeInBtn.textContent = 'Time In';
+                    });
+                });
+            }
 
-        document.getElementById('timeOutBtn').addEventListener('click', function() {
-            fetch('{{ route("intern.timeout") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Time Out recorded successfully!');
-                    updateDTRStatus();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error recording Time Out. Please try again.');
-            });
+            if (timeOutBtn) {
+                timeOutBtn.addEventListener('click', function() {
+                    if (timeOutBtn.disabled) return;
+                    
+                    timeOutBtn.disabled = true;
+                    timeOutBtn.textContent = 'Processing...';
+                    
+                    fetch('{{ route("intern.timeout") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: data.message || 'Time Out recorded successfully!',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            updateDTRStatus();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message || 'Failed to record Time Out'
+                            });
+                            timeOutBtn.disabled = false;
+                            timeOutBtn.textContent = 'Time Out';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to record Time Out. Please try again.'
+                        });
+                        timeOutBtn.disabled = false;
+                        timeOutBtn.textContent = 'Time Out';
+                    });
+                });
+            }
         });
 
         // Initialize DTR functionality
@@ -735,6 +955,109 @@
         
         // Update DTR status every 30 seconds
         setInterval(updateDTRStatus, 30000);
+
+        // Modal Functions
+        function openUploadDocumentsModal() {
+            document.getElementById('uploadDocumentsModal').style.display = 'block';
+        }
+
+        function closeUploadDocumentsModal() {
+            document.getElementById('uploadDocumentsModal').style.display = 'none';
+            document.getElementById('uploadDocumentsAlert').innerHTML = '';
+            document.getElementById('uploadDocumentsForm').reset();
+        }
+
+        function openJournalModal() {
+            document.getElementById('journalModal').style.display = 'block';
+        }
+
+        function closeJournalModal() {
+            document.getElementById('journalModal').style.display = 'none';
+            document.getElementById('journalAlert').innerHTML = '';
+            document.getElementById('journalForm').reset();
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const uploadModal = document.getElementById('uploadDocumentsModal');
+            const journalModal = document.getElementById('journalModal');
+            if (event.target == uploadModal) {
+                closeUploadDocumentsModal();
+            }
+            if (event.target == journalModal) {
+                closeJournalModal();
+            }
+        }
+
+        // Upload Documents Form Handler
+        document.getElementById('uploadDocumentsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const alertDiv = document.getElementById('uploadDocumentsAlert');
+            
+            fetch('{{ route("intern.uploadDocx") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alertDiv.innerHTML = '<div class="alert alert-success">File successfully uploaded.</div>';
+                    this.reset();
+                    setTimeout(() => {
+                        closeUploadDocumentsModal();
+                        location.reload();
+                    }, 1500);
+                } else {
+                    alertDiv.innerHTML = '<div class="alert alert-error">' + (data.message || 'Error uploading file.') + '</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alertDiv.innerHTML = '<div class="alert alert-error">Error uploading file. Please try again.</div>';
+            });
+        });
+
+        // Journal Form Handler
+        document.getElementById('journalForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const alertDiv = document.getElementById('journalAlert');
+            
+            fetch('{{ route("intern.journal.submit") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alertDiv.innerHTML = '<div class="alert alert-success">Journal uploaded successfully!</div>';
+                    this.reset();
+                    setTimeout(() => {
+                        closeJournalModal();
+                        location.reload();
+                    }, 1500);
+                } else {
+                    alertDiv.innerHTML = '<div class="alert alert-error">' + (data.error || data.message || 'Error uploading journal.') + '</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alertDiv.innerHTML = '<div class="alert alert-error">Error uploading journal. Please try again.</div>';
+            });
+        });
     </script>
 </body>
 </html>

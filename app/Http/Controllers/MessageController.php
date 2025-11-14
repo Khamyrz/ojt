@@ -62,6 +62,48 @@ class MessageController extends Controller
                 : Intern::find($message->sender_id)?->first_name . ' ' . Intern::find($message->sender_id)?->last_name;
         }
 
+        // Identify broadcast messages (same content sent to multiple interns at the same time)
+        $adminId = Auth::id();
+        $broadcastMessages = [];
+        foreach ($messages as $message) {
+            if ($message->sender_type === 'admin' && $message->sender_id == $adminId) {
+                // Check if this message content was sent to multiple interns at the same time
+                $duplicateCount = Message::where('sender_id', $adminId)
+                    ->where('sender_type', 'admin')
+                    ->where('receiver_type', 'intern')
+                    ->where('content', $message->content)
+                    ->whereRaw('ABS(TIMESTAMPDIFF(SECOND, created_at, ?)) <= 5', [$message->created_at])
+                    ->count();
+                
+                if ($duplicateCount > 1) {
+                    $broadcastMessages[$message->id] = true;
+                }
+            }
+        }
+
+        // Return JSON if requested via AJAX
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json([
+                'intern' => [
+                    'id' => $intern->id,
+                    'first_name' => $intern->first_name,
+                    'last_name' => $intern->last_name,
+                    'email' => $intern->email
+                ],
+                'messages' => $messages->map(function($message) use ($broadcastMessages) {
+                    return [
+                        'id' => $message->id,
+                        'content' => $message->content,
+                        'sender_type' => $message->sender_type,
+                        'sender_name' => $message->sender_name,
+                        'created_at' => $message->created_at->format('M j, Y g:i A'),
+                        'created_at_raw' => $message->created_at->toIso8601String(),
+                        'is_broadcast' => isset($broadcastMessages[$message->id])
+                    ];
+                })
+            ]);
+        }
+
         return view('conversation', compact('messages', 'intern'));
     }
 
@@ -266,7 +308,19 @@ class MessageController extends Controller
             $message->sender_name = $intern->first_name . ' ' . $intern->last_name;
         }
 
-        return response()->json(['messages' => $messages]);
+        // Format messages for response (intern messages are never broadcasts)
+        $formattedMessages = $messages->map(function($message) {
+            return [
+                'id' => $message->id,
+                'content' => $message->content,
+                'sender_type' => $message->sender_type,
+                'sender_name' => $message->sender_name,
+                'created_at' => $message->created_at->format('M j, Y g:i A'),
+                'is_broadcast' => false
+            ];
+        });
+
+        return response()->json(['messages' => $formattedMessages]);
     }
 
     // API endpoint for intern to get new messages

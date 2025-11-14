@@ -506,6 +506,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
     // Animate progress bars on load
     window.addEventListener('load', function() {
@@ -523,5 +524,119 @@
     setInterval(function() {
         location.reload();
     }, 60000);
+
+    // Notification System
+    let lastNotificationState = {};
+    let notificationCheckInterval = null;
+
+    function checkNotifications() {
+        fetch('{{ route("api.notifications") }}', {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Only show notifications if count increased (new items)
+            const wasInitialized = Object.keys(lastNotificationState).length > 0;
+
+            // Check for new pending acceptance
+            if (wasInitialized && data.pending_acceptance > (lastNotificationState.pending_acceptance || 0)) {
+                const newCount = data.pending_acceptance - (lastNotificationState.pending_acceptance || 0);
+                showNotification('New Registration', `${newCount} new intern(s) waiting for acceptance`, 'warning', '{{ route("interns") }}');
+            }
+
+            // Check for new pre-deployment submissions
+            if (wasInitialized && data.pending_pre_deployment > (lastNotificationState.pending_pre_deployment || 0)) {
+                const newCount = data.pending_pre_deployment - (lastNotificationState.pending_pre_deployment || 0);
+                showNotification('Pre-Deployment Update', `${newCount} intern(s) submitted Pre-Deployment files`, 'info', '{{ route("interns") }}?phase=pre_deployment');
+            }
+
+            // Check for new mid-deployment submissions
+            if (wasInitialized && data.pending_mid_deployment > (lastNotificationState.pending_mid_deployment || 0)) {
+                const newCount = data.pending_mid_deployment - (lastNotificationState.pending_mid_deployment || 0);
+                showNotification('Mid-Deployment Update', `${newCount} intern(s) submitted Mid-Deployment files`, 'info', '{{ route("interns") }}?phase=mid_deployment');
+            }
+
+            // Check for new deployment submissions
+            if (wasInitialized && data.pending_deployment > (lastNotificationState.pending_deployment || 0)) {
+                const newCount = data.pending_deployment - (lastNotificationState.pending_deployment || 0);
+                showNotification('Deployment Update', `${newCount} intern(s) submitted Deployment files`, 'info', '{{ route("interns") }}?phase=deployment');
+            }
+
+            // Check for new messages
+            if (wasInitialized && data.unread_messages > (lastNotificationState.unread_messages || 0)) {
+                const newCount = data.unread_messages - (lastNotificationState.unread_messages || 0);
+                showNotification('New Messages', `You have ${newCount} new unread message(s)`, 'info', '{{ route("messages") }}');
+            }
+
+            // Check for new grade submissions
+            if (wasInitialized && data.pending_grades > (lastNotificationState.pending_grades || 0)) {
+                const newCount = data.pending_grades - (lastNotificationState.pending_grades || 0);
+                showNotification('New Grade Submissions', `${newCount} intern(s) submitted grade files`, 'success', '{{ route("grades") }}');
+            }
+
+            // Check for new journal entries
+            if (wasInitialized && data.new_journals > (lastNotificationState.new_journals || 0)) {
+                const newCount = data.new_journals - (lastNotificationState.new_journals || 0);
+                showNotification('New Journal Entries', `${newCount} new journal entry/entries submitted`, 'info', '{{ route("documents") }}');
+            }
+
+            // Check for new documents
+            if (wasInitialized && data.new_documents > (lastNotificationState.new_documents || 0)) {
+                const newCount = data.new_documents - (lastNotificationState.new_documents || 0);
+                showNotification('New Documents', `${newCount} new document(s) submitted`, 'info', '{{ route("documents") }}');
+            }
+
+            // Update last state
+            lastNotificationState = {...data};
+        })
+        .catch(error => {
+            console.error('Error checking notifications:', error);
+        });
+    }
+
+    function showNotification(title, message, type, url) {
+        const icons = {
+            'warning': '⚠️',
+            'info': 'ℹ️',
+            'success': '✅',
+            'error': '❌'
+        };
+
+        Swal.fire({
+            title: `${icons[type] || '🔔'} ${title}`,
+            text: message,
+            icon: type,
+            showCancelButton: true,
+            confirmButtonText: 'View',
+            cancelButtonText: 'Later',
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#64748b',
+            timer: 10000,
+            timerProgressBar: true,
+            allowOutsideClick: false,
+            allowEscapeKey: true
+        }).then((result) => {
+            if (result.isConfirmed && url) {
+                window.location.href = url;
+            }
+        });
+    }
+
+    // Check notifications on page load (after 2 seconds)
+    setTimeout(() => {
+        checkNotifications();
+        // Then check every 30 seconds
+        notificationCheckInterval = setInterval(checkNotifications, 30000);
+    }, 2000);
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', function() {
+        if (notificationCheckInterval) {
+            clearInterval(notificationCheckInterval);
+        }
+    });
     </script>
 @endsection
