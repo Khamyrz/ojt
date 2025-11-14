@@ -21,18 +21,12 @@ class TimeLogController extends Controller
 
         // Allow Monday to Saturday only
         if ($now->isSunday()) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'Attendance is closed on Sundays.'
-            ], 400);
+            return back()->with('error', '⚠️ Attendance is closed on Sundays.');
         }
 
         // Allow time-in only between 8:00 AM and 4:59 PM (before 5:00 PM auto-timeout)
         if ($now->hour < 8 || $now->hour >= 17) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'Time In is available from 8:00 AM to 4:59 PM (Mon-Sat). Time Out is automatically recorded at 5:00 PM.'
-            ], 400);
+            return back()->with('error', '⚠️ Time In is available from 8:00 AM to 4:59 PM (Mon-Sat). Time Out is automatically recorded at 5:00 PM.');
         }
 
         $existing = TimeLog::where('intern_id', $intern->id)
@@ -40,10 +34,7 @@ class TimeLogController extends Controller
             ->first();
 
         if ($existing) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You already timed in today.'
-            ], 400);
+            return back()->with('error', '⚠️ You already timed in today.');
         }
 
         try {
@@ -53,16 +44,9 @@ class TimeLogController extends Controller
                 'time_in' => $now->toTimeString(),
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Time In recorded successfully!',
-                'time_in' => $now->format('h:i A')
-            ]);
+            return back()->with('success', '✅ Time In recorded successfully at ' . $now->format('h:i A') . '!');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to record Time In: ' . $e->getMessage()
-            ], 500);
+            return back()->with('error', '❌ Failed to record Time In: ' . $e->getMessage());
         }
     }
 
