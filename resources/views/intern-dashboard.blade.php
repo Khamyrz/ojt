@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Intern Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -227,87 +225,6 @@
             min-width: 120px;
         }
 
-        /* Time Action Buttons */
-        .time-action-btn {
-            flex: 1;
-            min-width: 140px;
-            padding: 14px 24px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .time-action-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .time-action-btn:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        .time-action-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .time-in-btn {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        .time-in-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        }
-
-        .time-out-btn {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-        }
-
-        .time-out-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-        }
-
-        .btn-icon {
-            font-size: 18px;
-            display: inline-block;
-        }
-
-        .btn-text {
-            display: inline-block;
-        }
-
-        .time-action-btn.processing {
-            pointer-events: none;
-        }
-
-        .time-action-btn.processing::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -499,117 +416,6 @@
                 font-size: 20px;
             }
         }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-content {
-            background-color: #fff;
-            margin: 5% auto;
-            padding: 30px;
-            border-radius: 10px;
-            max-width: 600px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            position: relative;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            position: absolute;
-            right: 20px;
-            top: 15px;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: #000;
-        }
-
-        .modal h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
-
-        .modal label {
-            display: block;
-            margin: 12px 0 6px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .modal input[type="file"],
-        .modal select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .modal button[type="submit"] {
-            margin-top: 20px;
-            background-color: #3490dc;
-            color: white;
-            border: none;
-            padding: 12px 18px;
-            font-size: 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        .modal button[type="submit"]:hover {
-            background-color: #2779bd;
-        }
-
-        .request-list {
-            margin-top: 20px;
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        .request-list ul {
-            padding-left: 20px;
-        }
-
-        .request-list strong {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .alert {
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 15px;
-        }
-
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
     </style>
 </head>
 <body>
@@ -672,7 +478,7 @@
         <!-- Attendance Notice (self-service) -->
         <div class="attendance-notification" id="selfAttendanceNotice" style="display:none;">
             <h3>⏰ Working Hours</h3>
-            <p>Time In is available Monday to Saturday, 8:00 AM to 4:59 PM. Time Out is automatically recorded at 5:00 PM.</p>
+            <p>Time In/Out is available Monday to Saturday, 8:00 AM to 5:00 PM. Time Out is auto-recorded at 5:00 PM.</p>
             <span class="attendance-status status-released">Self Service</span>
         </div>
 
@@ -692,7 +498,7 @@
                     Submit your daily journal entries to document your learning experiences and tasks completed.
                 </div>
                 <div class="card-actions">
-                    <button class="card-btn" onclick="openJournalModal()">Write Journal</button>
+                    <a href="{{ route('intern.journal') }}" class="card-btn">Write Journal</a>
                 </div>
             </div>
 
@@ -729,7 +535,7 @@
                     Upload and manage your required documents including grades and evaluations.
                 </div>
                 <div class="card-actions">
-                    <button class="card-btn" onclick="openUploadDocumentsModal()">Upload Documents</button>
+                    <a href="{{ route('intern.send-data') }}" class="card-btn">Upload Documents</a>
                 </div>
             </div>
 
@@ -761,71 +567,15 @@
                         
                         
                     </div>
-                    <div class="dtr-actions" style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" id="timeInBtn" class="time-action-btn time-in-btn" onclick="if(typeof window.handleTimeIn === 'function') { window.handleTimeIn(); } else { console.error('handleTimeIn function not found'); }">
-                            <span class="btn-icon">⏰</span>
-                            <span class="btn-text">Time In</span>
-                        </button>
-                        <button type="button" id="timeOutBtn" class="time-action-btn time-out-btn" onclick="if(typeof window.handleTimeOut === 'function') { window.handleTimeOut(); } else { console.error('handleTimeOut function not found'); }">
-                            <span class="btn-icon">🕐</span>
-                            <span class="btn-text">Time Out</span>
-                        </button>
+                    <div class="dtr-actions" style="margin-top: 15px;">
+                       
+                        <button id="timeInBtn" class="card-btn" style="background: #10b981; margin-right: 10px;">Time In</button>
+                        <button id="timeOutBtn" class="card-btn" style="background: #f59e0b;">Time Out</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Upload Documents Modal -->
-    <div id="uploadDocumentsModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeUploadDocumentsModal()">&times;</span>
-            <h2>📎 Send Grades</h2>
-            <div id="uploadDocumentsAlert"></div>
-            <form id="uploadDocumentsForm" enctype="multipart/form-data">
-                @csrf
-                <label for="grade_doc">Upload .doc or .docx file:</label>
-                <input type="file" name="grade_doc" id="grade_doc" accept=".doc,.docx" required>
-
-                <label for="semester">Select Document Type:</label>
-                <select name="semester" id="semester" required>
-                    <option value="">-- Choose --</option>
-                    <option value="3rd">Certificate</option>
-                    <option value="4th">Evaluation Form</option>
-                </select>
-
-                <button type="submit">✅ Submit Data</button>
-            </form>
-
-            @if(!empty($pendingRequests))
-                <div class="request-list">
-                    <strong>📢 Pending Document Requests:</strong>
-                    <ul>
-                        @foreach($pendingRequests as $req)
-                            <li>{{ ucfirst($req) }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <!-- Journal Modal -->
-    <div id="journalModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeJournalModal()">&times;</span>
-            <h2>📎 Upload Journal Entry (.docx)</h2>
-            <div id="journalAlert"></div>
-            <form id="journalForm" enctype="multipart/form-data">
-                @csrf
-                <label for="journal_file">Attach .docx File:</label>
-                <input type="file" name="journal_file" id="journal_file" accept=".docx" required>
-
-                <button type="submit">Upload Entry</button>
-            </form>
-        </div>
-    </div>
-
     <script>
         // Auto-refresh attendance status every 30 seconds
         setInterval(function() {
@@ -885,39 +635,27 @@
             document.getElementById('currentTime').textContent = timeString;
         }
 
+        
         function updateDTRStatus() {
             fetch('{{ route("intern.dtr.summary") }}')
                 .then(response => response.json())
                 .then(data => {
-                    // Format time display
-                    const formatTime = (timeString) => {
-                        if (!timeString || timeString === '-') return '-';
-                        try {
-                            const [hours, minutes, seconds] = timeString.split(':');
-                            const hour = parseInt(hours);
-                            const ampm = hour >= 12 ? 'PM' : 'AM';
-                            const displayHour = hour % 12 || 12;
-                            return `${displayHour}:${minutes} ${ampm}`;
-                        } catch (e) {
-                            return timeString;
-                        }
-                    };
+                    document.getElementById('todayStatus').textContent = data.today_status.replace('_', ' ').toUpperCase();
+                    document.getElementById('todayTimeIn').textContent = data.today_time_in || '-';
+                    document.getElementById('todayTimeOut').textContent = data.today_time_out || '-';
 
-                    document.getElementById('todayTimeIn').textContent = formatTime(data.today_time_in);
-                    document.getElementById('todayTimeOut').textContent = formatTime(data.today_time_out);
+                    const monthlyHours = parseFloat(data.monthly_hours ?? 0);
+                    const totalHours = parseFloat(data.total_hours ?? 0);
+                    const remainingHours = parseFloat(data.remaining_hours ?? 0);
+
+                    document.getElementById('monthlyHours').textContent = monthlyHours.toFixed(2) + ' hrs';
+                    document.getElementById('totalHoursLogged').textContent = totalHours.toFixed(2) + ' hrs';
+                    document.getElementById('remainingHours').textContent = remainingHours.toFixed(2) + ' hrs';
+                    document.getElementById('progressPercent').textContent = data.progress_percent + '%';
                     
                     // Update button states
                     const timeInBtn = document.getElementById('timeInBtn');
                     const timeOutBtn = document.getElementById('timeOutBtn');
-                    
-                    const now = new Date();
-                    const currentHour = now.getHours();
-                    const currentMinute = now.getMinutes();
-                    // Time In is only available from 8:00 AM to 4:59 PM (hour 8 to 16, minute 0-59)
-                    // After 4:59 PM (hour 16, minute 59), time-in is disabled (auto-timeout at 5:00 PM)
-                    const canTimeIn = currentHour >= 8 && currentHour < 17;
-                    // Time Out can be done manually until 4:59 PM, then auto-timeout at 5:00 PM
-                    const canTimeOut = currentHour < 17;
                     
                     const withinHours = !!data.is_working_hours && !!data.is_workday;
                     document.getElementById('selfAttendanceNotice').style.display = 'block';
@@ -926,40 +664,14 @@
                         timeInBtn.disabled = true;
                         timeOutBtn.disabled = true;
                     } else if (data.today_status === 'not_started') {
-                        // Can only time in from 8:00 AM to 4:59 PM
-                        if (timeInBtn) {
-                            timeInBtn.disabled = !canTimeIn;
-                            const timeInText = timeInBtn.querySelector('.btn-text');
-                            if (timeInText) timeInText.textContent = 'Time In';
-                        }
-                        if (timeOutBtn) {
-                            timeOutBtn.disabled = true;
-                            const timeOutText = timeOutBtn.querySelector('.btn-text');
-                            if (timeOutText) timeOutText.textContent = 'Time Out';
-                        }
+                        timeInBtn.disabled = false;
+                        timeOutBtn.disabled = true;
                     } else if (data.today_status === 'working') {
-                        if (timeInBtn) {
-                            timeInBtn.disabled = true;
-                            const timeInText = timeInBtn.querySelector('.btn-text');
-                            if (timeInText) timeInText.textContent = 'Time In';
-                        }
-                        // Can time out until 5:00 PM (auto-timeout happens at 5:00 PM)
-                        if (timeOutBtn) {
-                            timeOutBtn.disabled = !canTimeOut;
-                            const timeOutText = timeOutBtn.querySelector('.btn-text');
-                            if (timeOutText) timeOutText.textContent = 'Time Out';
-                        }
+                        timeInBtn.disabled = true;
+                        timeOutBtn.disabled = false;
                     } else {
-                        if (timeInBtn) {
-                            timeInBtn.disabled = true;
-                            const timeInText = timeInBtn.querySelector('.btn-text');
-                            if (timeInText) timeInText.textContent = 'Time In';
-                        }
-                        if (timeOutBtn) {
-                            timeOutBtn.disabled = true;
-                            const timeOutText = timeOutBtn.querySelector('.btn-text');
-                            if (timeOutText) timeOutText.textContent = 'Time Out';
-                        }
+                        timeInBtn.disabled = true;
+                        timeOutBtn.disabled = true;
                     }
                 })
                 .catch(error => {
@@ -967,287 +679,49 @@
                 });
         }
 
-        // Time In/Out Button Handlers - Fully Functional Implementation
-        window.handleTimeIn = function() {
-            const btn = document.getElementById('timeInBtn');
-            if (!btn) {
-                console.error('Time In button not found!');
-                return;
-            }
-            
-            if (btn.disabled) {
-                console.log('Time In button is disabled');
-                return;
-            }
-            
-            console.log('Time In button clicked - Starting request...');
-            
-            // Set processing state
-            btn.disabled = true;
-            btn.classList.add('processing');
-            const btnText = btn.querySelector('.btn-text');
-            if (!btnText) {
-                console.error('Button text element not found!');
-                btn.disabled = false;
-                return;
-            }
-            const originalText = btnText.textContent;
-            btnText.textContent = 'Processing...';
-            
-            // Get CSRF token
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-            const timeInUrl = '{{ route("intern.timein") }}';
-            
-            console.log('Making request to:', timeInUrl);
-            console.log('CSRF Token:', csrfToken ? 'Found' : 'Missing');
-            
-            // Make request
-            fetch(timeInUrl, {
+        // Time In/Out Handlers
+        document.getElementById('timeInBtn').addEventListener('click', function() {
+            fetch('{{ route("intern.timein") }}', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({})
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                }
             })
-            .then(response => {
-                console.log('Response received:', response.status, response.statusText);
-                return response.text().then(text => {
-                    console.log('Response text:', text);
-                    try {
-                        const data = JSON.parse(text);
-                        return { ok: response.ok, status: response.status, data: data };
-                    } catch (e) {
-                        console.error('JSON parse error:', e, 'Text:', text);
-                        return { ok: false, status: response.status, data: { success: false, message: 'Invalid server response: ' + text.substring(0, 100) } };
-                    }
-                });
-            })
-            .then(result => {
-                console.log('Processing result:', result);
-                btn.classList.remove('processing');
-                
-                if (result.ok && result.data && result.data.success) {
-                    // Success
-                    Swal.fire({
-                        icon: 'success',
-                        title: '✅ Time In Successful!',
-                        text: result.data.message || 'Time In recorded successfully!',
-                        timer: 3000,
-                        showConfirmButton: true,
-                        confirmButtonText: 'OK'
-                    }).then(() => {
-                        updateDTRStatus();
-                    });
-                    setTimeout(() => updateDTRStatus(), 500);
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Time In recorded successfully!');
+                    updateDTRStatus();
                 } else {
-                    // Error/Warning
-                    const message = result.data?.message || 'Failed to record Time In';
-                    const isWarning = result.status === 400 && (message.includes('already') || message.includes('available') || message.includes('8:00 AM'));
-                    
-                    Swal.fire({
-                        icon: isWarning ? 'warning' : 'error',
-                        title: isWarning ? '⚠️ Warning' : '❌ Time In Failed',
-                        text: message,
-                        showConfirmButton: true,
-                        confirmButtonText: 'OK'
-                    });
-                    
-                    if (!isWarning || !message.includes('already')) {
-                        btn.disabled = false;
-                        btnText.textContent = originalText;
-                    }
+                    alert('Error: ' + data.message);
                 }
             })
             .catch(error => {
-                console.error('Time In Error:', error);
-                btn.classList.remove('processing');
-                Swal.fire({
-                    icon: 'error',
-                    title: '❌ Connection Error',
-                    text: 'Failed to connect to server: ' + (error.message || 'Unknown error'),
-                    showConfirmButton: true,
-                    confirmButtonText: 'OK'
-                });
-                btn.disabled = false;
-                btnText.textContent = originalText;
+                console.error('Error:', error);
+                alert('Error recording Time In. Please try again.');
             });
-        };
-        
-        window.handleTimeOut = function() {
-            const btn = document.getElementById('timeOutBtn');
-            if (!btn) {
-                console.error('Time Out button not found!');
-                return;
-            }
-            
-            if (btn.disabled) {
-                console.log('Time Out button is disabled');
-                return;
-            }
-            
-            console.log('Time Out button clicked - Starting request...');
-            
-            // Set processing state
-            btn.disabled = true;
-            btn.classList.add('processing');
-            const btnText = btn.querySelector('.btn-text');
-            if (!btnText) {
-                console.error('Button text element not found!');
-                btn.disabled = false;
-                return;
-            }
-            const originalText = btnText.textContent;
-            btnText.textContent = 'Processing...';
-            
-            // Get CSRF token
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-            const timeOutUrl = '{{ route("intern.timeout") }}';
-            
-            console.log('Making request to:', timeOutUrl);
-            console.log('CSRF Token:', csrfToken ? 'Found' : 'Missing');
-            
-            // Make request
-            fetch(timeOutUrl, {
+        });
+
+        document.getElementById('timeOutBtn').addEventListener('click', function() {
+            fetch('{{ route("intern.timeout") }}', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({})
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                }
             })
-            .then(response => {
-                console.log('Response received:', response.status, response.statusText);
-                return response.text().then(text => {
-                    console.log('Response text:', text);
-                    try {
-                        const data = JSON.parse(text);
-                        return { ok: response.ok, status: response.status, data: data };
-                    } catch (e) {
-                        console.error('JSON parse error:', e, 'Text:', text);
-                        return { ok: false, status: response.status, data: { success: false, message: 'Invalid server response: ' + text.substring(0, 100) } };
-                    }
-                });
-            })
-            .then(result => {
-                console.log('Processing result:', result);
-                btn.classList.remove('processing');
-                
-                if (result.ok && result.data && result.data.success) {
-                    // Success
-                    Swal.fire({
-                        icon: 'success',
-                        title: '✅ Time Out Successful!',
-                        text: result.data.message || 'Time Out recorded successfully!',
-                        timer: 3000,
-                        showConfirmButton: true,
-                        confirmButtonText: 'OK'
-                    }).then(() => {
-                        updateDTRStatus();
-                    });
-                    setTimeout(() => updateDTRStatus(), 500);
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Time Out recorded successfully!');
+                    updateDTRStatus();
                 } else {
-                    // Error/Warning
-                    const message = result.data?.message || 'Failed to record Time Out';
-                    const isWarning = result.status === 400 && (message.includes('already') || message.includes('must time in'));
-                    
-                    Swal.fire({
-                        icon: isWarning ? 'warning' : 'error',
-                        title: isWarning ? '⚠️ Warning' : '❌ Time Out Failed',
-                        text: message,
-                        showConfirmButton: true,
-                        confirmButtonText: 'OK'
-                    });
-                    
-                    if (!isWarning || !message.includes('already')) {
-                        btn.disabled = false;
-                        btnText.textContent = originalText;
-                    }
+                    alert('Error: ' + data.message);
                 }
             })
             .catch(error => {
-                console.error('Time Out Error:', error);
-                btn.classList.remove('processing');
-                Swal.fire({
-                    icon: 'error',
-                    title: '❌ Connection Error',
-                    text: 'Failed to connect to server: ' + (error.message || 'Unknown error'),
-                    showConfirmButton: true,
-                    confirmButtonText: 'OK'
-                });
-                btn.disabled = false;
-                btnText.textContent = originalText;
+                console.error('Error:', error);
+                alert('Error recording Time Out. Please try again.');
             });
-        };
-        
-        // Initialize buttons with multiple methods
-        function attachTimeButtonHandlers() {
-            const timeInBtn = document.getElementById('timeInBtn');
-            const timeOutBtn = document.getElementById('timeOutBtn');
-            
-            console.log('Attaching handlers...', { timeInBtn: !!timeInBtn, timeOutBtn: !!timeOutBtn });
-            
-            if (timeInBtn) {
-                // Remove existing listeners by cloning
-                const newTimeInBtn = timeInBtn.cloneNode(true);
-                timeInBtn.parentNode.replaceChild(newTimeInBtn, timeInBtn);
-                
-                // Attach both onclick and addEventListener
-                newTimeInBtn.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.handleTimeIn();
-                };
-                newTimeInBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.handleTimeIn();
-                });
-                console.log('Time In button handler attached');
-            } else {
-                console.error('Time In button not found in DOM!');
-            }
-            
-            if (timeOutBtn) {
-                // Remove existing listeners by cloning
-                const newTimeOutBtn = timeOutBtn.cloneNode(true);
-                timeOutBtn.parentNode.replaceChild(newTimeOutBtn, timeOutBtn);
-                
-                // Attach both onclick and addEventListener
-                newTimeOutBtn.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.handleTimeOut();
-                };
-                newTimeOutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.handleTimeOut();
-                });
-                console.log('Time Out button handler attached');
-            } else {
-                console.error('Time Out button not found in DOM!');
-            }
-        }
-        
-        // Initialize immediately and on various events
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', attachTimeButtonHandlers);
-        } else {
-            attachTimeButtonHandlers();
-        }
-        
-        // Multiple fallback initializations
-        setTimeout(attachTimeButtonHandlers, 100);
-        setTimeout(attachTimeButtonHandlers, 500);
-        setTimeout(attachTimeButtonHandlers, 1000);
-        
-        window.addEventListener('load', function() {
-            setTimeout(attachTimeButtonHandlers, 100);
         });
 
         // Initialize DTR functionality
@@ -1259,109 +733,6 @@
         
         // Update DTR status every 30 seconds
         setInterval(updateDTRStatus, 30000);
-
-        // Modal Functions
-        function openUploadDocumentsModal() {
-            document.getElementById('uploadDocumentsModal').style.display = 'block';
-        }
-
-        function closeUploadDocumentsModal() {
-            document.getElementById('uploadDocumentsModal').style.display = 'none';
-            document.getElementById('uploadDocumentsAlert').innerHTML = '';
-            document.getElementById('uploadDocumentsForm').reset();
-        }
-
-        function openJournalModal() {
-            document.getElementById('journalModal').style.display = 'block';
-        }
-
-        function closeJournalModal() {
-            document.getElementById('journalModal').style.display = 'none';
-            document.getElementById('journalAlert').innerHTML = '';
-            document.getElementById('journalForm').reset();
-        }
-
-        // Close modals when clicking outside
-        window.onclick = function(event) {
-            const uploadModal = document.getElementById('uploadDocumentsModal');
-            const journalModal = document.getElementById('journalModal');
-            if (event.target == uploadModal) {
-                closeUploadDocumentsModal();
-            }
-            if (event.target == journalModal) {
-                closeJournalModal();
-            }
-        }
-
-        // Upload Documents Form Handler
-        document.getElementById('uploadDocumentsForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const alertDiv = document.getElementById('uploadDocumentsAlert');
-            
-            fetch('{{ route("intern.uploadDocx") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alertDiv.innerHTML = '<div class="alert alert-success">File successfully uploaded.</div>';
-                    this.reset();
-                    setTimeout(() => {
-                        closeUploadDocumentsModal();
-                        location.reload();
-                    }, 1500);
-                } else {
-                    alertDiv.innerHTML = '<div class="alert alert-error">' + (data.message || 'Error uploading file.') + '</div>';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alertDiv.innerHTML = '<div class="alert alert-error">Error uploading file. Please try again.</div>';
-            });
-        });
-
-        // Journal Form Handler
-        document.getElementById('journalForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const alertDiv = document.getElementById('journalAlert');
-            
-            fetch('{{ route("intern.journal.submit") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alertDiv.innerHTML = '<div class="alert alert-success">Journal uploaded successfully!</div>';
-                    this.reset();
-                    setTimeout(() => {
-                        closeJournalModal();
-                        location.reload();
-                    }, 1500);
-                } else {
-                    alertDiv.innerHTML = '<div class="alert alert-error">' + (data.error || data.message || 'Error uploading journal.') + '</div>';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alertDiv.innerHTML = '<div class="alert alert-error">Error uploading journal. Please try again.</div>';
-            });
-        });
     </script>
 </body>
 </html>
