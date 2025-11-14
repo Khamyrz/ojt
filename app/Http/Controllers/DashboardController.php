@@ -500,6 +500,89 @@ class DashboardController extends Controller
         return redirect()->back()->with('success', 'Document request sent successfully.');
     }
 
+    /**
+     * Broadcast grade request to all interns
+     */
+    public function broadcastGradeRequest(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|string|in:certificate,evaluation',
+        ]);
+
+        $admin = Auth::user();
+        
+        // Get all accepted interns for this admin
+        $interns = Intern::where('status', 'accepted')
+            ->where('current_phase', 'completed')
+            ->where('invited_by_user_id', $admin->id)
+            ->get();
+
+        if ($interns->isEmpty()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No interns available to send requests to.'
+                ], 400);
+            }
+            return back()->with('error', 'No interns available to send requests to.');
+        }
+
+        // Map type to document request type
+        $typeMap = [
+            'certificate' => 'certificate',
+            'evaluation' => 'evaluation',
+        ];
+
+        $documentType = $typeMap[$request->type] ?? null;
+
+        if (!$documentType) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid document type.'
+                ], 400);
+            }
+            return back()->with('error', 'Invalid document type.');
+        }
+
+        // Create document requests for all interns
+        $count = 0;
+        foreach ($interns as $intern) {
+            DocumentRequest::updateOrCreate(
+                ['intern_id' => $intern->id, 'type' => $documentType],
+                ['requested_at' => now()]
+            );
+            $count++;
+        }
+
+        // Send notification messages to all interns
+        $documentName = $request->type === 'certificate' ? 'Certificate' : 'Evaluation Form';
+        $messageContent = "📋 You have a new document request: {$documentName}. Please submit your {$documentName} through the Grades section.";
+
+        foreach ($interns as $intern) {
+            Message::create([
+                'sender_id' => $admin->id,
+                'receiver_id' => $intern->id,
+                'sender_type' => 'admin',
+                'receiver_type' => 'intern',
+                'content' => $messageContent,
+                'is_read' => false,
+            ]);
+        }
+
+        $message = "Request for {$documentName} has been sent to {$count} intern(s) and they have been notified.";
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'count' => $count
+            ]);
+        }
+
+        return redirect()->back()->with('success', $message);
+    }
+
     public function deleteAllInterns()
     {
         $adminId = Auth::id();
