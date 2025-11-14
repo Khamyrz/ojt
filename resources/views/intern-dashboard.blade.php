@@ -848,127 +848,200 @@
 
         // Time In/Out Handlers
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize time in/out buttons
+            initializeTimeButtons();
+        });
+
+        function initializeTimeButtons() {
             const timeInBtn = document.getElementById('timeInBtn');
             const timeOutBtn = document.getElementById('timeOutBtn');
             
+            // Time In Button Handler
             if (timeInBtn) {
-                timeInBtn.addEventListener('click', function() {
-                    if (timeInBtn.disabled) return;
+                timeInBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     
+                    if (timeInBtn.disabled) {
+                        return;
+                    }
+                    
+                    // Disable button and show processing state
                     timeInBtn.disabled = true;
+                    const originalText = timeInBtn.textContent;
                     timeInBtn.textContent = 'Processing...';
                     
+                    // Make the request
                     fetch('{{ route("intern.timein") }}', {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
-                        }
+                        },
+                        body: JSON.stringify({})
                     })
                     .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(data => {
-                                throw new Error(data.message || 'Failed to record Time In');
-                            });
-                        }
-                        return response.json();
+                        // Try to parse JSON response
+                        return response.text().then(text => {
+                            try {
+                                const data = JSON.parse(text);
+                                return {
+                                    ok: response.ok,
+                                    status: response.status,
+                                    data: data
+                                };
+                            } catch (e) {
+                                return {
+                                    ok: false,
+                                    status: response.status,
+                                    data: { success: false, message: 'Invalid response from server' }
+                                };
+                            }
+                        });
                     })
-                    .then(data => {
-                        if (data.success) {
+                    .then(result => {
+                        if (result.ok && result.data && result.data.success) {
+                            // Success - Show success message
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Success!',
-                                text: data.message || 'Time In recorded successfully!',
-                                timer: 2000,
-                                showConfirmButton: false
+                                title: 'Time In Successful!',
+                                text: result.data.message || 'Time In recorded successfully!',
+                                timer: 3000,
+                                showConfirmButton: true,
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                // Refresh status after user acknowledges
+                                updateDTRStatus();
                             });
-                            // Refresh status immediately
+                            
+                            // Also refresh status immediately
                             setTimeout(() => {
                                 updateDTRStatus();
                             }, 500);
                         } else {
+                            // Error - Show error message
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Error',
-                                text: data.message || 'Failed to record Time In'
+                                title: 'Time In Failed',
+                                text: (result.data && result.data.message) || 'Failed to record Time In. Please try again.',
+                                showConfirmButton: true
                             });
+                            
+                            // Re-enable button
                             timeInBtn.disabled = false;
-                            timeInBtn.textContent = 'Time In';
+                            timeInBtn.textContent = originalText;
                         }
                     })
                     .catch(error => {
-                        console.error('Error:', error);
+                        console.error('Time In Error:', error);
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'Failed to record Time In. Please try again.'
+                            text: error.message || 'Failed to record Time In. Please check your connection and try again.',
+                            showConfirmButton: true
                         });
+                        
+                        // Re-enable button
                         timeInBtn.disabled = false;
-                        timeInBtn.textContent = 'Time In';
+                        timeInBtn.textContent = originalText;
                     });
                 });
             }
 
+            // Time Out Button Handler
             if (timeOutBtn) {
-                timeOutBtn.addEventListener('click', function() {
-                    if (timeOutBtn.disabled) return;
+                timeOutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     
+                    if (timeOutBtn.disabled) {
+                        return;
+                    }
+                    
+                    // Disable button and show processing state
                     timeOutBtn.disabled = true;
+                    const originalText = timeOutBtn.textContent;
                     timeOutBtn.textContent = 'Processing...';
                     
+                    // Make the request
                     fetch('{{ route("intern.timeout") }}', {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
-                        }
+                        },
+                        body: JSON.stringify({})
                     })
                     .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(data => {
-                                throw new Error(data.message || 'Failed to record Time Out');
-                            });
-                        }
-                        return response.json();
+                        // Try to parse JSON response
+                        return response.text().then(text => {
+                            try {
+                                const data = JSON.parse(text);
+                                return {
+                                    ok: response.ok,
+                                    status: response.status,
+                                    data: data
+                                };
+                            } catch (e) {
+                                return {
+                                    ok: false,
+                                    status: response.status,
+                                    data: { success: false, message: 'Invalid response from server' }
+                                };
+                            }
+                        });
                     })
-                    .then(data => {
-                        if (data.success) {
+                    .then(result => {
+                        if (result.ok && result.data && result.data.success) {
+                            // Success - Show success message
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Success!',
-                                text: data.message || 'Time Out recorded successfully!',
-                                timer: 2000,
-                                showConfirmButton: false
+                                title: 'Time Out Successful!',
+                                text: result.data.message || 'Time Out recorded successfully!',
+                                timer: 3000,
+                                showConfirmButton: true,
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                // Refresh status after user acknowledges
+                                updateDTRStatus();
                             });
-                            // Refresh status immediately
+                            
+                            // Also refresh status immediately
                             setTimeout(() => {
                                 updateDTRStatus();
                             }, 500);
                         } else {
+                            // Error - Show error message
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Error',
-                                text: data.message || 'Failed to record Time Out'
+                                title: 'Time Out Failed',
+                                text: (result.data && result.data.message) || 'Failed to record Time Out. Please try again.',
+                                showConfirmButton: true
                             });
+                            
+                            // Re-enable button
                             timeOutBtn.disabled = false;
-                            timeOutBtn.textContent = 'Time Out';
+                            timeOutBtn.textContent = originalText;
                         }
                     })
                     .catch(error => {
-                        console.error('Error:', error);
+                        console.error('Time Out Error:', error);
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'Failed to record Time Out. Please try again.'
+                            text: error.message || 'Failed to record Time Out. Please check your connection and try again.',
+                            showConfirmButton: true
                         });
+                        
+                        // Re-enable button
                         timeOutBtn.disabled = false;
-                        timeOutBtn.textContent = 'Time Out';
+                        timeOutBtn.textContent = originalText;
                     });
                 });
             }
-        });
+        }
 
         // Initialize DTR functionality
         updateCurrentTime();
