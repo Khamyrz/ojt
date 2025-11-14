@@ -13,7 +13,7 @@ class TimeLogController extends Controller
     /**
      * Handle intern time in (only once per day).
      */
-    public function timeIn()
+    public function timeIn(Request $request)
     {
         $intern = Auth::guard('intern')->user();
         $now = now('Asia/Manila');
@@ -21,17 +21,18 @@ class TimeLogController extends Controller
 
         // Allow Monday to Saturday only
         if ($now->isSunday()) {
-            return request()->expectsJson()
-                ? response()->json(['success' => false, 'message' => 'Attendance is closed on Sundays.'], 400)
-                : back()->with('error', 'Attendance is closed on Sundays.');
+            return response()->json([
+                'success' => false, 
+                'message' => 'Attendance is closed on Sundays.'
+            ], 400);
         }
 
         // Allow time-in only between 8:00 AM and 4:59 PM (before 5:00 PM auto-timeout)
-        // Time In window: 8:00 AM (hour 8) to 4:59 PM (hour 16, any minute/second)
         if ($now->hour < 8 || $now->hour >= 17) {
-            return request()->expectsJson()
-                ? response()->json(['success' => false, 'message' => 'Time In is available from 8:00 AM to 4:59 PM (Mon-Sat). Time Out is automatically recorded at 5:00 PM.'], 400)
-                : back()->with('error', 'Time In is available from 8:00 AM to 4:59 PM (Mon-Sat). Time Out is automatically recorded at 5:00 PM.');
+            return response()->json([
+                'success' => false, 
+                'message' => 'Time In is available from 8:00 AM to 4:59 PM (Mon-Sat). Time Out is automatically recorded at 5:00 PM.'
+            ], 400);
         }
 
         $existing = TimeLog::where('intern_id', $intern->id)
@@ -39,35 +40,36 @@ class TimeLogController extends Controller
             ->first();
 
         if ($existing) {
-            if (request()->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You already timed in today.'
-                ]);
-            }
-            return back()->with('error', 'You already timed in today.');
+            return response()->json([
+                'success' => false,
+                'message' => 'You already timed in today.'
+            ], 400);
         }
 
-        TimeLog::create([
-            'intern_id' => $intern->id,
-            'date' => $today,
-            'time_in' => $now->toTimeString(),
-        ]);
+        try {
+            TimeLog::create([
+                'intern_id' => $intern->id,
+                'date' => $today,
+                'time_in' => $now->toTimeString(),
+            ]);
 
-        if (request()->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Time In recorded successfully!'
+                'message' => 'Time In recorded successfully!',
+                'time_in' => $now->format('h:i A')
             ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record Time In: ' . $e->getMessage()
+            ], 500);
         }
-
-        return back()->with('success', '✅ Time In recorded!');
     }
 
     /**
      * Handle intern time out (manual or automatic at 5:00 PM).
      */
-    public function timeOut()
+    public function timeOut(Request $request)
     {
         $intern = Auth::guard('intern')->user();
         $now = now('Asia/Manila');
@@ -78,23 +80,17 @@ class TimeLogController extends Controller
             ->first();
 
         if (!$log) {
-            if (request()->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You must time in first before timing out.'
-                ]);
-            }
-            return back()->with('error', '⚠️ You must time in first before timing out.');
+            return response()->json([
+                'success' => false,
+                'message' => 'You must time in first before timing out.'
+            ], 400);
         }
 
         if ($log->time_out) {
-            if (request()->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You already timed out today.'
-                ]);
-            }
-            return back()->with('error', '⏳ You already timed out today.');
+            return response()->json([
+                'success' => false,
+                'message' => 'You already timed out today.'
+            ], 400);
         }
 
         // If time out is after 5:00 PM, record exactly 5:00 PM
@@ -102,18 +98,22 @@ class TimeLogController extends Controller
             ? '17:00:00'
             : $now->toTimeString();
 
-        $log->update([
-            'time_out' => $timeOut,
-        ]);
+        try {
+            $log->update([
+                'time_out' => $timeOut,
+            ]);
 
-        if (request()->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Time Out recorded successfully!'
+                'message' => 'Time Out recorded successfully!',
+                'time_out' => Carbon::parse($today . ' ' . $timeOut)->format('h:i A')
             ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record Time Out: ' . $e->getMessage()
+            ], 500);
         }
-
-        return back()->with('success', '🕔 Time Out recorded!');
     }
 
     /**
@@ -236,10 +236,23 @@ class TimeLogController extends Controller
         $targetHours = 486;
         $remainingHours = max(0, round($targetHours - $totalHours, 2));
 
+        // Format time displays
+        $timeInFormatted = null;
+        $timeOutFormatted = null;
+        
+        if ($todayLog) {
+            if ($todayLog->time_in) {
+                $timeInFormatted = Carbon::parse($today . ' ' . $todayLog->time_in, 'Asia/Manila')->format('h:i A');
+            }
+            if ($todayLog->time_out) {
+                $timeOutFormatted = Carbon::parse($today . ' ' . $todayLog->time_out, 'Asia/Manila')->format('h:i A');
+            }
+        }
+
         return response()->json([
             'today_status' => $todayLog ? ($todayLog->time_out ? 'completed' : 'working') : 'not_started',
-            'today_time_in' => $todayLog?->time_in,
-            'today_time_out' => $todayLog?->time_out,
+            'today_time_in' => $timeInFormatted,
+            'today_time_out' => $timeOutFormatted,
             'monthly_hours' => $monthlyHours,
             'monthly_days' => $monthlyDays,
             'target_hours' => $targetHours,
