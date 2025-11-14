@@ -635,14 +635,22 @@
             document.getElementById('currentTime').textContent = timeString;
         }
 
-        
-       function updateDTRStatus() {
+        function updateDTRStatus() {
             fetch('{{ route("intern.dtr.summary") }}')
                 .then(response => response.json())
                 .then(data => {
-                    // Update time displays
+                    document.getElementById('todayStatus').textContent = data.today_status.replace('_', ' ').toUpperCase();
                     document.getElementById('todayTimeIn').textContent = data.today_time_in || '-';
                     document.getElementById('todayTimeOut').textContent = data.today_time_out || '-';
+
+                    const monthlyHours = parseFloat(data.monthly_hours ?? 0);
+                    const totalHours = parseFloat(data.total_hours ?? 0);
+                    const remainingHours = parseFloat(data.remaining_hours ?? 0);
+
+                    document.getElementById('monthlyHours').textContent = monthlyHours.toFixed(2) + ' hrs';
+                    document.getElementById('totalHoursLogged').textContent = totalHours.toFixed(2) + ' hrs';
+                    document.getElementById('remainingHours').textContent = remainingHours.toFixed(2) + ' hrs';
+                    document.getElementById('progressPercent').textContent = data.progress_percent + '%';
                     
                     // Update button states
                     const timeInBtn = document.getElementById('timeInBtn');
@@ -651,42 +659,25 @@
                     const withinHours = !!data.is_working_hours && !!data.is_workday;
                     document.getElementById('selfAttendanceNotice').style.display = 'block';
 
-                    // Reset button styles first
-                    timeInBtn.style.opacity = '1';
-                    timeInBtn.style.cursor = 'pointer';
-                    timeOutBtn.style.opacity = '1';
-                    timeOutBtn.style.cursor = 'pointer';
-
                     if (!withinHours) {
                         timeInBtn.disabled = true;
                         timeOutBtn.disabled = true;
-                        timeInBtn.style.opacity = '0.5';
-                        timeInBtn.style.cursor = 'not-allowed';
-                        timeOutBtn.style.opacity = '0.5';
-                        timeOutBtn.style.cursor = 'not-allowed';
                     } else if (data.today_status === 'not_started') {
                         timeInBtn.disabled = false;
                         timeOutBtn.disabled = true;
-                        timeOutBtn.style.opacity = '0.5';
-                        timeOutBtn.style.cursor = 'not-allowed';
                     } else if (data.today_status === 'working') {
                         timeInBtn.disabled = true;
                         timeOutBtn.disabled = false;
-                        timeInBtn.style.opacity = '0.5';
-                        timeInBtn.style.cursor = 'not-allowed';
                     } else {
                         timeInBtn.disabled = true;
                         timeOutBtn.disabled = true;
-                        timeInBtn.style.opacity = '0.5';
-                        timeInBtn.style.cursor = 'not-allowed';
-                        timeOutBtn.style.opacity = '0.5';
-                        timeOutBtn.style.cursor = 'not-allowed';
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching DTR status:', error);
                 });
         }
+
         // Time In/Out Handlers
         document.getElementById('timeInBtn').addEventListener('click', function() {
             fetch('{{ route("intern.timein") }}', {
