@@ -227,6 +227,87 @@
             min-width: 120px;
         }
 
+        /* Time Action Buttons */
+        .time-action-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .time-action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .time-action-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .time-action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .time-in-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .time-in-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        .time-out-btn {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .time-out-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+        }
+
+        .btn-icon {
+            font-size: 18px;
+            display: inline-block;
+        }
+
+        .btn-text {
+            display: inline-block;
+        }
+
+        .time-action-btn.processing {
+            pointer-events: none;
+        }
+
+        .time-action-btn.processing::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -680,10 +761,15 @@
                         
                         
                     </div>
-                    <div class="dtr-actions" style="margin-top: 15px;">
-                       
-                        <button type="button" id="timeInBtn" class="card-btn" style="background: #10b981; margin-right: 10px; cursor: pointer;">Time In</button>
-                        <button type="button" id="timeOutBtn" class="card-btn" style="background: #f59e0b; cursor: pointer;">Time Out</button>
+                    <div class="dtr-actions" style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" id="timeInBtn" class="time-action-btn time-in-btn">
+                            <span class="btn-icon">⏰</span>
+                            <span class="btn-text">Time In</span>
+                        </button>
+                        <button type="button" id="timeOutBtn" class="time-action-btn time-out-btn">
+                            <span class="btn-icon">🕐</span>
+                            <span class="btn-text">Time Out</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -841,15 +927,39 @@
                         timeOutBtn.disabled = true;
                     } else if (data.today_status === 'not_started') {
                         // Can only time in from 8:00 AM to 4:59 PM
-                        timeInBtn.disabled = !canTimeIn;
-                        timeOutBtn.disabled = true;
+                        if (timeInBtn) {
+                            timeInBtn.disabled = !canTimeIn;
+                            const timeInText = timeInBtn.querySelector('.btn-text');
+                            if (timeInText) timeInText.textContent = 'Time In';
+                        }
+                        if (timeOutBtn) {
+                            timeOutBtn.disabled = true;
+                            const timeOutText = timeOutBtn.querySelector('.btn-text');
+                            if (timeOutText) timeOutText.textContent = 'Time Out';
+                        }
                     } else if (data.today_status === 'working') {
-                        timeInBtn.disabled = true;
+                        if (timeInBtn) {
+                            timeInBtn.disabled = true;
+                            const timeInText = timeInBtn.querySelector('.btn-text');
+                            if (timeInText) timeInText.textContent = 'Time In';
+                        }
                         // Can time out until 5:00 PM (auto-timeout happens at 5:00 PM)
-                        timeOutBtn.disabled = !canTimeOut;
+                        if (timeOutBtn) {
+                            timeOutBtn.disabled = !canTimeOut;
+                            const timeOutText = timeOutBtn.querySelector('.btn-text');
+                            if (timeOutText) timeOutText.textContent = 'Time Out';
+                        }
                     } else {
-                        timeInBtn.disabled = true;
-                        timeOutBtn.disabled = true;
+                        if (timeInBtn) {
+                            timeInBtn.disabled = true;
+                            const timeInText = timeInBtn.querySelector('.btn-text');
+                            if (timeInText) timeInText.textContent = 'Time In';
+                        }
+                        if (timeOutBtn) {
+                            timeOutBtn.disabled = true;
+                            const timeOutText = timeOutBtn.querySelector('.btn-text');
+                            if (timeOutText) timeOutText.textContent = 'Time Out';
+                        }
                     }
                 })
                 .catch(error => {
@@ -857,270 +967,204 @@
                 });
         }
 
-        // Time In/Out Handlers - Initialize when DOM is ready
-        function initializeTimeButtons() {
-            const timeInBtn = document.getElementById('timeInBtn');
-            const timeOutBtn = document.getElementById('timeOutBtn');
+        // Time In/Out Button Handlers - Fully Functional Implementation
+        (function() {
+            'use strict';
             
-            console.log('Initializing time buttons...', { timeInBtn: !!timeInBtn, timeOutBtn: !!timeOutBtn });
+            let buttonsInitialized = false;
             
-            // Time In Button Handler
-            if (timeInBtn) {
-                // Remove any existing listeners by cloning
-                const newTimeInBtn = timeInBtn.cloneNode(true);
-                timeInBtn.parentNode.replaceChild(newTimeInBtn, timeInBtn);
+            function handleTimeIn() {
+                const btn = document.getElementById('timeInBtn');
+                if (!btn || btn.disabled) return;
                 
-                newTimeInBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    console.log('Time In button clicked');
-                    
-                    if (newTimeInBtn.disabled) {
-                        console.log('Time In button is disabled');
-                        return;
+                // Set processing state
+                btn.disabled = true;
+                btn.classList.add('processing');
+                const btnText = btn.querySelector('.btn-text');
+                const originalText = btnText.textContent;
+                btnText.textContent = 'Processing...';
+                
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                
+                // Make request
+                fetch('{{ route("intern.timein") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.text().then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        return { ok: response.ok, status: response.status, data: data };
+                    } catch (e) {
+                        return { ok: false, status: response.status, data: { success: false, message: 'Invalid server response' } };
                     }
+                }))
+                .then(result => {
+                    btn.classList.remove('processing');
                     
-                    // Disable button and show processing state
-                    newTimeInBtn.disabled = true;
-                    const originalText = newTimeInBtn.textContent;
-                    newTimeInBtn.textContent = 'Processing...';
-                    
-                    // Get CSRF token from meta tag or form
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-                    
-                    // Make the request
-                    fetch('{{ route("intern.timein") }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify({})
-                    })
-                    .then(response => {
-                        console.log('Time In response status:', response.status);
-                        // Try to parse JSON response
-                        return response.text().then(text => {
-                            console.log('Time In response text:', text);
-                            try {
-                                const data = JSON.parse(text);
-                                return {
-                                    ok: response.ok,
-                                    status: response.status,
-                                    data: data
-                                };
-                            } catch (e) {
-                                console.error('JSON parse error:', e);
-                                return {
-                                    ok: false,
-                                    status: response.status,
-                                    data: { success: false, message: 'Invalid response from server. Please try again.' }
-                                };
-                            }
-                        });
-                    })
-                    .then(result => {
-                        console.log('Time In result:', result);
-                        if (result.ok && result.data && result.data.success) {
-                            // Success - Show success message
-                            Swal.fire({
-                                icon: 'success',
-                                title: '✅ Time In Successful!',
-                                text: result.data.message || 'Time In recorded successfully!',
-                                timer: 3000,
-                                showConfirmButton: true,
-                                confirmButtonText: 'OK',
-                                allowOutsideClick: false
-                            }).then(() => {
-                                // Refresh status after user acknowledges
-                                updateDTRStatus();
-                            });
-                            
-                            // Also refresh status immediately
-                            setTimeout(() => {
-                                updateDTRStatus();
-                            }, 500);
-                        } else {
-                            // Error or Warning - Show appropriate message
-                            const message = (result.data && result.data.message) || 'Failed to record Time In. Please try again.';
-                            const isWarning = result.status === 400 && message.includes('already') || message.includes('available');
-                            
-                            Swal.fire({
-                                icon: isWarning ? 'warning' : 'error',
-                                title: isWarning ? '⚠️ Warning' : '❌ Time In Failed',
-                                text: message,
-                                showConfirmButton: true,
-                                confirmButtonText: 'OK'
-                            });
-                            
-                            // Re-enable button only if it's not a permanent state
-                            if (!isWarning || !message.includes('already')) {
-                                newTimeInBtn.disabled = false;
-                                newTimeInBtn.textContent = originalText;
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Time In Error:', error);
+                    if (result.ok && result.data && result.data.success) {
+                        // Success
                         Swal.fire({
-                            icon: 'error',
-                            title: '❌ Connection Error',
-                            text: error.message || 'Failed to record Time In. Please check your connection and try again.',
+                            icon: 'success',
+                            title: '✅ Time In Successful!',
+                            text: result.data.message || 'Time In recorded successfully!',
+                            timer: 3000,
                             showConfirmButton: true,
                             confirmButtonText: 'OK'
                         });
+                        updateDTRStatus();
+                    } else {
+                        // Error/Warning
+                        const message = result.data?.message || 'Failed to record Time In';
+                        const isWarning = result.status === 400 && (message.includes('already') || message.includes('available'));
                         
-                        // Re-enable button
-                        newTimeInBtn.disabled = false;
-                        newTimeInBtn.textContent = originalText;
+                        Swal.fire({
+                            icon: isWarning ? 'warning' : 'error',
+                            title: isWarning ? '⚠️ Warning' : '❌ Time In Failed',
+                            text: message,
+                            showConfirmButton: true
+                        });
+                        
+                        if (!isWarning || !message.includes('already')) {
+                            btn.disabled = false;
+                            btnText.textContent = originalText;
+                        }
+                    }
+                })
+                .catch(error => {
+                    btn.classList.remove('processing');
+                    Swal.fire({
+                        icon: 'error',
+                        title: '❌ Connection Error',
+                        text: 'Failed to connect to server. Please check your connection.',
+                        showConfirmButton: true
                     });
+                    btn.disabled = false;
+                    btnText.textContent = originalText;
                 });
             }
-
-            // Time Out Button Handler
-            if (timeOutBtn) {
-                // Remove any existing listeners by cloning
-                const newTimeOutBtn = timeOutBtn.cloneNode(true);
-                timeOutBtn.parentNode.replaceChild(newTimeOutBtn, timeOutBtn);
+            
+            function handleTimeOut() {
+                const btn = document.getElementById('timeOutBtn');
+                if (!btn || btn.disabled) return;
                 
-                newTimeOutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    console.log('Time Out button clicked');
-                    
-                    if (newTimeOutBtn.disabled) {
-                        console.log('Time Out button is disabled');
-                        return;
+                // Set processing state
+                btn.disabled = true;
+                btn.classList.add('processing');
+                const btnText = btn.querySelector('.btn-text');
+                const originalText = btnText.textContent;
+                btnText.textContent = 'Processing...';
+                
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                
+                // Make request
+                fetch('{{ route("intern.timeout") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.text().then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        return { ok: response.ok, status: response.status, data: data };
+                    } catch (e) {
+                        return { ok: false, status: response.status, data: { success: false, message: 'Invalid server response' } };
                     }
+                }))
+                .then(result => {
+                    btn.classList.remove('processing');
                     
-                    // Disable button and show processing state
-                    newTimeOutBtn.disabled = true;
-                    const originalText = newTimeOutBtn.textContent;
-                    newTimeOutBtn.textContent = 'Processing...';
-                    
-                    // Get CSRF token from meta tag or form
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-                    
-                    // Make the request
-                    fetch('{{ route("intern.timeout") }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify({})
-                    })
-                    .then(response => {
-                        console.log('Time Out response status:', response.status);
-                        // Try to parse JSON response
-                        return response.text().then(text => {
-                            console.log('Time Out response text:', text);
-                            try {
-                                const data = JSON.parse(text);
-                                return {
-                                    ok: response.ok,
-                                    status: response.status,
-                                    data: data
-                                };
-                            } catch (e) {
-                                console.error('JSON parse error:', e);
-                                return {
-                                    ok: false,
-                                    status: response.status,
-                                    data: { success: false, message: 'Invalid response from server. Please try again.' }
-                                };
-                            }
-                        });
-                    })
-                    .then(result => {
-                        console.log('Time Out result:', result);
-                        if (result.ok && result.data && result.data.success) {
-                            // Success - Show success message
-                            Swal.fire({
-                                icon: 'success',
-                                title: '✅ Time Out Successful!',
-                                text: result.data.message || 'Time Out recorded successfully!',
-                                timer: 3000,
-                                showConfirmButton: true,
-                                confirmButtonText: 'OK',
-                                allowOutsideClick: false
-                            }).then(() => {
-                                // Refresh status after user acknowledges
-                                updateDTRStatus();
-                            });
-                            
-                            // Also refresh status immediately
-                            setTimeout(() => {
-                                updateDTRStatus();
-                            }, 500);
-                        } else {
-                            // Error or Warning - Show appropriate message
-                            const message = (result.data && result.data.message) || 'Failed to record Time Out. Please try again.';
-                            const isWarning = result.status === 400 && (message.includes('already') || message.includes('must time in'));
-                            
-                            Swal.fire({
-                                icon: isWarning ? 'warning' : 'error',
-                                title: isWarning ? '⚠️ Warning' : '❌ Time Out Failed',
-                                text: message,
-                                showConfirmButton: true,
-                                confirmButtonText: 'OK'
-                            });
-                            
-                            // Re-enable button only if it's not a permanent state
-                            if (!isWarning || !message.includes('already')) {
-                                newTimeOutBtn.disabled = false;
-                                newTimeOutBtn.textContent = originalText;
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Time Out Error:', error);
+                    if (result.ok && result.data && result.data.success) {
+                        // Success
                         Swal.fire({
-                            icon: 'error',
-                            title: '❌ Connection Error',
-                            text: error.message || 'Failed to record Time Out. Please check your connection and try again.',
+                            icon: 'success',
+                            title: '✅ Time Out Successful!',
+                            text: result.data.message || 'Time Out recorded successfully!',
+                            timer: 3000,
                             showConfirmButton: true,
                             confirmButtonText: 'OK'
                         });
+                        updateDTRStatus();
+                    } else {
+                        // Error/Warning
+                        const message = result.data?.message || 'Failed to record Time Out';
+                        const isWarning = result.status === 400 && (message.includes('already') || message.includes('must time in'));
                         
-                        // Re-enable button
-                        newTimeOutBtn.disabled = false;
-                        newTimeOutBtn.textContent = originalText;
+                        Swal.fire({
+                            icon: isWarning ? 'warning' : 'error',
+                            title: isWarning ? '⚠️ Warning' : '❌ Time Out Failed',
+                            text: message,
+                            showConfirmButton: true
+                        });
+                        
+                        if (!isWarning || !message.includes('already')) {
+                            btn.disabled = false;
+                            btnText.textContent = originalText;
+                        }
+                    }
+                })
+                .catch(error => {
+                    btn.classList.remove('processing');
+                    Swal.fire({
+                        icon: 'error',
+                        title: '❌ Connection Error',
+                        text: 'Failed to connect to server. Please check your connection.',
+                        showConfirmButton: true
                     });
+                    btn.disabled = false;
+                    btnText.textContent = originalText;
                 });
             }
-        }
-
-        // Track if buttons are initialized to prevent multiple initializations
-        let buttonsInitialized = false;
-        
-        function initTimeButtonsOnce() {
-            if (buttonsInitialized) return;
-            buttonsInitialized = true;
-            initializeTimeButtons();
-        }
-        
-        // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initTimeButtonsOnce);
-        } else {
-            // DOM is already ready
-            initTimeButtonsOnce();
-        }
-        
-        // Also try to initialize after a short delay in case elements load later
-        setTimeout(initTimeButtonsOnce, 500);
-        
-        // Fallback: Initialize on window load
-        window.addEventListener('load', function() {
-            setTimeout(initTimeButtonsOnce, 100);
-        });
+            
+            function initializeButtons() {
+                if (buttonsInitialized) return;
+                
+                const timeInBtn = document.getElementById('timeInBtn');
+                const timeOutBtn = document.getElementById('timeOutBtn');
+                
+                if (timeInBtn) {
+                    timeInBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleTimeIn();
+                    });
+                }
+                
+                if (timeOutBtn) {
+                    timeOutBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleTimeOut();
+                    });
+                }
+                
+                buttonsInitialized = true;
+            }
+            
+            // Initialize when ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeButtons);
+            } else {
+                initializeButtons();
+            }
+            
+            // Fallback initialization
+            setTimeout(initializeButtons, 100);
+            window.addEventListener('load', () => setTimeout(initializeButtons, 100));
+        })();
 
         // Initialize DTR functionality
         updateCurrentTime();
