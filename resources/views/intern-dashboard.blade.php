@@ -478,7 +478,7 @@
         <!-- Attendance Notice (self-service) -->
         <div class="attendance-notification" id="selfAttendanceNotice" style="display:none;">
             <h3>⏰ Working Hours</h3>
-            <p>Time In/Out is available Monday to Saturday, 8:00 AM to 5:00 PM. Time Out is auto-recorded at 5:00 PM.</p>
+            <p>Time In is available anytime except 5:00 PM (Mon-Fri). Time Out is automatically recorded at 5:00 PM.</p>
             <span class="attendance-status status-released">Self Service</span>
         </div>
 
@@ -669,8 +669,9 @@
                     
                     const now = new Date();
                     const currentHour = now.getHours();
-                    // Time In is only available from 8:00 AM to 4:59 PM
-                    const canTimeIn = currentHour >= 8 && currentHour < 17;
+                    const currentMinute = now.getMinutes();
+                    // Time In is available anytime except exactly 5:00 PM (hour 17, minute 0)
+                    const canTimeIn = !(currentHour == 17 && currentMinute == 0);
                     // Time Out can be done manually until 4:59 PM, then auto-timeout at 5:00 PM
                     const canTimeOut = currentHour < 17;
                     
@@ -685,7 +686,7 @@
                             timeInBtn.disabled = true;
                             timeOutBtn.disabled = true;
                         } else if (data.today_status === 'not_started') {
-                            // Can only time in from 8:00 AM to 4:59 PM
+                            // Can time in anytime except 5:00 PM
                             timeInBtn.disabled = !canTimeIn;
                             timeOutBtn.disabled = true;
                         } else if (data.today_status === 'working') {

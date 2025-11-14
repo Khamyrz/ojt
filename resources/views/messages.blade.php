@@ -1016,6 +1016,7 @@
             
             messageDiv.className = messageClass;
             
+            // Show broadcast label for broadcast messages
             const broadcastLabel = isBroadcast 
                 ? '<div class="broadcast-label"><i class="fas fa-bullhorn"></i> Broadcasted</div>'
                 : '';

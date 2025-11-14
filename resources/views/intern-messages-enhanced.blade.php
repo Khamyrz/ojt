@@ -176,7 +176,7 @@
             text-align: left;
         }
 
-        /* Broadcast Messages */
+        /* Broadcast Messages - Pinned */
         .broadcast-message {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -185,6 +185,15 @@
             margin: 10px 0;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             border-left: 4px solid #ffd700;
+        }
+        
+        .pinned-broadcast {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-left: 4px solid #ffd700;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
         }
 
         .broadcast-header {
@@ -399,38 +408,50 @@
         <!-- Messages Area -->
         <div class="messages-area" id="messages-area">
             @if($messages->count() > 0)
-                @foreach($messages as $message)
-                    @if($message->receiver_type === 'all')
-                        <!-- Broadcast Message -->
-                        <div class="broadcast-message">
-                            <div class="broadcast-header">
-                                📢 Broadcast Message from Admin
-                            </div>
-                            <div class="broadcast-content">
-                                {{ $message->content }}
-                            </div>
-                            <div class="broadcast-time">
-                                {{ $message->created_at->format('M j, Y g:i A') }}
-                            </div>
+                @php
+                    // Separate broadcast messages and regular messages
+                    // Broadcast messages have receiver_type === 'all'
+                    $broadcastMessages = $messages->filter(function($msg) {
+                        return $msg->receiver_type === 'all';
+                    })->sortByDesc('created_at'); // Sort by newest first
+                    $regularMessages = $messages->filter(function($msg) {
+                        return $msg->receiver_type !== 'all';
+                    })->sortBy('created_at'); // Sort by oldest first for regular messages
+                @endphp
+                
+                {{-- Pinned Broadcast Messages at the top --}}
+                @foreach($broadcastMessages as $message)
+                    <div class="broadcast-message pinned-broadcast">
+                        <div class="broadcast-header">
+                            <span>📌</span>
+                            <span>📢 Broadcasted</span>
                         </div>
-                    @else
-                        <!-- Regular Message -->
-                        @php
-                            $isSent = $message->sender_type === 'intern';
-                            $senderName = $message->sender_type === 'admin' 
-                                ? 'Admin'
-                                : auth()->guard('intern')->user()->first_name;
-                        @endphp
-                        <div class="message {{ $isSent ? 'sent' : 'received' }}">
-                            <div class="message-avatar">
-                                {{ $isSent ? substr(auth()->guard('intern')->user()->first_name, 0, 1) : 'A' }}
-                            </div>
-                            <div class="message-content">
-                                <div class="message-text">{{ $message->content }}</div>
-                                <div class="message-time">{{ $message->created_at->format('M j, g:i A') }}</div>
-                            </div>
+                        <div class="broadcast-content">
+                            {{ $message->content }}
                         </div>
-                    @endif
+                        <div class="broadcast-time">
+                            {{ $message->created_at->format('M j, Y g:i A') }}
+                        </div>
+                    </div>
+                @endforeach
+                
+                {{-- Regular Messages --}}
+                @foreach($regularMessages as $message)
+                    @php
+                        $isSent = $message->sender_type === 'intern';
+                        $senderName = $message->sender_type === 'admin' 
+                            ? 'Admin'
+                            : auth()->guard('intern')->user()->first_name;
+                    @endphp
+                    <div class="message {{ $isSent ? 'sent' : 'received' }}">
+                        <div class="message-avatar">
+                            {{ $isSent ? substr(auth()->guard('intern')->user()->first_name, 0, 1) : 'A' }}
+                        </div>
+                        <div class="message-content">
+                            <div class="message-text">{{ $message->content }}</div>
+                            <div class="message-time">{{ $message->created_at->format('M j, g:i A') }}</div>
+                        </div>
+                    </div>
                 @endforeach
             @else
                 <div class="no-messages">
@@ -560,11 +581,12 @@
                                         let messageHtml;
                                         
                                         if (message.receiver_type === 'all') {
-                                            // Broadcast message
+                                            // Broadcast message - pin to top
                                             messageHtml = `
-                                                <div class="broadcast-message">
+                                                <div class="broadcast-message pinned-broadcast">
                                                     <div class="broadcast-header">
-                                                        📢 Broadcast Message from Admin
+                                                        <span>📌</span>
+                                                        <span>📢 Broadcasted</span>
                                                     </div>
                                                     <div class="broadcast-content">
                                                         ${message.content}
@@ -574,6 +596,15 @@
                                                     </div>
                                                 </div>
                                             `;
+                                            // Prepend to top (before regular messages)
+                                            // Find the first non-broadcast message or append to beginning
+                                            const firstRegular = messagesArea.find('.message:not(.broadcast-message)').first();
+                                            if (firstRegular.length) {
+                                                firstRegular.before(messageHtml);
+                                            } else {
+                                                messagesArea.prepend(messageHtml);
+                                            }
+                                            messagesArea.scrollTop(0); // Scroll to top to show pinned message
                                         } else {
                                             // Regular message
                                             messageHtml = `

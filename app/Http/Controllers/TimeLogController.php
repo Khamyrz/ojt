@@ -19,19 +19,20 @@ class TimeLogController extends Controller
         $now = now('Asia/Manila');
         $today = $now->toDateString();
 
-        // Allow Monday to Saturday only
-        if ($now->isSunday()) {
+        // Allow Monday to Friday only (not Saturday or Sunday)
+        if ($now->isWeekend()) {
+            $dayName = $now->isSaturday() ? 'Saturday' : 'Sunday';
             return request()->expectsJson()
-                ? response()->json(['success' => false, 'message' => 'Attendance is closed on Sundays.'], 400)
-                : back()->with('error', 'Attendance is closed on Sundays.');
+                ? response()->json(['success' => false, 'message' => "Attendance is closed on {$dayName}s. Time In/Out is available Monday to Friday only."], 400)
+                : back()->with('error', "Attendance is closed on {$dayName}s. Time In/Out is available Monday to Friday only.");
         }
 
-        // Allow time-in only between 8:00 AM and 4:59 PM (before 5:00 PM auto-timeout)
-        // Time In window: 8:00 AM (hour 8) to 4:59 PM (hour 16, any minute/second)
-        if ($now->hour < 8 || $now->hour >= 17) {
+        // Allow time-in anytime except exactly 5:00 PM (when auto-timeout happens)
+        // Block time-in only at 5:00 PM (hour 17, minute 0)
+        if ($now->hour == 17 && $now->minute == 0) {
             return request()->expectsJson()
-                ? response()->json(['success' => false, 'message' => 'Time In is available from 8:00 AM to 4:59 PM (Mon-Sat). Time Out is automatically recorded at 5:00 PM.'], 400)
-                : back()->with('error', 'Time In is available from 8:00 AM to 4:59 PM (Mon-Sat). Time Out is automatically recorded at 5:00 PM.');
+                ? response()->json(['success' => false, 'message' => 'Time In is not available at 5:00 PM. Time Out is automatically recorded at this time.'], 400)
+                : back()->with('error', 'Time In is not available at 5:00 PM. Time Out is automatically recorded at this time.');
         }
 
         $existing = TimeLog::where('intern_id', $intern->id)
@@ -72,6 +73,14 @@ class TimeLogController extends Controller
         $intern = Auth::guard('intern')->user();
         $now = now('Asia/Manila');
         $today = $now->toDateString();
+
+        // Allow Monday to Friday only (not Saturday or Sunday)
+        if ($now->isWeekend()) {
+            $dayName = $now->isSaturday() ? 'Saturday' : 'Sunday';
+            return request()->expectsJson()
+                ? response()->json(['success' => false, 'message' => "Attendance is closed on {$dayName}s. Time In/Out is available Monday to Friday only."], 400)
+                : back()->with('error', "Attendance is closed on {$dayName}s. Time In/Out is available Monday to Friday only.");
+        }
 
         $log = TimeLog::where('intern_id', $intern->id)
             ->where('date', $today)
@@ -167,11 +176,9 @@ class TimeLogController extends Controller
             $currentDayLog = $currentDayLog->fresh();
         }
 
-        $isWorkingHours = $now->between(
-            Carbon::createFromTime(8, 0, 0, 'Asia/Manila'),
-            Carbon::createFromTime(17, 0, 0, 'Asia/Manila')
-        );
-        $isWorkday = !$now->isSunday();
+        // Allow time in anytime except exactly 5:00 PM
+        $isWorkingHours = !($now->hour == 17 && $now->minute == 0);
+        $isWorkday = !$now->isWeekend(); // Monday to Friday only
 
         return response()->json([
             'total_hours' => $totalHours,
@@ -246,11 +253,8 @@ class TimeLogController extends Controller
             'total_hours' => $totalHours,
             'remaining_hours' => $remainingHours,
             'progress_percent' => min(100, round(($totalHours / $targetHours) * 100)),
-            'is_working_hours' => $now->between(
-                Carbon::createFromTime(8, 0, 0, 'Asia/Manila'),
-                Carbon::createFromTime(17, 0, 0, 'Asia/Manila')
-            ),
-            'is_workday' => !$now->isSunday()
+            'is_working_hours' => !($now->hour == 17 && $now->minute == 0), // Allow anytime except 5:00 PM
+            'is_workday' => !$now->isWeekend() // Monday to Friday only
         ]);
     }
 
