@@ -537,10 +537,9 @@
 
 <div class="container">
 
-    <!-- Tab Switch Buttons -->
-    <div class="tab-buttons">
+    <!-- Tab Switch Buttons - Register disabled -->
+    <div class="tab-buttons" style="display: none;">
         <button class="tab-btn active" onclick="switchTab('login')">Login</button>
-        <button class="tab-btn" onclick="switchTab('register')">Register</button>
     </div>
 
     <!-- Forms -->
@@ -558,24 +557,10 @@
             </div>
         </form>
 
-        {{-- Register Form --}}
-        <form id="register" method="POST" action="{{ route('register') }}">
+        {{-- Register Form - Disabled/Hidden --}}
+        <form id="register" method="POST" action="{{ route('register') }}" style="display: none !important;">
             @csrf
-            
-            <input type="text" name="name" placeholder="Full Name" required autocomplete="name">
-            <input type="email" name="email" placeholder="Email Address" required autocomplete="email">
-            <input type="password" name="password" placeholder="Password (Min 8 chars)" required autocomplete="new-password" minlength="8">
-            <input type="password" name="password_confirmation" placeholder="Confirm Password" required autocomplete="new-password">
-            <input type="hidden" name="recaptcha_token" id="register_recaptcha_token">
-            
-            <div class="terms-checkbox">
-                <input type="checkbox" id="terms_agreement" name="terms_agreement" required>
-                <label for="terms_agreement">
-                    I agree to the <a href="#" onclick="showTermsModal()">Terms of Service</a>
-                </label>
-            </div>
-            
-            <button class="submit" type="submit" onclick="submitRegisterForm(event)">Register</button>
+            <!-- Registration is disabled -->
         </form>
 
         <!-- Intern Login -->
@@ -641,7 +626,7 @@
         <div class="modal-body">
             <div id="adminTabs" class="admin-tabs">
                 <button id="adminLoginTab" class="btn btn-primary" onclick="switchAdminTab('login')">Login</button>
-                <button id="adminRegisterTab" class="btn btn-secondary" onclick="switchAdminTab('register')">Register</button>
+                <button id="adminRegisterTab" class="btn btn-secondary" onclick="switchAdminTab('register')" style="display: none !important;">Register</button>
                 <button id="adminForgotTab" class="btn btn-secondary" onclick="switchAdminTab('forgot')">Forgot</button>
             </div>
 
@@ -652,17 +637,7 @@
             </form>
 
             <form id="adminRegisterForm" onsubmit="return false;" style="display:none;">
-                @php $onlyOneAdmin = isset($adminExists) ? $adminExists : false; @endphp
-                @if($onlyOneAdmin)
-                    <div class="security-indicator">Admin already exists. Registration disabled.</div>
-                @else
-                    <input type="text" id="adminRegName" class="admin-input" placeholder="Full Name" required>
-                    <input type="email" id="adminRegEmail" class="admin-input" placeholder="Email Address" required>
-                    <input type="password" id="adminRegPassword" class="admin-input" placeholder="Password (min 8)" minlength="8" required>
-                    <input type="password" id="adminRegPasswordConfirm" class="admin-input" placeholder="Confirm Password" minlength="8" required>
-                    <div class="admin-note">Only one administrator account is allowed. Choose a strong password.</div>
-                    <button id="adminRegisterBtn" class="btn btn-primary" onclick="submitAdminRegister()">Register</button>
-                @endif
+                <div class="security-indicator">Admin registration is disabled. Please contact the system administrator.</div>
             </form>
 
             <form id="adminForgotForm" onsubmit="return false;" style="display:none;">
@@ -1013,6 +988,10 @@
     }
 
     function switchTab(tabId) {
+        // Registration is disabled - only allow login
+        if (tabId !== 'login') {
+            return;
+        }
         const tabs = document.querySelectorAll('form');
         const buttons = document.querySelectorAll('.tab-btn');
 
@@ -1020,7 +999,8 @@
         buttons.forEach(btn => btn.classList.remove('active'));
 
         document.getElementById(tabId).classList.add('active');
-        document.querySelector(`[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        const loginBtn = document.querySelector(`[onclick="switchTab('login')"]`);
+        if (loginBtn) loginBtn.classList.add('active');
     }
 
     // Terms Modal Functions
@@ -1391,12 +1371,9 @@
             }
         }, true);
 
-        // Hide admin Register tab if admin already exists
-        const adminExists = {{ isset($adminExists) && $adminExists ? 'true' : 'false' }};
-        if (adminExists) {
-            const regTab = document.getElementById('adminRegisterTab');
-            if (regTab) regTab.style.display = 'none';
-        }
+        // Hide admin Register tab - registration is always disabled
+        const regTab = document.getElementById('adminRegisterTab');
+        if (regTab) regTab.style.display = 'none';
 
         // Form validation is now handled by reCAPTCHA functions above
     });
