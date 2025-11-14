@@ -26,13 +26,12 @@ class TimeLogController extends Controller
                 : back()->with('error', 'Attendance is closed on Sundays.');
         }
 
-        // Allow time-in only between 8:00 AM and 5:00 PM
-        $start = \Carbon\Carbon::createFromTime(8, 0, 0, 'Asia/Manila');
-        $end = \Carbon\Carbon::createFromTime(17, 0, 0, 'Asia/Manila');
-        if (!$now->betweenIncluded($start, $end)) {
+        // Allow time-in only between 8:00 AM and 4:59 PM (before 5:00 PM auto-timeout)
+        // Time In window: 8:00 AM (hour 8) to 4:59 PM (hour 16, any minute/second)
+        if ($now->hour < 8 || $now->hour >= 17) {
             return request()->expectsJson()
-                ? response()->json(['success' => false, 'message' => 'Time In is available from 8:00 AM to 5:00 PM (Mon-Sat).'], 400)
-                : back()->with('error', 'Time In is available from 8:00 AM to 5:00 PM (Mon-Sat).');
+                ? response()->json(['success' => false, 'message' => 'Time In is available from 8:00 AM to 4:59 PM (Mon-Sat). Time Out is automatically recorded at 5:00 PM.'], 400)
+                : back()->with('error', 'Time In is available from 8:00 AM to 4:59 PM (Mon-Sat). Time Out is automatically recorded at 5:00 PM.');
         }
 
         $existing = TimeLog::where('intern_id', $intern->id)
