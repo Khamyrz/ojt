@@ -12,6 +12,7 @@ use App\Http\Controllers\JournalController;
 use App\Http\Controllers\SupervisorController;  
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AdminController;
+
 /*
 |--------------------------------------------------------------------------
 | Default Redirect
@@ -27,12 +28,14 @@ Route::get('/', fn () => view('welcome'))->name('welcome');
 Route::get('/login', [AuthController::class, 'showLoginRegister'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
+
 // Secret Admin API routes
 Route::get('/admin/check-exists', [AdminController::class, 'checkAdminExists'])->name('admin.checkExists');
 Route::post('/admin/login', [AdminController::class, 'login'])->name('admin.login');
 Route::post('/admin/register', [AdminController::class, 'register'])->name('admin.register');
 Route::post('/admin/forgot-password', [AdminController::class, 'forgotPassword'])->name('admin.forgot');
 Route::post('/admin/verify-forgot-otp', [AdminController::class, 'verifyForgotOtp'])->name('admin.verify-forgot-otp');
+
 // OTP Verification Routes (Users)
 Route::get('/verify-otp', [AuthController::class, 'showOtpForm'])->name('otp.verify');
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('otp.verify.submit');
@@ -50,14 +53,10 @@ Route::post('/password/verify-otp', [AuthController::class, 'verifyForgotPasswor
 Route::post('/password/resend-otp', [AuthController::class, 'resendForgotPasswordOtp'])->name('password.resend-otp');
 Route::post('/password/reset-submit', [AuthController::class, 'resetPasswordWithOtp'])->name('password.reset.submit');
 
-// Admin routes removed
-
 // Supervisor Login & Registration (PUBLIC)
 Route::get('/supervisor/login', [SupervisorController::class, 'showLoginForm'])->name('supervisor.login');
 Route::post('/supervisor/login', [SupervisorController::class, 'login'])->name('supervisor.login.submit');
 Route::post('/supervisor/register', [SupervisorController::class, 'register'])->name('supervisor.register.submit');
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -120,8 +119,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/qr', [DashboardController::class, 'qr'])->name('qr');
     Route::get('/show-qr-code', [QrCodeController::class, 'display'])->name('show.qr');
 
-    
-
     // Notifications
     Route::get('/api/notifications', [DashboardController::class, 'getNotifications'])->name('api.notifications');
 
@@ -133,9 +130,6 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/messages/clear/{intern}', [MessageController::class, 'clearConversation'])->name('messages.clear');
     Route::get('/api/messages/{internId}/new', [MessageController::class, 'getNewMessages'])->name('api.messages.new');
 
-    // Supervisor Authentication
-    // REMOVE supervisor login/register routes from here if present
-
     // Admin Supervisor Management
     Route::get('/supervisors', [SupervisorController::class, 'index'])->name('supervisors');
     Route::post('/supervisors/{id}/accept', [SupervisorController::class, 'accept'])->name('supervisor.accept');
@@ -143,8 +137,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/supervisors/{id}/update', [SupervisorController::class, 'update'])->name('supervisor.update');
     Route::delete('/supervisors/{id}/delete', [SupervisorController::class, 'delete'])->name('supervisor.delete');
 });
-
-// Admin connect interns routes removed
 
 /*
 |--------------------------------------------------------------------------
@@ -160,7 +152,6 @@ Route::get('/api/invite/verify', [InternController::class, 'verifyInvite'])->nam
 | Intern Authentication Routes
 |--------------------------------------------------------------------------
 */
-
 Route::get('/intern/login', [InternAuthController::class, 'showLoginForm'])->name('intern.login');
 Route::post('/intern/login', [InternAuthController::class, 'login'])->name('intern.login.submit');
 Route::post('/intern/logout', [InternAuthController::class, 'logout'])->name('intern.logout');
@@ -195,10 +186,10 @@ Route::middleware(['auth:intern'])->group(function () {
     Route::get('/api/intern/messages/new', [MessageController::class, 'getNewInternMessages'])->name('api.intern.messages.new');
     Route::get('/api/intern/message/stats', [MessageController::class, 'getInternMessageStats'])->name('api.intern.message.stats');
 
-    // Time In / Time Out (DTR)
+    // Time In / Time Out (DTR) - FIXED ROUTES
     Route::get('/intern/dtr', [TimeLogController::class, 'showOwnDTR'])->name('intern.dtr');
-    Route::post('/intern/time-in', [TimeLogController::class, 'timeIn'])->name('intern.timein');
-    Route::post('/intern/time-out', [TimeLogController::class, 'timeOut'])->name('intern.timeout');
+    Route::post('/intern/timein', [TimeLogController::class, 'timeIn'])->name('intern.timein');
+    Route::post('/intern/timeout', [TimeLogController::class, 'timeOut'])->name('intern.timeout');
     
     // Real-time DTR Tracking
     Route::get('/intern/dtr/real-time', [TimeLogController::class, 'getRealTimeDTR'])->name('intern.dtr.real-time');
@@ -227,10 +218,11 @@ Route::middleware(['auth:intern'])->group(function () {
     Route::get('/intern/check-phase-status', [InternAuthController::class, 'checkPhaseStatus'])->name('intern.check-phase-status');
 });
 
-// Supervisor Registration
-// REMOVE supervisor registration route from here if present
-
-// Supervisor Protected Routes
+/*
+|--------------------------------------------------------------------------
+| Supervisor Protected Routes
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth:supervisor'])->group(function () {
     Route::get('/supervisor/dashboard', [SupervisorController::class, 'dashboard'])->name('supervisor.dashboard');
     Route::post('/supervisor/release-attendance', [SupervisorController::class, 'releaseAttendance'])->name('supervisor.releaseAttendance');
@@ -242,7 +234,11 @@ Route::middleware(['auth:supervisor'])->group(function () {
     Route::post('/supervisor/attendance/reset', [AttendanceController::class, 'resetAttendance'])->name('supervisor.attendance.reset');
 });
 
-// Intern attendance routes
+/*
+|--------------------------------------------------------------------------
+| Intern Attendance Routes
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth:intern'])->group(function () {
     // Attendance marking
     Route::post('/intern/attendance/mark', [AttendanceController::class, 'markAttendance'])->name('intern.attendance.mark');
