@@ -108,6 +108,7 @@ Route::middleware(['auth'])->group(function () {
     // Grades
     Route::get('/grades', [DashboardController::class, 'grades'])->name('grades');
     Route::post('/grades/request', [DashboardController::class, 'sendGradeRequest'])->name('grades.request');
+    Route::post('/grades/broadcast', [DashboardController::class, 'broadcastGradeRequest'])->name('grades.broadcast');
 
     // Documents
     Route::get('/documents', [DashboardController::class, 'documents'])->name('documents');

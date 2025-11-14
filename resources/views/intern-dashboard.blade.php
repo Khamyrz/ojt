@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Intern Dashboard</title>
     <style>
         body {
@@ -141,11 +142,6 @@
             transform: translateY(-2px);
         }
 
-        .dtr-btn:hover {
-            background: rgba(255, 255, 255, 0.3) !important;
-            border-color: rgba(255, 255, 255, 0.5) !important;
-            transform: translateY(-2px);
-        }
 
         .unread-badge {
             background: #ef4444;
@@ -190,6 +186,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
+            margin-bottom: 15px;
         }
 
         .status-item {
@@ -224,6 +221,8 @@
             flex: 1;
             min-width: 120px;
         }
+
+        .icon-dtr { background: #10b981; }
 
         .container {
             max-width: 1200px;
@@ -364,7 +363,7 @@
         .icon-journal { background: #48bb78; }
         .icon-messages { background: #ed8936; }
         .icon-documents { background: #9f7aea; }
-        .icon-dtr { background: #10b981; } /* Added for DTR widget */
+        .icon-dtr { background: #10b981; }
 
         .card-title {
             font-size: 18px;
@@ -475,12 +474,6 @@
             </div>
         @endif
 
-        <!-- Attendance Notice (self-service) -->
-        <div class="attendance-notification" id="selfAttendanceNotice" style="display:none;">
-            <h3>⏰ Working Hours</h3>
-            <p>Time In is available anytime except 5:00 PM (Mon-Fri). Time Out is automatically recorded at 5:00 PM.</p>
-            <span class="attendance-status status-released">Self Service</span>
-        </div>
 
         <!-- Dashboard Cards -->
         <div class="dashboard-grid">
@@ -539,51 +532,51 @@
                 </div>
             </div>
 
-            
-
-            
             <!-- Real-time DTR Widget -->
-            <div class="dashboard-card dtr-widget">
+            <div class="dashboard-card dtr-widget" style="grid-column: span 2 !important; display: block !important; visibility: visible !important;">
                 <div class="card-header">
-                    <div class="card-icon icon-dtr">
+                    <div class="card-icon icon-dtr" style="background: #10b981 !important;">
                         ⏰
                     </div>
                     <div>
-                        <div class="card-title">Real-time DTR</div>
-                        <div class="current-time" id="currentTime"></div>
+                        <div class="card-title">Daily Time Record (DTR)</div>
+                        <div class="current-time" id="currentTime" style="font-size: 14px !important; color: #6b7280 !important; margin-top: 5px !important;"></div>
                     </div>
                 </div>
                 <div class="card-content">
-                    <div class="dtr-status" id="dtrStatus">
-                        
-                        <div class="status-item">
-                            <span class="label">Time In:</span>
-                            <span class="value" id="todayTimeIn">-</span>
+                    <div class="dtr-status" id="dtrStatus" style="display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 15px !important; margin-bottom: 15px !important;">
+                        <div class="status-item" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 10px !important; background: #f8fafc !important; border-radius: 6px !important; border: 1px solid #e2e8f0 !important;">
+                            <span class="label" style="font-weight: 600 !important; color: #374151 !important; font-size: 14px !important;">Time In:</span>
+                            <span class="value" id="todayTimeIn" style="font-weight: 700 !important; color: #1f2937 !important; font-size: 14px !important;">-</span>
                         </div>
-                        <div class="status-item">
-                            <span class="label">Time Out:</span>
-                            <span class="value" id="todayTimeOut">-</span>
+                        <div class="status-item" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 10px !important; background: #f8fafc !important; border-radius: 6px !important; border: 1px solid #e2e8f0 !important;">
+                            <span class="label" style="font-weight: 600 !important; color: #374151 !important; font-size: 14px !important;">Time Out:</span>
+                            <span class="value" id="todayTimeOut" style="font-weight: 700 !important; color: #1f2937 !important; font-size: 14px !important;">-</span>
                         </div>
-                        
-                        
                     </div>
-                    <div class="dtr-actions" style="margin-top: 15px;">
-                       
-                        <button id="timeInBtn" class="card-btn" style="background: #10b981; margin-right: 10px;">Time In</button>
-                        <button id="timeOutBtn" class="card-btn" style="background: #f59e0b;">Time Out</button>
+                    <div class="dtr-actions" style="margin-top: 15px !important; display: flex !important; gap: 10px !important; flex-wrap: wrap !important;">
+                        <button id="timeInBtn" class="card-btn" type="button" onclick="handleTimeIn()" style="background: #10b981 !important; color: white !important; margin-right: 10px !important; padding: 10px 20px !important; border-radius: 8px !important; font-weight: 500 !important; cursor: pointer !important; border: none !important; display: inline-block !important;">Time In</button>
+                        <button id="timeOutBtn" class="card-btn" type="button" onclick="handleTimeOut()" style="background: #f59e0b !important; color: white !important; padding: 10px 20px !important; border-radius: 8px !important; font-weight: 500 !important; cursor: pointer !important; border: none !important; display: inline-block !important;">Time Out</button>
+                    </div>
+                    <div style="margin-top: 15px; padding: 10px; background: #f0f9ff; border-radius: 6px; font-size: 12px; color: #0369a1;">
+                        <strong>Progress:</strong> <span id="totalHoursDisplay">0</span> / 486 hours (<span id="progressPercent">0</span>%)
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // Auto-refresh attendance status every 30 seconds
         setInterval(function() {
-            location.reload();
+            updateDTRStatus();
         }, 30000);
 
         // Quick Message Form Handler
-        document.getElementById('quickMessageForm').addEventListener('submit', function(e) {
+        const quickMessageForm = document.getElementById('quickMessageForm');
+        if (quickMessageForm) {
+            quickMessageForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);
@@ -622,6 +615,7 @@
                 alert('Error sending message. Please try again.');
             });
         });
+        }
 
         // Real-time DTR Functions
         function updateCurrentTime() {
@@ -632,7 +626,10 @@
                 minute: '2-digit', 
                 second: '2-digit' 
             });
-            document.getElementById('currentTime').textContent = timeString;
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
         }
 
         function updateDTRStatus() {
@@ -643,7 +640,7 @@
                     const formatTime = (timeString) => {
                         if (!timeString || timeString === '-') return '-';
                         try {
-                            const [hours, minutes, seconds] = timeString.split(':');
+                            const [hours, minutes] = timeString.split(':');
                             const hour = parseInt(hours);
                             const ampm = hour >= 12 ? 'PM' : 'AM';
                             const displayHour = hour % 12 || 12;
@@ -655,6 +652,8 @@
 
                     const timeInElement = document.getElementById('todayTimeIn');
                     const timeOutElement = document.getElementById('todayTimeOut');
+                    const totalHoursElement = document.getElementById('totalHoursDisplay');
+                    const progressPercentElement = document.getElementById('progressPercent');
                     
                     if (timeInElement) {
                         timeInElement.textContent = formatTime(data.today_time_in);
@@ -662,40 +661,52 @@
                     if (timeOutElement) {
                         timeOutElement.textContent = formatTime(data.today_time_out);
                     }
+                    if (totalHoursElement) {
+                        totalHoursElement.textContent = data.total_hours.toFixed(2);
+                    }
+                    if (progressPercentElement) {
+                        progressPercentElement.textContent = data.progress_percent.toFixed(1);
+                    }
                     
                     // Update button states
                     const timeInBtn = document.getElementById('timeInBtn');
                     const timeOutBtn = document.getElementById('timeOutBtn');
                     
-                    const now = new Date();
-                    const currentHour = now.getHours();
-                    const currentMinute = now.getMinutes();
-                    // Time In is available anytime except exactly 5:00 PM (hour 17, minute 0)
-                    const canTimeIn = !(currentHour == 17 && currentMinute == 0);
-                    // Time Out can be done manually until 4:59 PM, then auto-timeout at 5:00 PM
-                    const canTimeOut = currentHour < 17;
-                    
                     const withinHours = !!data.is_working_hours && !!data.is_workday;
-                    const selfAttendanceNotice = document.getElementById('selfAttendanceNotice');
-                    if (selfAttendanceNotice) {
-                        selfAttendanceNotice.style.display = 'block';
-                    }
 
                     if (timeInBtn && timeOutBtn) {
+                        // Reset button states first
+                        timeInBtn.style.cursor = 'pointer';
+                        timeOutBtn.style.cursor = 'pointer';
+                        
                         if (!withinHours) {
                             timeInBtn.disabled = true;
                             timeOutBtn.disabled = true;
+                            timeInBtn.style.opacity = '0.5';
+                            timeOutBtn.style.opacity = '0.5';
+                            timeInBtn.style.cursor = 'not-allowed';
+                            timeOutBtn.style.cursor = 'not-allowed';
                         } else if (data.today_status === 'not_started') {
-                            // Can time in anytime except 5:00 PM
-                            timeInBtn.disabled = !canTimeIn;
+                            timeInBtn.disabled = false;
                             timeOutBtn.disabled = true;
+                            timeInBtn.style.opacity = '1';
+                            timeOutBtn.style.opacity = '0.5';
+                            timeInBtn.style.cursor = 'pointer';
+                            timeOutBtn.style.cursor = 'not-allowed';
                         } else if (data.today_status === 'working') {
                             timeInBtn.disabled = true;
-                            // Can time out until 5:00 PM (auto-timeout happens at 5:00 PM)
-                            timeOutBtn.disabled = !canTimeOut;
+                            timeOutBtn.disabled = false;
+                            timeInBtn.style.opacity = '0.5';
+                            timeOutBtn.style.opacity = '1';
+                            timeInBtn.style.cursor = 'not-allowed';
+                            timeOutBtn.style.cursor = 'pointer';
                         } else {
                             timeInBtn.disabled = true;
                             timeOutBtn.disabled = true;
+                            timeInBtn.style.opacity = '0.5';
+                            timeOutBtn.style.opacity = '0.5';
+                            timeInBtn.style.cursor = 'not-allowed';
+                            timeOutBtn.style.cursor = 'not-allowed';
                         }
                     }
                 })
@@ -704,32 +715,48 @@
                 });
         }
 
-        // Time In/Out Handlers - Fully Functional with SweetAlert
+        // Time In Handler
         function handleTimeIn() {
             const btn = document.getElementById('timeInBtn');
-            if (!btn || btn.disabled) return;
+            if (!btn) {
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Error',
+                    text: 'Time In button not found. Please refresh the page.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
             
-            // Disable button and show processing
+            if (btn.disabled) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '⚠️ Time In Not Available',
+                    text: 'Time In is currently not available. Please check your status or try again later.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+            
             btn.disabled = true;
             const originalText = btn.textContent;
             btn.textContent = 'Processing...';
             
-            // Get CSRF token
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
             
-            // Make request
-                    fetch('{{ route("intern.timein") }}', {
-                        method: 'POST',
-                        headers: {
+            fetch('{{ route("intern.timein") }}', {
+                method: 'POST',
+                headers: {
                     'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
+                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({})
             })
             .then(response => {
-                // Handle both JSON and non-JSON responses
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
                     return response.json().then(data => ({ ok: response.ok, status: response.status, data: data }));
@@ -747,43 +774,66 @@
             .then(result => {
                 if (result.ok && result.data && result.data.success) {
                     // Success
-                            Swal.fire({
-                                icon: 'success',
+                    Swal.fire({
+                        icon: 'success',
                         title: '✅ Time In Successful!',
                         text: result.data.message || 'Time In recorded successfully!',
                         timer: 3000,
                         showConfirmButton: true,
                         confirmButtonText: 'OK'
                     }).then(() => {
-                            updateDTRStatus();
+                        updateDTRStatus();
                     });
                     setTimeout(() => updateDTRStatus(), 500);
-                        } else {
-                    // Error/Warning
+                } else {
+                    // Error/Warning handling
                     const message = result.data?.message || 'Failed to record Time In';
-                    const isWarning = result.status === 400 && (message.includes('already') || message.includes('available') || message.includes('8:00 AM'));
+                    const status = result.status || 500;
                     
-                            Swal.fire({
-                        icon: isWarning ? 'warning' : 'error',
-                        title: isWarning ? '⚠️ Warning' : '❌ Time In Failed',
+                    // Determine alert type based on message content
+                    let alertType = 'error';
+                    let alertTitle = '❌ Time In Failed';
+                    
+                    if (status === 400) {
+                        if (message.includes('already') || message.includes('already timed in')) {
+                            alertType = 'warning';
+                            alertTitle = '⚠️ Already Timed In';
+                        } else if (message.includes('Saturday') || message.includes('Sunday') || message.includes('weekend')) {
+                            alertType = 'warning';
+                            alertTitle = '⚠️ Weekend - Time In Not Available';
+                        } else if (message.includes('5:00 PM') || message.includes('5:00PM') || message.includes('17:00')) {
+                            alertType = 'warning';
+                            alertTitle = '⚠️ Time In Not Available';
+                        } else {
+                            alertType = 'warning';
+                            alertTitle = '⚠️ Warning';
+                        }
+                    } else if (status === 500 || status >= 500) {
+                        alertType = 'error';
+                        alertTitle = '❌ Server Error';
+                    }
+                    
+                    Swal.fire({
+                        icon: alertType,
+                        title: alertTitle,
                         text: message,
                         showConfirmButton: true,
                         confirmButtonText: 'OK'
                     });
                     
-                    // Re-enable button if it's not a permanent state
-                    if (!isWarning || !message.includes('already')) {
+                    // Re-enable button if it's not a permanent state (already timed in)
+                    if (!message.includes('already') && !message.includes('already timed in')) {
                         btn.disabled = false;
                         btn.textContent = originalText;
                     }
-                        }
-                    })
-                    .catch(error => {
+                }
+            })
+            .catch(error => {
                 console.error('Time In Error:', error);
-                        Swal.fire({
-                            icon: 'error',
+                Swal.fire({
+                    icon: 'error',
                     title: '❌ Connection Error',
-                    text: 'Failed to connect to server. Please check your connection and try again.',
+                    text: 'Failed to connect to server. Please check your internet connection and try again.',
                     showConfirmButton: true,
                     confirmButtonText: 'OK'
                 });
@@ -792,31 +842,48 @@
             });
         }
         
+        // Time Out Handler
         function handleTimeOut() {
             const btn = document.getElementById('timeOutBtn');
-            if (!btn || btn.disabled) return;
+            if (!btn) {
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Error',
+                    text: 'Time Out button not found. Please refresh the page.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
             
-            // Disable button and show processing
+            if (btn.disabled) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '⚠️ Time Out Not Available',
+                    text: 'Time Out is currently not available. You must time in first, or you may have already timed out today.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+            
             btn.disabled = true;
             const originalText = btn.textContent;
             btn.textContent = 'Processing...';
             
-            // Get CSRF token
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
             
-            // Make request
-                    fetch('{{ route("intern.timeout") }}', {
-                        method: 'POST',
-                        headers: {
+            fetch('{{ route("intern.timeout") }}', {
+                method: 'POST',
+                headers: {
                     'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
+                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({})
             })
             .then(response => {
-                // Handle both JSON and non-JSON responses
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
                     return response.json().then(data => ({ ok: response.ok, status: response.status, data: data }));
@@ -834,43 +901,66 @@
             .then(result => {
                 if (result.ok && result.data && result.data.success) {
                     // Success
-                            Swal.fire({
-                                icon: 'success',
+                    Swal.fire({
+                        icon: 'success',
                         title: '✅ Time Out Successful!',
                         text: result.data.message || 'Time Out recorded successfully!',
                         timer: 3000,
                         showConfirmButton: true,
                         confirmButtonText: 'OK'
                     }).then(() => {
-                            updateDTRStatus();
+                        updateDTRStatus();
                     });
                     setTimeout(() => updateDTRStatus(), 500);
-                        } else {
-                    // Error/Warning
+                } else {
+                    // Error/Warning handling
                     const message = result.data?.message || 'Failed to record Time Out';
-                    const isWarning = result.status === 400 && (message.includes('already') || message.includes('must time in'));
+                    const status = result.status || 500;
                     
-                            Swal.fire({
-                        icon: isWarning ? 'warning' : 'error',
-                        title: isWarning ? '⚠️ Warning' : '❌ Time Out Failed',
+                    // Determine alert type based on message content
+                    let alertType = 'error';
+                    let alertTitle = '❌ Time Out Failed';
+                    
+                    if (status === 400) {
+                        if (message.includes('already') || message.includes('already timed out')) {
+                            alertType = 'warning';
+                            alertTitle = '⚠️ Already Timed Out';
+                        } else if (message.includes('must time in') || message.includes('time in first')) {
+                            alertType = 'error';
+                            alertTitle = '❌ Time In Required';
+                        } else if (message.includes('Saturday') || message.includes('Sunday') || message.includes('weekend')) {
+                            alertType = 'warning';
+                            alertTitle = '⚠️ Weekend - Time Out Not Available';
+                        } else {
+                            alertType = 'warning';
+                            alertTitle = '⚠️ Warning';
+                        }
+                    } else if (status === 500 || status >= 500) {
+                        alertType = 'error';
+                        alertTitle = '❌ Server Error';
+                    }
+                    
+                    Swal.fire({
+                        icon: alertType,
+                        title: alertTitle,
                         text: message,
                         showConfirmButton: true,
                         confirmButtonText: 'OK'
                     });
                     
-                    // Re-enable button if it's not a permanent state
-                    if (!isWarning || !message.includes('already')) {
+                    // Re-enable button if it's not a permanent state (already timed out)
+                    if (!message.includes('already') && !message.includes('already timed out')) {
                         btn.disabled = false;
                         btn.textContent = originalText;
                     }
-                        }
-                    })
-                    .catch(error => {
+                }
+            })
+            .catch(error => {
                 console.error('Time Out Error:', error);
-                        Swal.fire({
-                            icon: 'error',
+                Swal.fire({
+                    icon: 'error',
                     title: '❌ Connection Error',
-                    text: 'Failed to connect to server. Please check your connection and try again.',
+                    text: 'Failed to connect to server. Please check your internet connection and try again.',
                     showConfirmButton: true,
                     confirmButtonText: 'OK'
                 });
@@ -879,30 +969,35 @@
             });
         }
         
-        // Attach event listeners when DOM is ready
+        // Make functions globally available for onclick handlers
+        window.handleTimeIn = handleTimeIn;
+        window.handleTimeOut = handleTimeOut;
+        
+        // Attach event listeners as backup (onclick is primary)
         function attachTimeHandlers() {
             const timeInBtn = document.getElementById('timeInBtn');
             const timeOutBtn = document.getElementById('timeOutBtn');
             
-            if (timeInBtn) {
-                // Remove existing listeners
-                const newTimeInBtn = timeInBtn.cloneNode(true);
-                timeInBtn.parentNode.replaceChild(newTimeInBtn, timeInBtn);
-                newTimeInBtn.addEventListener('click', function(e) {
+            // Attach listeners only if not already attached
+            if (timeInBtn && !timeInBtn.hasAttribute('data-listener-attached')) {
+                timeInBtn.setAttribute('data-listener-attached', 'true');
+                timeInBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    handleTimeIn();
+                    if (!timeInBtn.disabled) {
+                        handleTimeIn();
+                    }
                 });
             }
             
-            if (timeOutBtn) {
-                // Remove existing listeners
-                const newTimeOutBtn = timeOutBtn.cloneNode(true);
-                timeOutBtn.parentNode.replaceChild(newTimeOutBtn, timeOutBtn);
-                newTimeOutBtn.addEventListener('click', function(e) {
+            if (timeOutBtn && !timeOutBtn.hasAttribute('data-listener-attached')) {
+                timeOutBtn.setAttribute('data-listener-attached', 'true');
+                timeOutBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    handleTimeOut();
+                    if (!timeOutBtn.disabled) {
+                        handleTimeOut();
+                    }
                 });
             }
         }
@@ -910,12 +1005,13 @@
         // Initialize handlers
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', attachTimeHandlers);
-                } else {
+        } else {
             attachTimeHandlers();
         }
         
         // Fallback initialization
         setTimeout(attachTimeHandlers, 100);
+        setTimeout(attachTimeHandlers, 500);
         window.addEventListener('load', () => setTimeout(attachTimeHandlers, 100));
 
         // Initialize DTR functionality

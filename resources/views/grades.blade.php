@@ -388,9 +388,193 @@
         .loading {
             animation: pulse 1.5s ease-in-out infinite;
         }
+
+        /* Broadcast Section */
+        .broadcast-section {
+            background: #f1f5f9;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 2px solid #e2e8f0;
+            display: block;
+            visibility: visible;
+        }
+
+        .broadcast-header {
+            margin-bottom: 16px;
+        }
+
+        .broadcast-header h3 {
+            margin: 0 0 8px 0;
+            color: #1e293b;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .broadcast-header p {
+            margin: 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .broadcast-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Broadcast Button Styles */
+        .btn-broadcast {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 250px;
+            border: 2px solid;
+            white-space: nowrap;
+        }
+
+        .btn-certificate {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+
+        .btn-certificate:hover:not(:disabled) {
+            background: #059669;
+            border-color: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-evaluation {
+            background: #8b5cf6;
+            color: white;
+            border-color: #8b5cf6;
+        }
+
+        .btn-evaluation:hover:not(:disabled) {
+            background: #7c3aed;
+            border-color: #7c3aed;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-broadcast:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Ensure broadcast section is always visible */
+        #broadcastSection {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: relative !important;
+            z-index: 10 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+            background: #f1f5f9 !important;
+            padding: 24px !important;
+            border-radius: 12px !important;
+            margin-bottom: 24px !important;
+            margin-top: 0 !important;
+            border: 2px solid #e2e8f0 !important;
+            box-sizing: border-box !important;
+        }
+
+        #broadcastSection * {
+            visibility: visible !important;
+        }
+
+        #broadcastSection .broadcast-header {
+            margin-bottom: 16px !important;
+            display: block !important;
+        }
+
+        #broadcastSection .broadcast-header h3 {
+            margin: 0 0 8px 0 !important;
+            color: #1e293b !important;
+            font-size: 18px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            font-weight: 600 !important;
+        }
+
+        #broadcastSection .broadcast-header p {
+            margin: 0 !important;
+            color: #64748b !important;
+            font-size: 14px !important;
+        }
+
+        #broadcastSection .broadcast-buttons {
+            display: flex !important;
+            gap: 12px !important;
+            flex-wrap: wrap !important;
+            width: 100% !important;
+        }
+
+        #broadcastCertificateBtn,
+        #broadcastEvaluationBtn {
+            display: inline-flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            align-items: center !important;
+            gap: 8px !important;
+            min-width: 280px !important;
+            flex: 1 !important;
+            max-width: 400px !important;
+            padding: 12px 24px !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            border: 2px solid !important;
+        }
+
+        #broadcastCertificateBtn {
+            background: #10b981 !important;
+            color: white !important;
+            border-color: #10b981 !important;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2) !important;
+        }
+
+        #broadcastEvaluationBtn {
+            background: #8b5cf6 !important;
+            color: white !important;
+            border-color: #8b5cf6 !important;
+            box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2) !important;
+        }
+
+        /* Button hover effects */
+        #broadcastCertificateBtn:hover:not(:disabled) {
+            background: #059669 !important;
+            border-color: #059669 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+        }
+
+        #broadcastEvaluationBtn:hover:not(:disabled) {
+            background: #7c3aed !important;
+            border-color: #7c3aed !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3) !important;
+        }
     </style>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <div class="grades-container">
         <!-- Page Header -->
@@ -410,6 +594,34 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="alert error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
+        <!-- Broadcast Section - Placed right after alerts, before filter section -->
+        <div id="broadcastSection" class="broadcast-section">
+            <div class="broadcast-header">
+                <h3>
+                    <i class="fas fa-bullhorn" style="color: #2563eb;"></i>
+                    Broadcast Requests to All Interns
+                </h3>
+                <p>Send document requests to all interns at once</p>
+            </div>
+            <div class="broadcast-buttons">
+                <button type="button" id="broadcastCertificateBtn" data-type="certificate" class="btn-broadcast btn-certificate">
+                    <i class="fas fa-certificate"></i>
+                    <span id="certificateBtnText">Send Request to all Interns - Certificate</span>
+                </button>
+                <button type="button" id="broadcastEvaluationBtn" data-type="evaluation" class="btn-broadcast btn-evaluation">
+                    <i class="fas fa-file-alt"></i>
+                    <span id="evaluationBtnText">Send Request to all Interns - Evaluation Form</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Filter Section -->
         <div class="filter-section">
             <div class="filter-controls">
@@ -419,25 +631,27 @@
                     <button type="submit" class="filter-btn {{ !request('filter') || request('filter') === 'all' ? 'active' : '' }}">
                         <i class="fas fa-th-large"></i>
                         Show All
-                        @if(array_sum($sectionCounts))
+                        @if(isset($sectionCounts) && is_array($sectionCounts) && array_sum($sectionCounts) > 0)
                             <span class="badge">{{ array_sum($sectionCounts) }}</span>
                         @endif
                     </button>
                 </form>
 
                 {{-- Section Buttons --}}
-                @foreach(array_keys($sectionCounts) as $section)
-                    <form method="GET" action="{{ route('grades') }}" style="display: inline;">
-                        <input type="hidden" name="filter" value="{{ $section }}">
-                        <button type="submit" class="filter-btn {{ request('filter') === $section ? 'active' : '' }}">
-                            <i class="fas fa-users"></i>
-                            {{ $section }}
-                            @if(isset($sectionCounts[$section]) && $sectionCounts[$section] > 0)
-                                <span class="badge">{{ $sectionCounts[$section] }}</span>
-                            @endif
-                        </button>
-                    </form>
-                @endforeach
+                @if(isset($sectionCounts) && is_array($sectionCounts))
+                    @foreach(array_keys($sectionCounts) as $section)
+                        <form method="GET" action="{{ route('grades') }}" style="display: inline;">
+                            <input type="hidden" name="filter" value="{{ $section }}">
+                            <button type="submit" class="filter-btn {{ request('filter') === $section ? 'active' : '' }}">
+                                <i class="fas fa-users"></i>
+                                {{ $section }}
+                                @if(isset($sectionCounts[$section]) && $sectionCounts[$section] > 0)
+                                    <span class="badge">{{ $sectionCounts[$section] }}</span>
+                                @endif
+                            </button>
+                        </form>
+                    @endforeach
+                @endif
 
                 {{-- Search Bar --}}
                 <div class="search-container">
@@ -459,7 +673,7 @@
         </div>
 
         <!-- Table -->
-        @if($interns->count() > 0)
+        @if(isset($interns) && $interns->count() > 0)
             <div class="table-container">
                 <table>
                     <thead>
@@ -483,12 +697,24 @@
                                 @foreach(['certificate', 'evaluation'] as $type)
                                     <td>
                                         @php
-                                            $hasSubmission = isset($submissions[$intern->id][$type]);
-                                            $wasRequested = isset($requests[$intern->id][$type]);
+                                            $hasSubmission = false;
+                                            $wasRequested = false;
+                                            
+                                            if (isset($submissions) && isset($submissions[$intern->id]) && isset($submissions[$intern->id][$type])) {
+                                                $submission = $submissions[$intern->id][$type];
+                                                $hasSubmission = !empty($submission->file_path ?? null);
+                                            }
+                                            
+                                            if (isset($requests) && isset($requests[$intern->id]) && isset($requests[$intern->id][$type])) {
+                                                $wasRequested = true;
+                                            }
                                         @endphp
 
-                                        @if($hasSubmission && !empty($submissions[$intern->id][$type]->file_path))
-                                            <a href="{{ asset('storage/' . $submissions[$intern->id][$type]->file_path) }}"
+                                        @if($hasSubmission)
+                                            @php
+                                                $submissionFile = $submissions[$intern->id][$type]->file_path;
+                                            @endphp
+                                            <a href="{{ asset('storage/' . $submissionFile) }}"
                                                class="btn btn-view" target="_blank">
                                                 <i class="fas fa-eye"></i>
                                                 View
@@ -547,8 +773,142 @@
     </div>
 
     <script>
+        // Broadcast Request Function
+        function broadcastRequest(type) {
+            const btnId = type === 'certificate' ? 'broadcastCertificateBtn' : 'broadcastEvaluationBtn';
+            const btnTextId = type === 'certificate' ? 'certificateBtnText' : 'evaluationBtnText';
+            const btn = document.getElementById(btnId);
+            const btnText = document.getElementById(btnTextId);
+            const icon = btn.querySelector('i');
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+            const originalText = btnText.textContent;
+            btnText.textContent = 'Sending...';
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+            
+            // Broadcast route URL
+            const broadcastRouteUrl = '{{ url("/grades/broadcast") }}';
+            
+            // Make request
+            fetch(broadcastRouteUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    type: type
+                })
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(data => ({ ok: response.ok, status: response.status, data: data }));
+                } else {
+                    return response.text().then(text => {
+                        try {
+                            const data = JSON.parse(text);
+                            return { ok: response.ok, status: response.status, data: data };
+                        } catch (e) {
+                            return { ok: false, status: response.status, data: { success: false, message: text || 'Server error occurred' } };
+                        }
+                    });
+                }
+            })
+            .then(result => {
+                if (result.ok && result.data && result.data.success) {
+                    // Success
+                    Swal.fire({
+                        icon: 'success',
+                        title: '✅ Request Sent Successfully!',
+                        text: result.data.message || `Request for ${type === 'certificate' ? 'Certificate' : 'Evaluation Form'} has been sent to all interns.`,
+                        timer: 3000,
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK'
+                    });
+                    
+                    // Update button state
+                    btnText.textContent = 'Request sent';
+                    btn.classList.remove('btn-certificate', 'btn-evaluation');
+                    btn.style.background = '#64748b';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = '#64748b';
+                    icon.className = 'fas fa-check-circle';
+                } else {
+                    // Error/Warning
+                    const message = result.data?.message || `Failed to send request for ${type === 'certificate' ? 'Certificate' : 'Evaluation Form'}`;
+                    const isWarning = result.status === 400;
+                    
+                    Swal.fire({
+                        icon: isWarning ? 'warning' : 'error',
+                        title: isWarning ? '⚠️ Warning' : '❌ Request Failed',
+                        text: message,
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK'
+                    });
+                    
+                    // Re-enable button
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                    btnText.textContent = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Broadcast Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Connection Error',
+                    text: 'Failed to connect to server. Please check your connection and try again.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK'
+                });
+                
+                // Re-enable button
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+                btnText.textContent = originalText;
+            });
+        }
+
         // Real-time search functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Ensure broadcast section is always visible
+            const broadcastSection = document.getElementById('broadcastSection');
+            if (broadcastSection) {
+                broadcastSection.style.display = 'block';
+                broadcastSection.style.visibility = 'visible';
+                broadcastSection.style.opacity = '1';
+                
+                // Ensure buttons are visible
+                const certBtn = document.getElementById('broadcastCertificateBtn');
+                const evalBtn = document.getElementById('broadcastEvaluationBtn');
+                if (certBtn) {
+                    certBtn.style.display = 'inline-flex';
+                    certBtn.style.visibility = 'visible';
+                    certBtn.style.opacity = '1';
+                    certBtn.addEventListener('click', function() {
+                        broadcastRequest('certificate');
+                    });
+                }
+                if (evalBtn) {
+                    evalBtn.style.display = 'inline-flex';
+                    evalBtn.style.visibility = 'visible';
+                    evalBtn.style.opacity = '1';
+                    evalBtn.addEventListener('click', function() {
+                        broadcastRequest('evaluation');
+                    });
+                }
+            }
+            
             const searchInput = document.getElementById('searchInput');
             const tableRows = document.querySelectorAll('tbody tr');
             
