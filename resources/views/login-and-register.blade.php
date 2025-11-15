@@ -140,7 +140,8 @@
             margin-top: 20px;
         }
 
-        .intern-link button {
+        .intern-link button,
+        .intern-link a.intern-btn {
             padding: 10px 20px;
             border: none;
             border-radius: 6px;
@@ -148,6 +149,8 @@
             font-size: 14px;
             cursor: pointer;
             margin-top: 5px;
+            display: inline-block;
+            text-align: center;
         }
 
         .intern-btn { background-color: #38c172; }
@@ -566,9 +569,7 @@
         <!-- Intern Login -->
         <div class="intern-link">
             <p>Are you an intern?</p>
-            <a href="{{ route('intern.login') }}">
-                <button type="button" class="intern-btn">Login as Intern</button>
-            </a>
+            <a href="{{ route('intern.login') }}" class="intern-btn" style="text-decoration: none; display: inline-block; text-align: center;">Login as Intern</a>
         </div>
         
     </div>
