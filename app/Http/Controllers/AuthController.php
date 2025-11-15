@@ -272,8 +272,12 @@ class AuthController extends Controller
                 $this->logLoginAttempt($request->email, $ipAddress, $userAgent, true, 'Login successful with 2FA', $locationData);
                 
                 // Redirect based on role
+                // Newly created admin accounts should go to the regular admin dashboard (dashboard)
+                // Super admin dashboard (admin.dashboard) is for special admin functions
                 if ($user->role === 'admin') {
-                    return redirect()->route('admin.dashboard')->with('success', 'Welcome back, admin!');
+                    // Check if this is a newly created account (no email_verified_at means it was just created)
+                    // or redirect all admin accounts to the regular dashboard
+                    return redirect()->route('dashboard')->with('success', 'Welcome back, admin!');
                 }
                 return redirect()->intended(route('dashboard'))->with('success', 'Welcome back!');
             } else {

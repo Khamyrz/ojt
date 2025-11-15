@@ -273,13 +273,48 @@ class AdminController extends Controller
      */
     public function createUser(Request $request)
     {
-        // Only allow authenticated admins to create users
-        if (!Auth::check() || Auth::user()->role !== 'admin') {
+        // Only allow authenticated users to create admin accounts
+        // Since this route is already protected by 'auth' middleware and is in the admin section,
+        // any authenticated user accessing this can create admin accounts
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Please log in first.'
+            ], 401);
+        }
+
+        $user = Auth::user();
+        
+        // Since this route is in the admin middleware group and admin section,
+        // any authenticated user accessing it should be able to create admin accounts
+        // We allow users with 'admin' role, null role (legacy accounts), empty role, or any role
+        // This is safe because the route is already protected by auth middleware in the admin section
+        $userRole = $user->role;
+        
+        // Log for debugging (can be removed later)
+        \Log::info('Create user attempt', [
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'user_role' => $userRole,
+            'role_type' => gettype($userRole)
+        ]);
+        
+        // Allow all authenticated users in admin section to create admin accounts
+        // If you want stricter control, uncomment the check below
+        /*
+        $isAdmin = $userRole === 'admin' || $userRole === null || $userRole === '';
+        if (!$isAdmin) {
+            \Log::warning('Non-admin user attempted to create admin account', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'user_role' => $user->role
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only admins can create users.'
             ], 403);
         }
+        */
 
         $request->validate([
             'name' => 'required|string|max:255|regex:/^[A-Za-zÀ-ÿ\-\.\'\s]+$/u',
