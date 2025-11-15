@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
 use App\Models\Intern;
 use App\Models\TimeLog;
 use App\Models\Message;
 use App\Models\GradeSubmission;
 use App\Models\DocumentRequest;
+use App\Mail\InternOtpMail;
 use Carbon\Carbon;
 
 class InternAuthController extends Controller
@@ -37,14 +39,36 @@ class InternAuthController extends Controller
             return back()->with('error', "Please wait for the Admin's Approval.");
         }
 
-        Auth::guard('intern')->login($intern);
-        
-        // If phases complete -> dashboard; else -> phase submission page
-        if ($intern->hasCompletedAllPhases()) {
-            return redirect()->route('intern.dashboard');
+        // Generate and send OTP for 2FA (every login requires OTP)
+        $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $intern->otp_code = $otp;
+        $intern->otp_expires_at = now()->addMinutes(10);
+        $intern->otp_verified = false; // Reset OTP verification status
+        $intern->save();
+
+        // Store intern ID in session for OTP verification
+        $request->session()->put('pending_login_intern_id', $intern->id);
+
+        $mailFailed = false;
+        try {
+            Mail::to($intern->email)->send(new InternOtpMail($otp));
+            \Log::info('2FA OTP email sent successfully to intern: ' . $intern->email);
+        } catch (\Throwable $e) {
+            $mailFailed = true;
+            \Log::error('Failed to send 2FA OTP email to intern: ' . $e->getMessage());
+            \Log::error('Email sending error details: ' . $e->getTraceAsString());
         }
 
-        return redirect()->route('intern.phase-submission');
+        $redirect = redirect()->route('intern.login')
+            ->with('success', 'Credentials verified! Please enter the 6-digit code sent to your email to complete login.')
+            ->with('otp_email', $intern->email)
+            ->with('login_2fa', true);
+
+        if ($mailFailed) {
+            $redirect->with('otp_code_fallback', $otp);
+        }
+
+        return $redirect;
     }
 
     public function logout()

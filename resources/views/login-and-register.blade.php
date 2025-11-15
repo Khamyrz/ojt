@@ -1596,6 +1596,22 @@
                 });
             @endif
         @endif
+
+        // Show OTP modal for 2FA login
+        @if(session('login_2fa') && session('otp_email'))
+            // OTP modal is already shown above, but ensure it's visible for 2FA
+            setTimeout(() => {
+                const modal = document.getElementById('otpModal');
+                if (modal) {
+                    modal.style.display = 'block';
+                    document.body.style.overflow = 'hidden';
+                    const otpInput = document.getElementById('otpInput');
+                    if (otpInput) {
+                        setTimeout(() => otpInput.focus(), 150);
+                    }
+                }
+            }, 100);
+        @endif
     });
 
     // Ensure timer continues even when user navigates away and comes back

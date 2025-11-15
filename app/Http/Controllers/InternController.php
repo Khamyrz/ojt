@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OtpMail;
+use App\Mail\InternOtpMail;
 
 class InternController extends Controller
 {
@@ -86,7 +87,7 @@ class InternController extends Controller
 
         // Send OTP via email
         try {
-            Mail::to($intern->email)->send(new OtpMail($otp));
+            Mail::to($intern->email)->send(new InternOtpMail($otp));
             $mailSent = true;
         } catch (\Exception $e) {
             \Log::error('Failed to send OTP email to intern: ' . $e->getMessage());
@@ -629,12 +630,38 @@ class InternController extends Controller
         }
 
         if (hash_equals($intern->otp_code, $request->otp)) {
-            $intern->otp_verified = true;
-            $intern->otp_code = null;
-            $intern->otp_expires_at = null;
-            $intern->save();
+            // Check if this is a 2FA login verification
+            $pendingInternId = $request->session()->get('pending_login_intern_id');
 
-            return redirect()->route('intern.login')->with('success', 'Email verified successfully! You can now log in.');
+            if ($pendingInternId && $pendingInternId == $intern->id) {
+                // This is a 2FA login - complete the login process
+                $intern->otp_verified = true;
+                $intern->otp_code = null;
+                $intern->otp_expires_at = null;
+                $intern->save();
+
+                Auth::guard('intern')->login($intern);
+                
+                // Clear pending login session data
+                $request->session()->forget('pending_login_intern_id');
+                
+                // Regenerate session ID for security
+                $request->session()->regenerate();
+                
+                // Redirect based on phase completion
+                if ($intern->hasCompletedAllPhases()) {
+                    return redirect()->route('intern.dashboard')->with('success', 'Welcome back!');
+                }
+                return redirect()->route('intern.phase-submission')->with('success', 'Welcome back!');
+            } else {
+                // This is a regular OTP verification (e.g., registration)
+                $intern->otp_verified = true;
+                $intern->otp_code = null;
+                $intern->otp_expires_at = null;
+                $intern->save();
+
+                return redirect()->route('intern.login')->with('success', 'Email verified successfully! You can now log in.');
+            }
         }
 
         return back()->with('error', 'Invalid OTP code.');
@@ -670,7 +697,8 @@ class InternController extends Controller
         $intern->save();
 
         try {
-            Mail::to($intern->email)->send(new OtpMail($otp));
+            Mail::to($intern->email)->send(new InternOtpMail($otp));
+            \Log::info('OTP email resent successfully to intern: ' . $intern->email);
         } catch (\Exception $e) {
             \Log::error('Failed to resend OTP email to intern: ' . $e->getMessage());
             // Return OTP in response as last-resort fallback so user can proceed
@@ -709,7 +737,7 @@ class InternController extends Controller
         $intern->save();
 
         try {
-            Mail::to($intern->email)->send(new OtpMail($otp));
+            Mail::to($intern->email)->send(new InternOtpMail($otp));
         } catch (\Exception $e) {
             \Log::error('Failed to send forgot password OTP email: ' . $e->getMessage());
             // Return OTP in response as last-resort fallback so user can proceed
@@ -779,7 +807,7 @@ class InternController extends Controller
         $intern->save();
 
         try {
-            Mail::to($intern->email)->send(new OtpMail($otp));
+            Mail::to($intern->email)->send(new InternOtpMail($otp));
         } catch (\Exception $e) {
             \Log::error('Failed to resend forgot password OTP email: ' . $e->getMessage());
             // Return OTP in response as last-resort fallback so user can proceed

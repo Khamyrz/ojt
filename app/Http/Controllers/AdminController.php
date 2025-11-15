@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Models\LoginAttempt;
 use App\Mail\AdminPasswordResetMail;
 use App\Mail\OtpMail;
+use App\Mail\AdminOtpMail;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -263,6 +265,76 @@ class AdminController extends Controller
             ]);
         } catch (\Exception $e) {
             \Log::error('Failed to log login attempt: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create a new admin user
+     */
+    public function createUser(Request $request)
+    {
+        // Only allow authenticated admins to create users
+        if (!Auth::check() || Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only admins can create users.'
+            ], 403);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255|regex:/^[A-Za-zÀ-ÿ\-\.\'\s]+$/u',
+            'email' => 'required|email|unique:users,email|max:255',
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                PasswordRule::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised()
+            ],
+        ], [
+            'name.regex' => 'Name may include letters, spaces, hyphens, apostrophes, and periods.',
+            'password.uncompromised' => 'This password has been found in data breaches. Please choose a different password.',
+        ]);
+
+        try {
+            // Create user with admin role
+            $user = User::create([
+                'name' => trim($request->name),
+                'email' => strtolower(trim($request->email)),
+                'password' => Hash::make($request->password),
+                'role' => 'admin',
+                'otp_verified' => false, // New account needs activation
+            ]);
+
+            // Generate and store OTP (6 digits) valid for 10 minutes
+            $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $user->otp_code = $otp;
+            $user->otp_expires_at = now()->addMinutes(10);
+            $user->save();
+
+            // Send activation OTP via email
+            try {
+                Mail::to($user->email)->send(new AdminOtpMail($otp));
+                \Log::info('Admin user created and activation OTP sent to: ' . $user->email);
+            } catch (\Throwable $e) {
+                \Log::error('Failed to send activation OTP email: ' . $e->getMessage());
+                // Still return success, but log the error
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Admin user created successfully. Activation OTP has been sent to the user\'s email.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to create admin user: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create admin user: ' . $e->getMessage()
+            ], 500);
         }
     }
 

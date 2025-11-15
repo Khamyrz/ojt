@@ -22,6 +22,9 @@ class TimeLogController extends Controller
             $date->format('Y') . '-01-01',
             // Christmas
             $date->format('Y') . '-12-25',
+            // Valentine's Day
+            $date->format('Y') . '-2-14',
+
             // Add more holidays as needed
         ];
         

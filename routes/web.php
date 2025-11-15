@@ -143,6 +143,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/supervisors/{id}/reject', [SupervisorController::class, 'reject'])->name('supervisor.reject');
     Route::put('/supervisors/{id}/update', [SupervisorController::class, 'update'])->name('supervisor.update');
     Route::delete('/supervisors/{id}/delete', [SupervisorController::class, 'delete'])->name('supervisor.delete');
+
+    // Admin User Management
+    Route::post('/admin/create-user', [AdminController::class, 'createUser'])->name('admin.create-user');
 });
 
 // Admin connect interns routes removed

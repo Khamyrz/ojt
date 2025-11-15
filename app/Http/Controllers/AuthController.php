@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Mail\OtpMail;
+use App\Mail\AdminOtpMail;
 use App\Models\LoginAttempt;
 
 class AuthController extends Controller
@@ -145,65 +146,54 @@ class AuthController extends Controller
         $locationData = $this->getLocationData($ipAddress);
 
         if (Auth::attempt($credentials, $remember)) {
-            // If OTP not verified, force verification before proceeding
-            if (!Auth::user()->otp_verified) {
-                $email = Auth::user()->email;
+            $user = Auth::user();
+            $email = $user->email;
 
-                // Regenerate and send a fresh OTP on login for unverified accounts
-                $user = User::where('email', $email)->first();
-                if ($user) {
-                    $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-                    $user->otp_code = $otp;
-                    $user->otp_expires_at = now()->addMinutes(10);
-                    $user->save();
+            // Check if this is a new account that needs activation
+            $isNewAccount = !$user->otp_verified && !$user->email_verified_at;
 
-                    $mailFailed = false;
-                    try {
-                        Mail::to($user->email)->send(new OtpMail($otp));
-                        \Log::info('OTP email sent successfully on login to: ' . $user->email);
-                    } catch (\Throwable $e) {
-                        $mailFailed = true;
-                        \Log::error('Failed to send OTP email on login: ' . $e->getMessage());
-                        \Log::error('Email sending error details: ' . $e->getTraceAsString());
-                    }
+            // Generate and send OTP for 2FA (every login requires OTP)
+            $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $user->otp_code = $otp;
+            $user->otp_expires_at = now()->addMinutes(10);
+            $user->otp_verified = false; // Reset OTP verification status
+            $user->save();
 
-                    Auth::logout();
+            // Store user ID in session for OTP verification
+            $request->session()->put('pending_login_user_id', $user->id);
+            $request->session()->put('pending_login_remember', $remember);
 
-                    $redirect = redirect()->route('login')
-                        ->with('error', 'Please verify the 6-digit code sent to your email to continue.')
-                        ->with('otp_email', $email);
-
-                    if ($mailFailed) {
-                        $redirect->with('otp_code_fallback', $otp);
-                    }
-                    // Commented out for production - emails are working properly
-                    // if (app()->environment() !== 'production') {
-                    //     $redirect->with('otp_code_fallback', $otp);
-                    // }
-
-                    return $redirect;
+            $mailFailed = false;
+            try {
+                // Use AdminOtpMail for admin users
+                if ($user->role === 'admin') {
+                    Mail::to($user->email)->send(new AdminOtpMail($otp));
+                } else {
+                    Mail::to($user->email)->send(new OtpMail($otp));
                 }
+                \Log::info(($isNewAccount ? 'Activation' : '2FA') . ' OTP email sent successfully to: ' . $user->email);
+            } catch (\Throwable $e) {
+                $mailFailed = true;
+                \Log::error('Failed to send ' . ($isNewAccount ? 'activation' : '2FA') . ' OTP email: ' . $e->getMessage());
+                \Log::error('Email sending error details: ' . $e->getTraceAsString());
+            }
 
-                Auth::logout();
-                return redirect()->route('login')
-                    ->with('error', 'Please verify the code sent to your email before logging in.')
-                    ->with('otp_email', $email);
+            Auth::logout();
+
+            $successMessage = $isNewAccount 
+                ? 'Account created! Please enter the activation code sent to your email to complete login.'
+                : 'Credentials verified! Please enter the 6-digit code sent to your email to complete login.';
+
+            $redirect = redirect()->route('login')
+                ->with('success', $successMessage)
+                ->with('otp_email', $email)
+                ->with('login_2fa', true);
+
+            if ($mailFailed) {
+                $redirect->with('otp_code_fallback', $otp);
             }
-            // Clear rate limiting on successful login
-            RateLimiter::clear($key);
-            RateLimiter::clear($emailKey);
-            
-            // Log successful login attempt
-            $this->logLoginAttempt($request->email, $ipAddress, $userAgent, true, 'Login successful', $locationData);
-            
-            // Regenerate session ID for security
-            $request->session()->regenerate();
-            
-            // If admin, redirect to admin dashboard
-            if (Auth::user()->role === 'admin') {
-                return redirect()->route('admin.dashboard')->with('success', 'Welcome back, admin!');
-            }
-            return redirect()->intended(route('dashboard'))->with('success', 'Welcome back!');
+
+            return $redirect;
         }
 
         // Increment rate limiting on failed login
@@ -248,13 +238,54 @@ class AuthController extends Controller
         }
 
         if (hash_equals($user->otp_code, $request->otp)) {
-            $user->otp_verified = true;
-            $user->otp_code = null;
-            $user->otp_expires_at = null;
-            $user->email_verified_at = $user->email_verified_at ?: now();
-            $user->save();
+            // Check if this is a 2FA login verification
+            $pendingUserId = $request->session()->get('pending_login_user_id');
+            $remember = $request->session()->get('pending_login_remember', false);
 
-            return redirect()->route('login')->with('success', 'Email verified! You can now log in.');
+            if ($pendingUserId && $pendingUserId == $user->id) {
+                // This is a 2FA login - complete the login process
+                $user->otp_verified = true;
+                $user->otp_code = null;
+                $user->otp_expires_at = null;
+                $user->email_verified_at = $user->email_verified_at ?: now();
+                $user->save();
+
+                Auth::login($user, $remember);
+                
+                // Clear pending login session data
+                $request->session()->forget('pending_login_user_id');
+                $request->session()->forget('pending_login_remember');
+                
+                // Regenerate session ID for security
+                $request->session()->regenerate();
+                
+                // Clear rate limiting on successful login
+                $key = 'login:' . $request->ip();
+                $emailKey = 'login:' . $request->email;
+                RateLimiter::clear($key);
+                RateLimiter::clear($emailKey);
+                
+                // Log successful login attempt
+                $ipAddress = $request->ip();
+                $userAgent = $request->userAgent();
+                $locationData = $this->getLocationData($ipAddress);
+                $this->logLoginAttempt($request->email, $ipAddress, $userAgent, true, 'Login successful with 2FA', $locationData);
+                
+                // Redirect based on role
+                if ($user->role === 'admin') {
+                    return redirect()->route('admin.dashboard')->with('success', 'Welcome back, admin!');
+                }
+                return redirect()->intended(route('dashboard'))->with('success', 'Welcome back!');
+            } else {
+                // This is a regular OTP verification (e.g., registration)
+                $user->otp_verified = true;
+                $user->otp_code = null;
+                $user->otp_expires_at = null;
+                $user->email_verified_at = $user->email_verified_at ?: now();
+                $user->save();
+
+                return redirect()->route('login')->with('success', 'Email verified! You can now log in.');
+            }
         }
 
         return back()->with('error', 'Invalid code. Please try again.');
@@ -288,7 +319,12 @@ class AuthController extends Controller
         $user->save();
 
         try {
-            Mail::to($user->email)->send(new OtpMail($otp));
+            // Use AdminOtpMail for admin users, OtpMail for regular users
+            if ($user->role === 'admin') {
+                Mail::to($user->email)->send(new AdminOtpMail($otp));
+            } else {
+                Mail::to($user->email)->send(new OtpMail($otp));
+            }
             \Log::info('OTP email resent successfully to: ' . $user->email);
         } catch (\Throwable $e) {
             \Log::error('Failed to resend OTP email: ' . $e->getMessage());

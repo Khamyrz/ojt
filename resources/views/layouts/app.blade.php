@@ -120,6 +120,11 @@
             @endif
           </a>
         </div>
+        <div class="nav-item">
+          <button type="button" onclick="openCreateUserModal()" class="nav-link" style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; font-family: inherit;">
+            <i class="fas fa-user-plus"></i><span>Create User</span>
+          </button>
+        </div>
       </nav>
 
       <div class="logout-section">
@@ -136,6 +141,141 @@
       @yield('content')
     </div>
   </div>
+
+  <!-- Create User Modal -->
+  <div id="createUserModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; margin: 5% auto;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+        <h2 style="margin: 0; color: #1d3557;">Create Admin User</h2>
+        <span class="close" onclick="closeCreateUserModal()" style="cursor: pointer; font-size: 28px; color: #aaa;">&times;</span>
+      </div>
+      <form id="createUserForm">
+        @csrf
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; color: #334155; font-weight: 600;">Name</label>
+          <input type="text" name="name" required style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box;" placeholder="Enter admin name">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; color: #334155; font-weight: 600;">Email</label>
+          <input type="email" name="email" required style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box;" placeholder="Enter admin email">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; color: #334155; font-weight: 600;">Password</label>
+          <input type="password" name="password" required minlength="8" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box;" placeholder="Enter password (min 8 characters)">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; color: #334155; font-weight: 600;">Confirm Password</label>
+          <input type="password" name="password_confirmation" required minlength="8" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box;" placeholder="Confirm password">
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" onclick="closeCreateUserModal()" style="padding: 12px 24px; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #64748b; cursor: pointer; font-weight: 600;">Cancel</button>
+          <button type="submit" style="padding: 12px 24px; border: none; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; font-weight: 600;">Create User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(5px);
+    }
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: modalFadeIn 0.3s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .close:hover {
+      color: #000;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    function openCreateUserModal() {
+      document.getElementById('createUserModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeCreateUserModal() {
+      document.getElementById('createUserModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+      document.getElementById('createUserForm').reset();
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('createUserModal');
+      if (event.target === modal) {
+        closeCreateUserModal();
+      }
+    }
+
+    // Handle form submission
+    document.getElementById('createUserForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(this);
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating...';
+
+      fetch('{{ route('admin.create-user') }}', {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'Accept': 'application/json'
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          closeCreateUserModal();
+          Swal.fire({
+            title: 'Success!',
+            text: 'Another Admin can now login and an OTP verification will be sent to its account',
+            icon: 'success',
+            confirmButtonText: 'OK'
+          });
+        } else {
+          Swal.fire({
+            title: 'Error!',
+            text: data.message || 'Failed to create admin user',
+            icon: 'error',
+            confirmButtonText: 'OK'
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+          title: 'Error!',
+          text: 'An error occurred while creating the user',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      });
+    });
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   @stack('scripts')
