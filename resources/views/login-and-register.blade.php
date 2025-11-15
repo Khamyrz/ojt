@@ -569,7 +569,7 @@
         <!-- Intern Login -->
         <div class="intern-link">
             <p>Are you an intern?</p>
-            <a href="{{ route('intern.login') }}" class="intern-btn" style="text-decoration: none; display: inline-block; text-align: center;">Login as Intern</a>
+            <a href="{{ route('intern.login') }}" class="intern-btn" id="internLoginLink" style="text-decoration: none; display: inline-block; text-align: center; cursor: pointer;">Login as Intern</a>
         </div>
         
     </div>
@@ -1359,10 +1359,25 @@
             console.log('Email input event listeners added');
         }
 
+        // Ensure intern login link works - explicit redirect
+        const internLoginLink = document.getElementById('internLoginLink');
+        if (internLoginLink) {
+            internLoginLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent the 5-tap listener from interfering
+                window.location.href = '{{ route('intern.login') }}';
+                return false;
+            });
+        }
+
         // Secret 5-tap trigger anywhere on screen
         let tapCount = 0;
         let tapTimer = null;
-        document.addEventListener('click', function() {
+        document.addEventListener('click', function(e) {
+            // Don't count clicks on the intern login link
+            if (e.target.closest('#internLoginLink')) {
+                return;
+            }
             tapCount++;
             if (tapTimer) clearTimeout(tapTimer);
             tapTimer = setTimeout(() => { tapCount = 0; }, 1000);
