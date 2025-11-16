@@ -140,8 +140,7 @@
             margin-top: 20px;
         }
 
-        .intern-link button,
-        .intern-link a.intern-btn {
+        .intern-link button {
             padding: 10px 20px;
             border: none;
             border-radius: 6px;
@@ -149,8 +148,6 @@
             font-size: 14px;
             cursor: pointer;
             margin-top: 5px;
-            display: inline-block;
-            text-align: center;
         }
 
         .intern-btn { background-color: #38c172; }
@@ -569,7 +566,9 @@
         <!-- Intern Login -->
         <div class="intern-link">
             <p>Are you an intern?</p>
-            <a href="{{ route('intern.login') }}" class="intern-btn" id="internLoginLink" style="text-decoration: none; display: inline-block; text-align: center; cursor: pointer;">Login as Intern</a>
+            <a href="{{ route('intern.login') }}">
+                <button type="button" class="intern-btn">Login as Intern</button>
+            </a>
         </div>
         
     </div>
@@ -1359,25 +1358,10 @@
             console.log('Email input event listeners added');
         }
 
-        // Ensure intern login link works - explicit redirect
-        const internLoginLink = document.getElementById('internLoginLink');
-        if (internLoginLink) {
-            internLoginLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation(); // Prevent the 5-tap listener from interfering
-                window.location.href = '{{ route('intern.login') }}';
-                return false;
-            });
-        }
-
         // Secret 5-tap trigger anywhere on screen
         let tapCount = 0;
         let tapTimer = null;
-        document.addEventListener('click', function(e) {
-            // Don't count clicks on the intern login link
-            if (e.target.closest('#internLoginLink')) {
-                return;
-            }
+        document.addEventListener('click', function() {
             tapCount++;
             if (tapTimer) clearTimeout(tapTimer);
             tapTimer = setTimeout(() => { tapCount = 0; }, 1000);
@@ -1611,22 +1595,6 @@
                     allowEscapeKey: false
                 });
             @endif
-        @endif
-
-        // Show OTP modal for 2FA login
-        @if(session('login_2fa') && session('otp_email'))
-            // OTP modal is already shown above, but ensure it's visible for 2FA
-            setTimeout(() => {
-                const modal = document.getElementById('otpModal');
-                if (modal) {
-                    modal.style.display = 'block';
-                    document.body.style.overflow = 'hidden';
-                    const otpInput = document.getElementById('otpInput');
-                    if (otpInput) {
-                        setTimeout(() => otpInput.focus(), 150);
-                    }
-                }
-            }, 100);
         @endif
     });
 
