@@ -579,11 +579,25 @@
     <div class="grades-container">
         <!-- Page Header -->
         <div class="page-header">
-            <h1>
-                <i class="fas fa-chart-bar"></i>
-                Grades Management
-            </h1>
-            <p>View, request, and manage intern certificates and evaluation forms</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h1>
+                        <i class="fas fa-chart-bar"></i>
+                        Grades Management
+                    </h1>
+                    <p>View, request, and manage intern certificates and evaluation forms</p>
+                </div>
+                <div>
+                    <a href="{{ route('grades.export-database') }}" 
+                       class="btn" 
+                       style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: all 0.3s ease;"
+                       onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(16, 185, 129, 0.4)';"
+                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)';">
+                        <i class="fas fa-database"></i>
+                        Export Database
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- Alert Messages -->
@@ -711,13 +725,11 @@
                                         @endphp
 
                                         @if($hasSubmission)
-                                            @php
-                                                $submissionFile = $submissions[$intern->id][$type]->file_path;
-                                            @endphp
-                                            <a href="{{ asset('storage/' . $submissionFile) }}"
-                                               class="btn btn-view" target="_blank">
-                                                <i class="fas fa-eye"></i>
-                                                View
+                                            <a href="{{ route('grades.download', ['internId' => $intern->id, 'type' => $type]) }}"
+                                               class="btn btn-view"
+                                               onclick="downloadAndRedirect(event, this.href);">
+                                                <i class="fas fa-download"></i>
+                                                Download
                                             </a>
                                         @elseif($wasRequested)
                                             <span class="status-label status-requested">
@@ -773,6 +785,34 @@
     </div>
 
     <script>
+        // Download and redirect function
+        function downloadAndRedirect(event, downloadUrl) {
+            event.preventDefault();
+            
+            // Create a temporary anchor element to trigger download
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            
+            // Trigger download
+            link.click();
+            
+            // Remove the link
+            setTimeout(function() {
+                document.body.removeChild(link);
+            }, 100);
+            
+            // Wait for download to start, then redirect back to grades page
+            setTimeout(function() {
+                // Preserve any filters/search parameters
+                const currentUrl = new URL(window.location.href);
+                const params = new URLSearchParams(currentUrl.search);
+                const redirectUrl = '{{ route("grades") }}' + (params.toString() ? '?' + params.toString() : '');
+                window.location.href = redirectUrl;
+            }, 1500); // Wait 1.5 seconds for download to start
+        }
+
         // Broadcast Request Function
         function broadcastRequest(type) {
             const btnId = type === 'certificate' ? 'broadcastCertificateBtn' : 'broadcastEvaluationBtn';

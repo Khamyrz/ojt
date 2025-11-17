@@ -109,6 +109,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/grades', [DashboardController::class, 'grades'])->name('grades');
     Route::post('/grades/request', [DashboardController::class, 'sendGradeRequest'])->name('grades.request');
     Route::post('/grades/broadcast', [DashboardController::class, 'broadcastGradeRequest'])->name('grades.broadcast');
+    Route::get('/grades/download/{internId}/{type}', [DashboardController::class, 'downloadGradeFile'])->name('grades.download');
+    Route::get('/grades/export-database', [DashboardController::class, 'exportDatabase'])->name('grades.export-database');
 
     // Documents
     Route::get('/documents', [DashboardController::class, 'documents'])->name('documents');

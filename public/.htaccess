@@ -14,11 +14,28 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # Allow access to resources folder
+    RewriteCond %{REQUEST_URI} ^/resources/
+    RewriteRule ^ - [L]
+
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Block directory browsing for all folders except resources
+Options -Indexes
+
+# Allow resources folder
+<DirectoryMatch "^/resources/">
+    Options +Indexes
+</DirectoryMatch>
+
+# Block access to sensitive folders (403 error)
+<DirectoryMatch "^(vendor|storage|config|bootstrap|database|app|routes|tests)/">
+    Require all denied
+</DirectoryMatch>
 
 # PHP Upload Settings for 128 MB
 php_value upload_max_filesize 128M

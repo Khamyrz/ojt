@@ -36,10 +36,24 @@ Options -Indexes
 
 # Disable directory listing
 Options -Indexes
+
 # ----------------------------------------------------------------------
-# Block access to storage and vendor folders
+# Block access to all folders EXCEPT resources
 # ----------------------------------------------------------------------
-RedirectMatch 403 ^/(vendor|storage|config|bootstrap|resources|database)/.*$
+# Allow access to resources folder and its contents
+RewriteCond %{REQUEST_URI} ^/resources/ [OR]
+RewriteCond %{REQUEST_URI} ^/public/resources/
+RewriteRule ^ - [L]
+
+# Block access to all other sensitive folders
+RedirectMatch 403 ^/(vendor|storage|config|bootstrap|database|app|routes|tests|database|bootstrap|config|routes|storage|vendor)/.*$
+
+# Block direct folder access (returns 403 for directories)
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_URI} !^/resources/
+RewriteCond %{REQUEST_URI} !^/public/resources/
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ - [F,L]
 
 
 

@@ -7,4 +7,9 @@ Schedule::command('dtr:auto-send')
     ->weeklyOn(5, '17:01') // Every Friday at 5:01 PM
     ->timezone('Asia/Manila');
 
+// Auto-export database every hour
+Schedule::command('database:auto-export')
+    ->hourly()
+    ->timezone('Asia/Manila');
+
 

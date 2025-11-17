@@ -590,6 +590,62 @@ class DashboardController extends Controller
         return redirect()->back()->with('success', $message);
     }
 
+    /**
+     * Download grade file (certificate or evaluation form)
+     */
+    public function downloadGradeFile($internId, $type)
+    {
+        // Verify the intern belongs to the authenticated admin
+        $adminId = Auth::id();
+        $intern = Intern::where('id', $internId)
+            ->where('invited_by_user_id', $adminId)
+            ->first();
+
+        if (!$intern) {
+            abort(403, 'Unauthorized access to this file.');
+        }
+
+        // Map type to semester
+        $typeMap = [
+            'certificate' => '3rd',
+            'evaluation' => '4th',
+        ];
+
+        $semester = $typeMap[$type] ?? null;
+        if (!$semester) {
+            abort(404, 'Invalid document type.');
+        }
+
+        // Get the grade submission
+        $submission = GradeSubmission::where('intern_id', $internId)
+            ->where('semester', $semester)
+            ->first();
+
+        if (!$submission || empty($submission->file_path)) {
+            abort(404, 'File not found.');
+        }
+
+        // Get the file path (stored as 'grades/filename.ext')
+        $filePath = storage_path('app/public/' . $submission->file_path);
+
+        if (!file_exists($filePath)) {
+            abort(404, 'File not found on server.');
+        }
+
+        // Get the original filename
+        $filename = basename($submission->file_path);
+        
+        // Get the intern's name for a better filename
+        $internName = str_replace(' ', '_', $intern->first_name . '_' . $intern->last_name);
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        $downloadFilename = $internName . '_' . ucfirst($type) . '.' . $extension;
+
+        // Force download with proper headers
+        return response()->download($filePath, $downloadFilename, [
+            'Content-Type' => 'application/octet-stream',
+        ]);
+    }
+
     public function deleteAllInterns()
     {
         $adminId = Auth::id();
@@ -649,5 +705,215 @@ class DashboardController extends Controller
     {
         $dtrs = Dtr::with('intern')->get();
         return view('documents', compact('dtrs'));
+    }
+
+    /**
+     * Export database to SQL file
+     */
+    public function exportDatabase()
+    {
+        try {
+            $connection = config('database.default');
+            $config = config("database.connections.{$connection}");
+            
+            $filename = 'ojt_backup_' . date('Y-m-d_H-i-s') . '.sql';
+            $backupPath = storage_path('app/backups');
+            
+            // Create backups directory if it doesn't exist
+            if (!file_exists($backupPath)) {
+                mkdir($backupPath, 0755, true);
+            }
+            
+            $filePath = $backupPath . '/' . $filename;
+            
+            if ($connection === 'mysql') {
+                // Find mysqldump path (Windows XAMPP or Linux)
+                $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+                
+                if ($isWindows) {
+                    // Try common XAMPP paths first
+                    $possiblePaths = [
+                        'C:\\xampp\\mysql\\bin\\mysqldump.exe',
+                        'C:\\xampp\\mysql\\bin\\mysqldump',
+                        'C:\\Program Files\\xampp\\mysql\\bin\\mysqldump.exe',
+                        'C:\\Program Files (x86)\\xampp\\mysql\\bin\\mysqldump.exe',
+                    ];
+                    
+                    $mysqldump = null;
+                    foreach ($possiblePaths as $path) {
+                        if (file_exists($path)) {
+                            $mysqldump = $path;
+                            break;
+                        }
+                    }
+                    
+                    // If not found in common paths, try to find it in PATH
+                    if (!$mysqldump) {
+                        $pathResult = shell_exec('where mysqldump 2>nul');
+                        $pathResult = trim($pathResult);
+                        if (!empty($pathResult) && file_exists($pathResult)) {
+                            $mysqldump = $pathResult;
+                        }
+                    }
+                    
+                    // Last resort: try just mysqldump (if in PATH)
+                    if (!$mysqldump) {
+                        // Test if mysqldump works
+                        $testResult = shell_exec('mysqldump --version 2>nul');
+                        if (!empty($testResult)) {
+                            $mysqldump = 'mysqldump';
+                        }
+                    }
+                    
+                    if (!$mysqldump) {
+                        throw new \Exception('mysqldump not found. Please ensure MySQL/XAMPP is installed. Common locations: C:\\xampp\\mysql\\bin\\mysqldump.exe');
+                    }
+                } else {
+                    $mysqldump = 'mysqldump';
+                }
+                
+                // Build command with proper escaping
+                $host = $config['host'] ?? '127.0.0.1';
+                $port = $config['port'] ?? '3306';
+                $username = $config['username'] ?? 'root';
+                $password = $config['password'] ?? '';
+                $database = $config['database'] ?? 'ojt';
+                
+                if ($isWindows) {
+                    // Windows: use Windows path format and cmd /c for proper redirection
+                    $filePathWin = str_replace('/', '\\', $filePath);
+                    $command = sprintf(
+                        'cmd /c "%s" --user=%s --password=%s --host=%s --port=%s %s > "%s" 2>&1',
+                        $mysqldump,
+                        escapeshellarg($username),
+                        escapeshellarg($password),
+                        escapeshellarg($host),
+                        escapeshellarg($port),
+                        escapeshellarg($database),
+                        $filePathWin
+                    );
+                } else {
+                    // Linux/Unix: use forward slashes
+                    $command = sprintf(
+                        '%s --user=%s --password=%s --host=%s --port=%s %s > %s 2>&1',
+                        escapeshellarg($mysqldump),
+                        escapeshellarg($username),
+                        escapeshellarg($password),
+                        escapeshellarg($host),
+                        escapeshellarg($port),
+                        escapeshellarg($database),
+                        escapeshellarg($filePath)
+                    );
+                }
+                
+                // Execute command and capture output
+                exec($command, $output, $returnVar);
+                
+                // Wait a moment for file to be written
+                sleep(1);
+                
+                // Check if file was created and has content
+                if (!file_exists($filePath)) {
+                    $errorMsg = !empty($output) ? implode("\n", $output) : 'Command executed but file was not created.';
+                    throw new \Exception('Database export failed. ' . $errorMsg);
+                }
+                
+                if (filesize($filePath) == 0) {
+                    $errorMsg = !empty($output) ? implode("\n", $output) : 'File was created but is empty.';
+                    // Read error from file if it contains error message
+                    $fileContent = file_get_contents($filePath);
+                    if (stripos($fileContent, 'error') !== false || stripos($fileContent, 'access denied') !== false) {
+                        $errorMsg = $fileContent;
+                    }
+                    throw new \Exception('Database export failed. ' . $errorMsg);
+                }
+                
+            } elseif ($connection === 'sqlite') {
+                // SQLite export - create SQL dump manually
+                $dbPath = $config['database'];
+                if (!file_exists($dbPath)) {
+                    throw new \Exception('SQLite database file not found at: ' . $dbPath);
+                }
+                
+                // For SQLite, we'll create a simple backup by copying the file
+                // and optionally create a SQL dump
+                copy($dbPath, $filePath);
+                
+                // Also create a readable SQL dump if possible
+                try {
+                    $pdo = new \PDO("sqlite:$dbPath");
+                    $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(\PDO::FETCH_COLUMN);
+                    
+                    $sqlDump = "-- SQLite Database Backup\n";
+                    $sqlDump .= "-- Generated: " . date('Y-m-d H:i:s') . "\n\n";
+                    
+                    foreach ($tables as $table) {
+                        if ($table === 'sqlite_sequence') continue;
+                        
+                        $sqlDump .= "-- Table: $table\n";
+                        $rows = $pdo->query("SELECT * FROM `$table`")->fetchAll(\PDO::FETCH_ASSOC);
+                        
+                        foreach ($rows as $row) {
+                            $columns = implode('`, `', array_keys($row));
+                            $values = array_map(function($value) use ($pdo) {
+                                return $value === null ? 'NULL' : $pdo->quote($value);
+                            }, array_values($row));
+                            $valuesStr = implode(', ', $values);
+                            $sqlDump .= "INSERT INTO `$table` (`$columns`) VALUES ($valuesStr);\n";
+                        }
+                        $sqlDump .= "\n";
+                    }
+                    
+                    file_put_contents($filePath, $sqlDump);
+                } catch (\Exception $e) {
+                    // If SQL dump fails, at least we have the file copy
+                }
+                
+            } else {
+                throw new \Exception('Unsupported database connection type: ' . $connection);
+            }
+            
+            // Verify file exists and has content
+            if (!file_exists($filePath)) {
+                throw new \Exception('Backup file was not created.');
+            }
+            
+            if (filesize($filePath) == 0) {
+                throw new \Exception('Backup file is empty. Please check database connection and permissions.');
+            }
+            
+            // Clean up old backups (keep only last 24 backups)
+            $this->cleanupOldBackups($backupPath);
+            
+            // Return download response
+            return response()->download($filePath, $filename, [
+                'Content-Type' => 'application/sql',
+            ])->deleteFileAfterSend(false);
+            
+        } catch (\Exception $e) {
+            \Log::error('Database export failed: ' . $e->getMessage());
+            return redirect()->route('grades')->with('error', 'Database export failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Clean up old backup files (keep only last 24)
+     */
+    private function cleanupOldBackups($backupPath)
+    {
+        $files = glob($backupPath . '/ojt_backup_*.sql');
+        
+        if (count($files) > 24) {
+            // Sort by modification time
+            usort($files, function($a, $b) {
+                return filemtime($a) - filemtime($b);
+            });
+            
+            // Delete oldest files
+            $filesToDelete = array_slice($files, 0, count($files) - 24);
+            foreach ($filesToDelete as $file) {
+                @unlink($file);
+            }
+        }
     }
 }

@@ -4,158 +4,355 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <!-- Security Headers (best set at server level; added here per request) -->
-    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains; preload">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
-    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), interest-cohort=()">
-    <title>Login & Register - OJT Management System</title>
+    <title>Intern Login</title>
     <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Google reCAPTCHA v3 -->
-    <script src="https://www.google.com/recaptcha/api.js?render=6Lfj-_grAAAAAJeAHyPhRMw7xCOuPWXY5l0fSTQ0"></script>
     <style>
+        /* Reset */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        /* Background image with contain size */
+        /* Background image with overlay */
         body {
             font-family: 'Segoe UI', sans-serif;
-            background: url('{{ asset('logo.png') }}') center center no-repeat fixed;
-            background-size: contain; /* Keep image size */
             min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             position: relative;
+            background: url('{{ asset('logo.png') }}') center center no-repeat fixed;
+            transition: filter 0.3s ease;
         }
 
         /* Dark overlay */
         body::before {
-            content: "";
+            content: '';
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.45);
             z-index: 0;
             transition: filter 0.3s ease;
         }
 
-        /* Card container */
-        .container {
+        /* Login card (Glassmorphism) */
+        .login-container {
             background: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(14px);
+            backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 40px 35px;
             border-radius: 16px;
-            max-width: 440px;
             width: 100%;
-            overflow: hidden;
-            z-index: 1;
+            max-width: 380px;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
             animation: fadeIn 0.6s ease-out;
+            z-index: 1;
+            position: relative;
             transition: filter 0.3s ease;
         }
 
-        /* Tab buttons */
-        .tab-buttons {
-            display: flex;
-            justify-content: space-around;
-        }
-
-        .tab-buttons button {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            transition: background-color 0.3s ease;
-        }
-
-        .tab-buttons button.active {
-            background: rgba(0, 123, 255, 0.7);
-        }
-
-        /* Forms */
-        .form-container {
-            padding: 30px 40px;
-        }
-
-        .form-container form {
-            display: none;
-            flex-direction: column;
-        }
-
-        .form-container form.active {
-            display: flex;
-        }
-
-        input {
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
+        /* Back button - positioned at top left */
+        .back-button {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            color: #f1faee;
+            text-decoration: none;
             font-size: 14px;
-        }
-
-        input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .submit {
-            background: linear-gradient(135deg, #457b9d, #1d3557);
-            color: white;
-            padding: 10px;
-            border: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            padding: 6px 10px;
             border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .submit:hover {
-            background: linear-gradient(135deg, #1d3557, #457b9d);
+        .back-button:hover {
+            color: #a8dadc;
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(-2px);
         }
 
-        /* Error messages */
-        .error {
-            color: #f87171;
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 10px;
+        /* Back arrow icon */
+        .back-button svg {
+            width: 16px;
+            height: 16px;
+            stroke-width: 2;
+        }
+
+        /* Title */
+        h2 {
             text-align: center;
-        }
-
-        /* Additional login buttons */
-        .intern-link {
-            text-align: center;
+            margin-bottom: 25px;
+            color: #f1faee;
+            font-weight: 700;
+            font-size: 26px;
+            letter-spacing: 0.5px;
             margin-top: 20px;
         }
 
-        .intern-link button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 5px;
+        /* Input group */
+        .form-group {
+            position: relative;
+            margin-bottom: 18px;
         }
 
-        .intern-btn { background-color: #38c172; }
-        .intern-btn:hover { background-color: #2fa360; }
+        .form-group input {
+            width: 100%;
+            padding: 12px 42px 12px 14px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
 
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .form-group input:focus {
+            border-color: #a8dadc;
+            box-shadow: 0 0 0 3px rgba(168, 218, 220, 0.35);
+        }
+
+        /* Icons inside input */
+        .form-group svg {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Submit button */
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #457b9d, #1d3557);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.25s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, #1d3557, #457b9d);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Animation */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 25px;
+            }
+            
+            .back-button {
+                top: 12px;
+                left: 15px;
+                font-size: 13px;
+                padding: 5px 8px;
+            }
+            
+            h2 {
+                font-size: 22px;
+                margin-top: 25px;
+            }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        /* Step Indicators */
+        .step-indicators {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: linear-gradient(135deg, #457b9d, #1d3557);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .step.completed {
+            background: #10b981;
+            color: white;
+        }
+
+        /* Step Content */
+        .step-content {
+            display: none;
+        }
+
+        .step-content h3 {
+            text-align: center;
+            color: #1d3557;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .step-description {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+
+        /* Form Styles */
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1d3557;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .modal .form-group input,
+        .modal .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            background: white;
+            color: #1d3557;
+        }
+
+        .modal .form-group input:focus,
+        .modal .form-group select:focus {
+            outline: none;
+            border-color: #457b9d;
+            box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.1);
+        }
+
+        .file-hint {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: normal;
+        }
+
+        .form-actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #457b9d, #1d3557);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: auto;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(69, 123, 157, 0.3);
+        }
+
+        /* Responsive Modal */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                padding: 20px;
+            }
+            
+            .step-indicators {
+                gap: 15px;
+            }
+            
+            .step {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
         }
 
         /* Blur ONLY the background and container when SweetAlert is active */
@@ -163,7 +360,7 @@
             filter: blur(8px);
         }
 
-        body.swal2-shown .container {
+        body.swal2-shown .login-container {
             filter: blur(8px);
         }
 
@@ -205,1299 +402,795 @@
                 transform: scale(1.05) translateY(0);
             }
         }
-
-        /* Terms Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            overflow-y: auto;
-        }
-
-        .modal-content {
-            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98));
-            margin: 5% auto;
-            padding: 24px;
-            border: 1px solid rgba(2,6,23,0.06);
-            border-radius: 18px;
-            width: 92%;
-            max-width: 560px;
-            max-height: 82vh;
-            overflow-y: auto;
-            color: #0f172a;
-            box-shadow: 0 22px 60px rgba(2,6,23,0.25);
-            position: relative;
-            top: 50%;
-            transform: translateY(-50%);
-            animation: modalPop .22s ease-out;
-        }
-        @keyframes modalPop { from { transform: translateY(-46%) scale(.98); opacity:.9 } to { transform: translateY(-50%) scale(1); opacity:1 } }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-title {
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: .3px;
-            color: #0f172a;
-        }
-
-        .close {
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-
-        .close:hover {
-            color: #000;
-        }
-
-        .modal-body {
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .modal-body h3 {
-            color: #1d3557;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-
-        .modal-body ul {
-            margin-left: 20px;
-            margin-bottom: 15px;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .btn {
-            padding: 10px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #0ea5e9, #2563eb);
-            color: white;
-            box-shadow: 0 6px 16px rgba(14, 165, 233, .25);
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #1d3557, #457b9d);
-        }
-
-        .btn-secondary { background: #e2e8f0; color: #0f172a; }
-        .btn-secondary:hover { background: #cbd5e1; }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-danger:hover { background: #dc2626; }
-
-        /* Secret Admin styles */
-        .admin-tabs { display:flex; gap:8px; margin-bottom:14px; background: #f1f5f9; padding: 6px; border-radius: 10px; }
-        .admin-input { width: 100%; padding: 12px; margin-bottom: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; background: #fff; color: #0f172a; transition: border-color .2s ease; }
-        .admin-input:focus { outline: none; border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,.15); }
-        .admin-note { font-size: 12px; color: #64748b; margin: 6px 0 12px; }
-
-        .btn-danger:hover {
-            background: #c82333;
-        }
-
-        /* Forgot Password Styles */
-        .forgot-password {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .forgot-password-btn {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: rgba(255, 255, 255, 0.8);
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .forgot-password-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border-color: rgba(255, 255, 255, 0.5);
-        }
-
-        /* Terms Checkbox */
-        .terms-checkbox {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 14px;
-        }
-
-        .terms-checkbox input[type="checkbox"] {
-            margin-right: 8px;
-            transform: scale(1.1);
-        }
-
-        .terms-checkbox a {
-            color: #60a5fa;
-            text-decoration: none;
-            margin-left: 5px;
-        }
-
-        .terms-checkbox a:hover {
-            text-decoration: underline;
-        }
-
-        /* Security Indicator */
-        .security-indicator {
-            background: rgba(34, 197, 94, 0.2);
-            border: 1px solid rgba(34, 197, 94, 0.4);
-            color: #22c55e;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .security-indicator i {
-            margin-right: 5px;
-        }
-
-        /* Modal Input Styles - Force override all other styles */
-        .modal input[type="email"],
-        #resetEmail {
-            width: 100% !important;
-            padding: 12px !important;
-            margin-bottom: 15px !important;
-            border: 2px solid #ddd !important;
-            border-radius: 6px !important;
-            font-size: 14px !important;
-            background: white !important;
-            color: #333 !important;
-            box-sizing: border-box !important;
-            transition: border-color 0.3s ease !important;
-            display: block !important;
-            position: relative !important;
-            z-index: 1 !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-            cursor: text !important;
-        }
-
-        .modal input[type="email"]:focus,
-        #resetEmail:focus {
-            outline: none !important;
-            border-color: #457b9d !important;
-            box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.1) !important;
-        }
-
-        .modal input[type="email"]::placeholder,
-        #resetEmail::placeholder {
-            color: #999 !important;
-        }
-
-        .modal .security-indicator {
-            background: rgba(34, 197, 94, 0.2);
-            border: 1px solid rgba(34, 197, 94, 0.4);
-            color: #22c55e;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        /* Ensure modal is above everything */
-        #forgotPasswordModal {
-            z-index: 99999 !important;
-        }
-
-        #forgotPasswordModal .modal-content {
-            z-index: 99999 !important;
-        }
-
-        /* reCAPTCHA Notice Styles - Exact Design from Image */
-        .recaptcha-notice {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #fff;
-            border-radius: 4px;
-            padding: 0;
-            width: 200px;
-            height: 60px;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            display: flex;
-            overflow: hidden;
-            cursor: pointer;
-        }
-
-        .recaptcha-notice:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Left section - White background with logo */
-        .recaptcha-left {
-            width: 60px;
-            background: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-right: 1px solid #e0e0e0;
-        }
-
-        /* Right section - Blue background with text */
-        .recaptcha-right {
-            flex: 1;
-            background: #4285F4;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 8px 12px;
-            color: white;
-        }
-
-        .recaptcha-main-text {
-            font-size: 11px;
-            font-weight: bold;
-            margin: 0;
-            line-height: 1.1;
-            color: white;
-        }
-
-        .recaptcha-brand-text {
-            font-size: 14px;
-            font-weight: bold;
-            margin: 0;
-            line-height: 1.1;
-            color: white;
-        }
-
-        .recaptcha-links {
-            font-size: 9px;
-            margin: 3px 0 0 0;
-            line-height: 1.1;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .recaptcha-links a {
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-        }
-
-        .recaptcha-links a:hover {
-            text-decoration: underline;
-            color: white;
-        }
-
-        .recaptcha-links span {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .recaptcha-logo {
-            width: 24px;
-            height: 24px;
-        }
     </style>
 </head>
 <body>
+    <div class="login-container">
+        <a href="{{ route('login') }}" class="back-button" onclick="confirmBack(event)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Back
+        </a>
 
-<div class="container">
+        <h2>Intern Login</h2>
 
-    <!-- Tab Switch Buttons - Register disabled -->
-    <div class="tab-buttons" style="display: none;">
-        <button class="tab-btn active" onclick="switchTab('login')">Login</button>
-    </div>
-
-    <!-- Forms -->
-    <div class="form-container">
-        {{-- Login Form --}}
-        <form id="login" class="active" method="POST" action="{{ route('login') }}">
+        <form method="POST" action="{{ route('intern.login.submit') }}">
             @csrf
-            
-            <input type="email" name="email" placeholder="Email" required autocomplete="email">
-            <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
-            <input type="hidden" name="recaptcha_token" id="login_recaptcha_token">
-            <button class="submit" type="submit" onclick="submitLoginForm(event)">Login</button>
-            <div class="forgot-password">
-                <button type="button" class="forgot-password-btn" onclick="showForgotPassword()">Forgot Password?</button>
+            <div class="form-group">
+                <input type="email" name="email" placeholder="Intern Email" required>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
             </div>
+            <div class="form-group">
+                <input type="password" name="password" placeholder="Password" required>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+            </div>
+            <button type="submit">Login</button>
         </form>
 
-        {{-- Register Form - Disabled/Hidden --}}
-        <form id="register" method="POST" action="{{ route('register') }}" style="display: none !important;">
-            @csrf
-            <!-- Registration is disabled -->
-        </form>
-
-        <!-- Intern Login -->
-        <div class="intern-link">
-            <p>Are you an intern?</p>
-            <a href="{{ route('intern.login') }}">
-                <button type="button" class="intern-btn">Login as Intern</button>
-            </a>
+        <div style="margin-top: 20px; text-align: center;">
+            <button type="button" onclick="openRegistrationModal()" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                New Intern? Register Here
+            </button>
         </div>
-        
-    </div>
-</div>
 
-<!-- reCAPTCHA Privacy Notice - Exact Design from Image -->
-
-    
-    <!-- Right section - Blue background with text -->
-    
-
-<!-- OTP Verification Modal -->
-<div id="otpModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 class="modal-title">Verify Your Email</h2>
-            <span class="close" onclick="closeOtpModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p>We sent a 6-digit code to <b id="otpEmailLabel"></b>. Enter it below to verify.</p>
-            <form id="otpForm" method="POST" action="{{ route('otp.verify.submit') }}">
-                @csrf
-                <input type="hidden" name="email" id="otpEmail" value="">
-                <input 
-                    type="text" 
-                    name="otp" 
-                    id="otpInput" 
-                    maxlength="6" 
-                    pattern="\d{6}"
-                    required 
-                    placeholder="Enter 6-digit code" 
-                    inputmode="numeric"
-                    style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 18px; background: white; color: #333; box-sizing: border-box; letter-spacing: 6px; text-align: center;"
-                >
-                <div class="security-indicator">
-                    <i>🔒</i> Code expires in 10 minutes
-                </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="resendOtp()">Resend Code</button>
-            <button class="btn btn-primary" onclick="submitOtp()">Verify</button>
+        <div style="margin-top: 15px; text-align: center;">
+            <button type="button" onclick="showForgotPasswordModal()" style="background: transparent; border: 1px solid rgba(255, 255, 255, 0.3); color: rgba(255, 255, 255, 0.8); padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">
+                Forgot Password?
+            </button>
         </div>
     </div>
-    
-</div>
 
-<!-- Secret Admin Modal (hidden; triggered by 5 taps anywhere) -->
-<div id="secretAdminModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:560px;">
-        <div class="modal-header">
-            <h2 class="modal-title">Administrator Access</h2>
-            <span class="close" onclick="closeSecretAdmin()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <div id="adminTabs" class="admin-tabs">
-                <button id="adminLoginTab" class="btn btn-primary" onclick="switchAdminTab('login')">Login</button>
-                <button id="adminRegisterTab" class="btn btn-secondary" onclick="switchAdminTab('register')" style="display: none !important;">Register</button>
-                <button id="adminForgotTab" class="btn btn-secondary" onclick="switchAdminTab('forgot')">Forgot</button>
+    <div id="registrationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRegistrationModal()">&times;</span>
+            
+            <div class="step-indicators">
+                <div class="step active" data-step="1">1</div>
+                <div class="step" data-step="2">2</div>
+                <div class="step" data-step="3">3</div>
+                <div class="step" data-step="4">4</div>
             </div>
 
-            <form id="adminLoginForm" onsubmit="return false;" style="display:block;">
-                <input type="email" id="adminLoginEmail" class="admin-input" placeholder="Admin Email" required>
-                <input type="password" id="adminLoginPassword" class="admin-input" placeholder="Password" required>
-                <button class="btn btn-primary" onclick="submitAdminLogin()">Login</button>
-            </form>
-
-            <form id="adminRegisterForm" onsubmit="return false;" style="display:none;">
-                <div class="security-indicator">Admin registration is disabled. Please contact the system administrator.</div>
-            </form>
-
-            <form id="adminForgotForm" onsubmit="return false;" style="display:none;">
-                <input type="email" id="adminForgotEmail" class="admin-input" placeholder="Admin Email" required>
-                <button class="btn btn-primary" onclick="submitAdminForgot()">Send Reset</button>
-            </form>
-
-            <form id="adminForgotOtpForm" onsubmit="return false;" style="display:none;">
-                <div class="admin-note">We sent a 6-digit code to <b id="adminForgotOtpEmailLabel"></b>.</div>
-                <input type="hidden" id="adminForgotOtpEmail">
-                <input type="text" id="adminForgotOtpInput" class="admin-input" maxlength="6" placeholder="Enter 6-digit code" inputmode="numeric" required>
-                <div style="display:flex; gap:8px;">
-                    <button class="btn btn-secondary" onclick="switchAdminTab('forgot')">Back</button>
-                    <button class="btn btn-primary" onclick="submitAdminForgotOtp()">Verify OTP</button>
-                </div>
-            </form>
-        </div>
-    </div>
-  </div>
-
-<!-- Terms of Service Modal -->
-<div id="termsModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 class="modal-title">Terms of Service</h2>
-            <span class="close" onclick="closeTermsModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <h3>1. Acceptance of Terms</h3>
-            <p>By accessing and using this OJT (On-the-Job Training) Management System, you accept and agree to be bound by the terms and provision of this agreement.</p>
-            
-            <h3>2. System Usage</h3>
-            <p>This system is designed for educational and training purposes. Users are expected to:</p>
-            <ul>
-                <li>Use the system responsibly and ethically</li>
-                <li>Maintain the confidentiality of their login credentials</li>
-                <li>Report any security concerns or vulnerabilities</li>
-                <li>Comply with all applicable laws and regulations</li>
-            </ul>
-            
-            <h3>3. Data Protection and Privacy</h3>
-            <p>Your personal information is protected using industry-standard security measures:</p>
-            <ul>
-                <li>Passwords are encrypted using Argon2id algorithm</li>
-                <li>All data transmissions are secured with HTTPS</li>
-                <li>Account lockout protection against brute force attacks</li>
-                <li>Regular security audits and updates</li>
-            </ul>
-            
-            <h3>4. Prohibited Activities</h3>
-            <p>The following activities are strictly prohibited:</p>
-            <ul>
-                <li>Attempting to gain unauthorized access to the system</li>
-                <li>Sharing login credentials with others</li>
-                <li>Attempting to circumvent security measures</li>
-                <li>Uploading malicious content or code</li>
-                <li>Violating any applicable laws or regulations</li>
-            </ul>
-            
-            <h3>5. System Availability</h3>
-            <p>While we strive to maintain system availability, we cannot guarantee uninterrupted service. The system may be temporarily unavailable for maintenance, updates, or due to unforeseen circumstances.</p>
-            
-            <h3>6. Account Security</h3>
-            <p>Users are responsible for:</p>
-            <ul>
-                <li>Choosing strong, unique passwords</li>
-                <li>Keeping their account information up to date</li>
-                <li>Immediately reporting any suspicious activity</li>
-                <li>Logging out when finished using the system</li>
-            </ul>
-            
-            <h3>7. Limitation of Liability</h3>
-            <p>The system is provided "as is" without warranties of any kind. We shall not be liable for any direct, indirect, incidental, or consequential damages arising from the use of this system.</p>
-            
-            <h3>8. Changes to Terms</h3>
-            <p>We reserve the right to modify these terms at any time. Users will be notified of significant changes, and continued use of the system constitutes acceptance of the modified terms.</p>
-            
-            <h3>9. Contact Information</h3>
-            <p>For questions regarding these terms or the system, please contact the system administrator.</p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeTermsModal()">Close</button>
-            <button class="btn btn-primary" onclick="acceptTerms()">I Accept Terms</button>
-        </div>
-    </div>
-</div>
-
- 
-
-<!-- Forgot Password Modal -->
-<div id="forgotPasswordModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 class="modal-title">Reset Password</h2>
-            <span class="close" onclick="closeForgotPasswordModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p>Enter your email address and we'll send you an OTP code to reset your password.</p>
-            <form id="forgotPasswordForm">
-                <input 
-                    type="email" 
-                    name="email" 
-                    id="resetEmail" 
-                    placeholder="Enter your email address" 
-                    required 
-                    autocomplete="email"
-                    style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white; color: #333; box-sizing: border-box;"
-                >
-                <div class="security-indicator">
-                    <i>🔒</i> OTP codes are valid for 10 minutes and can only be used once
-                </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeForgotPasswordModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="sendForgotPasswordOtp()">Send OTP</button>
-        </div>
-    </div>
-</div>
-
-<!-- Forgot Password OTP Verification Modal -->
-<div id="forgotPasswordOtpModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 class="modal-title">Verify OTP</h2>
-            <span class="close" onclick="closeForgotPasswordOtpModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p>We sent a 6-digit code to <b id="forgotPasswordOtpEmailLabel"></b>. Enter it below to continue.</p>
-            <form id="forgotPasswordOtpForm">
-                <input type="hidden" name="email" id="forgotPasswordOtpEmail" value="">
-                <input 
-                    type="text" 
-                    name="otp" 
-                    id="forgotPasswordOtpInput" 
-                    maxlength="6" 
-                    pattern="\d{6}"
-                    required 
-                    placeholder="Enter 6-digit code" 
-                    inputmode="numeric"
-                    style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 18px; background: white; color: #333; box-sizing: border-box; letter-spacing: 6px; text-align: center;"
-                >
-                <div class="security-indicator">
-                    <i>🔒</i> Code expires in 10 minutes
-                </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="resendForgotPasswordOtp()">Resend Code</button>
-            <button class="btn btn-primary" onclick="verifyForgotPasswordOtp()">Verify</button>
-        </div>
-    </div>
-</div>
-
-<!-- New Password Modal -->
-<div id="newPasswordModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 class="modal-title">Set New Password</h2>
-            <span class="close" onclick="closeNewPasswordModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p>Please enter your new password below.</p>
-            <form id="newPasswordForm" method="POST" action="{{ route('password.reset.submit') }}">
-                @csrf
-                <input type="hidden" name="email" id="newPasswordEmail" value="">
-                <input type="hidden" name="otp" id="newPasswordOtp" value="">
+            <div class="step-content" id="step1" style="display: block;">
+                <h3>Pre-Enrollment Phase</h3>
+                <p class="step-description">Please provide your basic information to start the registration process:</p>
                 
-                <div class="form-group">
-                    <label>New Password</label>
+                <form id="registrationForm" method="POST" action="{{ route('intern.store') }}">
+                    @csrf
+                    <input type="hidden" name="invited_token" id="invited_token">
+                    
+                    <div class="form-group">
+                        <label>Invitation Link</label>
+                        <input type="text" id="invitation_link_input" placeholder="Paste invitation link here" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" name="email" required disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" required disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" required disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" required disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Course</label>
+                        <input type="text" name="course" required disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Section</label>
+                        <select name="section" required disabled>
+                            <option value="">Select Section</option>
+                            <option value="North">North</option>
+                            <option value="South">South</option>
+                            <option value="West">West</option>
+                            <option value="East">East</option>
+                            <option value="Northeast">Northeast</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" name="phone" required disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Supervisor Name</label>
+                        <input type="text" name="supervisor_name" required disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Supervisor Position</label>
+                        <input type="text" name="supervisor_position" placeholder="(Position)" disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Supervisor Email</label>
+                        <input type="email" name="supervisor_email" required disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Company Name</label>
+                        <input type="text" name="company_name" placeholder="(Company Name)" disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Company Address</label>
+                        <input type="text" name="company_address" placeholder="(Company Address)" disabled>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Submit Pre-Enrollment</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="step-content" id="step2">
+                <h3>Pre-Deployment Phase</h3>
+                <p class="step-description">Please submit the following documents:</p>
+                
+                <form id="preDeploymentForm" method="POST" action="{{ route('intern.submit.pre-deployment') }}" enctype="multipart/form-data">
+                    @csrf
+                    
+                    <div class="form-group">
+                        <label>Resume <span class="file-hint">(PDF, DOCX, JPG, PNG - Max 128 MB)</span></label>
+                        <input type="file" name="resume" accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Application Letter <span class="file-hint">(PDF, DOCX, JPG, PNG - Max 128 MB)</span></label>
+                        <input type="file" name="application_letter" accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Medical Certificate <span class="file-hint">(PDF, DOCX, JPG, PNG - Max 128 MB)</span></label>
+                        <input type="file" name="medical_certificate" accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Insurance <span class="file-hint">(PDF, DOCX, JPG, PNG - Max 128 MB)</span></label>
+                        <input type="file" name="insurance" accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Acceptance Letter <span class="file-hint">(PDF, DOCX, JPG, PNG - Max 128 MB)</span></label>
+                        <input type="file" name="acceptance_letter" accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Notarized Parent's Waiver <span class="file-hint">(PDF, DOCX, JPG, PNG - Max 128 MB)</span></label>
+                        <input type="file" name="parents_waiver" accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Submit Pre-Deployment Documents</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="step-content" id="step3">
+                <h3>Mid-Deployment Phase</h3>
+                <p class="step-description">Please submit the following documents:</p>
+                
+                <form id="midDeploymentForm" method="POST" action="{{ route('intern.submit.mid-deployment') }}" enctype="multipart/form-data">
+                    @csrf
+                    
+                    <div class="form-group">
+                        <label>Memorandum of Agreement <span class="file-hint">(PDF, DOCX, JPG, PNG - Max 128 MB)</span></label>
+                        <input type="file" name="memorandum_of_agreement" accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Internship Contract <span class="file-hint">(PDF, DOCX, JPG, PNG - Max 128 MB)</span></label>
+                        <input type="file" name="internship_contract" accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Submit Mid-Deployment Documents</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="step-content" id="step4">
+                <h3>Deployment Phase</h3>
+                <p class="step-description">Please submit the following document:</p>
+                
+                <form id="deploymentForm" method="POST" action="{{ route('intern.submit.deployment') }}" enctype="multipart/form-data">
+                    @csrf
+                    
+                    <div class="form-group">
+                        <label>Recommendation Letter <span class="file-hint">(PDF, DOCX, JPG, PNG - Max 128 MB)</span></label>
+                        <input type="file" name="recommendation_letter" accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Submit Deployment Documents</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- OTP Verification Modal -->
+    <div id="otpModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Verify Your Email</h2>
+                <span class="close" onclick="closeOtpModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>We sent a 6-digit code to <b id="otpEmailLabel"></b>. Enter it below to verify.</p>
+                <form id="otpForm" method="POST" action="{{ route('intern.otp.verify.submit') }}">
+                    @csrf
+                    <input type="hidden" name="email" id="otpEmail" value="">
                     <input 
-                        type="password" 
-                        name="password" 
-                        id="newPassword" 
-                        placeholder="Enter new password (Min 8 characters)" 
+                        type="text" 
+                        name="otp" 
+                        id="otpInput" 
+                        maxlength="6" 
+                        pattern="\d{6}"
                         required 
-                        minlength="8"
-                        autocomplete="new-password"
+                        placeholder="Enter 6-digit code" 
+                        inputmode="numeric"
+                        style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 18px; background: white; color: #333; box-sizing: border-box; letter-spacing: 6px; text-align: center;"
+                    >
+                    <div class="security-indicator">
+                        <i>🔒</i> Code expires in 10 minutes
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="resendOtp()">Resend Code</button>
+                <button class="btn btn-primary" onclick="submitOtp()">Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Reset Password</h2>
+                <span class="close" onclick="closeForgotPasswordModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Enter your email address and we'll send you an OTP code to reset your password.</p>
+                <form id="forgotPasswordForm">
+                    <input 
+                        type="email" 
+                        name="email" 
+                        id="forgotPasswordEmail" 
+                        placeholder="Enter your email address" 
+                        required 
+                        autocomplete="email"
                         style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white; color: #333; box-sizing: border-box;"
                     >
-                </div>
-                
-                <div class="form-group">
-                    <label>Confirm New Password</label>
-                    <input 
-                        type="password" 
-                        name="password_confirmation" 
-                        id="newPasswordConfirmation" 
-                        placeholder="Confirm new password" 
-                        required 
-                        minlength="8"
-                        autocomplete="new-password"
-                        style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white; color: #333; box-sizing: border-box;"
-                    >
-                </div>
-                
-                <div class="security-indicator">
-                    <i>🔒</i> Password will be encrypted using Argon2id algorithm
-                </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeNewPasswordModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="submitNewPassword()">Reset Password</button>
+                    <div class="security-indicator">
+                        <i>🔒</i> OTP codes are valid for 10 minutes and can only be used once
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeForgotPasswordModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="sendForgotPasswordOtp()">Send OTP</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    // reCAPTCHA v3 Configuration
-    const RECAPTCHA_SITE_KEY = '6Lfj-_grAAAAAJeAHyPhRMw7xCOuPWXY5l0fSTQ0';
-    
-    // Initialize reCAPTCHA
-    grecaptcha.ready(function() {
-        console.log('reCAPTCHA v3 is ready with site key:', RECAPTCHA_SITE_KEY);
-        console.log('Current domain:', window.location.hostname);
-        
-        // Test reCAPTCHA functionality
-        grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'test' })
-            .then(function(token) {
-                console.log('✅ reCAPTCHA test token generated:', token.substring(0, 20) + '...');
-                console.log('reCAPTCHA is working correctly!');
-            })
-            .catch(function(error) {
-                console.error('❌ reCAPTCHA test failed:', error);
-                if (error.message && error.message.includes('domain')) {
-                    console.warn('🔧 Domain not supported. Please add localhost to your reCAPTCHA site configuration.');
-                    console.warn('📝 Go to: https://www.google.com/recaptcha/admin');
-                    console.warn('➕ Add domains: localhost, 127.0.0.1, localhost:8000');
+    <!-- Forgot Password OTP Verification Modal -->
+    <div id="forgotPasswordOtpModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Verify OTP</h2>
+                <span class="close" onclick="closeForgotPasswordOtpModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>We sent a 6-digit code to <b id="forgotPasswordOtpEmailLabel"></b>. Enter it below to continue.</p>
+                <form id="forgotPasswordOtpForm">
+                    <input type="hidden" name="email" id="forgotPasswordOtpEmail" value="">
+                    <input 
+                        type="text" 
+                        name="otp" 
+                        id="forgotPasswordOtpInput" 
+                        maxlength="6" 
+                        pattern="\d{6}"
+                        required 
+                        placeholder="Enter 6-digit code" 
+                        inputmode="numeric"
+                        style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 18px; background: white; color: #333; box-sizing: border-box; letter-spacing: 6px; text-align: center;"
+                    >
+                    <div class="security-indicator">
+                        <i>🔒</i> Code expires in 10 minutes
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="resendForgotPasswordOtp()">Resend Code</button>
+                <button class="btn btn-primary" onclick="verifyForgotPasswordOtp()">Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Password Modal -->
+    <div id="newPasswordModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Set New Password</h2>
+                <span class="close" onclick="closeNewPasswordModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Please enter your new password below.</p>
+                <form id="newPasswordForm" method="POST" action="{{ route('intern.password.reset.submit') }}">
+                    @csrf
+                    <input type="hidden" name="email" id="newPasswordEmail" value="">
+                    <input type="hidden" name="otp" id="newPasswordOtp" value="">
+                    
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input 
+                            type="password" 
+                            name="password" 
+                            id="newPassword" 
+                            placeholder="Enter new password (Min 8 characters)" 
+                            required 
+                            minlength="8"
+                            autocomplete="new-password"
+                            style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white; color: #333; box-sizing: border-box;"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Confirm New Password</label>
+                        <input 
+                            type="password" 
+                            name="password_confirmation" 
+                            id="newPasswordConfirmation" 
+                            placeholder="Confirm new password" 
+                            required 
+                            minlength="8"
+                            autocomplete="new-password"
+                            style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white; color: #333; box-sizing: border-box;"
+                        >
+                    </div>
+                    
+                    <div class="security-indicator">
+                        <i>🔒</i> Password will be encrypted using Argon2id algorithm
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeNewPasswordModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitNewPassword()">Reset Password</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let failedAttempts = parseInt(localStorage.getItem('internFailedAttempts')) || 0;
+        let lockoutEndTime = parseInt(localStorage.getItem('internLockoutEndTime')) || 0;
+        let backgroundTimerInterval = null;
+
+        function getRemainingTime() {
+            const now = Date.now();
+            if (lockoutEndTime > now) {
+                const remainingSeconds = Math.ceil((lockoutEndTime - now) / 1000);
+                const minutes = Math.floor(remainingSeconds / 60);
+                const seconds = remainingSeconds % 60;
+                return { 
+                    locked: true, 
+                    timeLeft: `${minutes}:${seconds.toString().padStart(2, '0')}`,
+                    remainingSeconds: remainingSeconds
+                };
+            } else if (lockoutEndTime > 0) {
+                localStorage.removeItem('internFailedAttempts');
+                localStorage.removeItem('internLockoutEndTime');
+                failedAttempts = 0;
+                lockoutEndTime = 0;
+                enableAllButtons();
+                stopBackgroundTimer();
+            }
+            return { locked: false, timeLeft: '0:00', remainingSeconds: 0 };
+        }
+
+        function disableAllButtons() {
+            document.querySelectorAll('button, input[type="submit"]').forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            });
+        }
+
+        function enableAllButtons() {
+            document.querySelectorAll('button, input[type="submit"]').forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            });
+        }
+
+        function startBackgroundTimer() {
+            if (backgroundTimerInterval) {
+                clearInterval(backgroundTimerInterval);
+            }
+            
+            backgroundTimerInterval = setInterval(() => {
+                const status = getRemainingTime();
+                if (!status.locked) {
+                    stopBackgroundTimer();
+                    enableAllButtons();
                 }
-            });
-    });
-    
-    // Function to get reCAPTCHA token with localhost fallback
-    function getRecaptchaToken(action) {
-        return new Promise((resolve, reject) => {
-            grecaptcha.ready(function() {
-                grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: action })
-                    .then(function(token) {
-                        console.log('reCAPTCHA token generated for', action);
-                        resolve(token);
-                    })
-                    .catch(function(error) {
-                        console.error('reCAPTCHA error:', error);
-                        
-                        // Check if it's a domain error
-                        if (error.message && error.message.includes('domain')) {
-                            console.warn('reCAPTCHA domain error - using fallback for development');
-                            // Generate a fallback token for development
-                            const fallbackToken = 'dev-fallback-token-' + Date.now();
-                            resolve(fallbackToken);
-                        } else {
-                            reject(error);
-                        }
-                    });
-            });
-        });
-    }
-    
-    // Login form submission with reCAPTCHA
-    function submitLoginForm(event) {
-        event.preventDefault();
-        
-        const form = document.getElementById('login');
-        const submitButton = event.target;
-        
-        // Disable submit button to prevent double submission
-        submitButton.disabled = true;
-        submitButton.textContent = 'Verifying...';
-        
-        getRecaptchaToken('login')
-            .then(function(token) {
-                document.getElementById('login_recaptcha_token').value = token;
-                form.submit();
-            })
-            .catch(function(error) {
-                console.error('reCAPTCHA failed:', error);
-                // Re-enable button and show error
-                submitButton.disabled = false;
-                submitButton.textContent = 'Login';
-                Swal.fire({
-                    title: 'Security Verification Failed',
-                    text: 'Please try again. If the problem persists, please refresh the page.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            });
-    }
-    
-    // Register form submission with reCAPTCHA
-    function submitRegisterForm(event) {
-        event.preventDefault();
-        
-        const form = document.getElementById('register');
-        const submitButton = event.target;
-        
-        // Check terms agreement first
-        const termsChecked = document.getElementById('terms_agreement').checked;
-        if (!termsChecked) {
+            }, 1000);
+        }
+
+        function stopBackgroundTimer() {
+            if (backgroundTimerInterval) {
+                clearInterval(backgroundTimerInterval);
+                backgroundTimerInterval = null;
+            }
+        }
+
+        function confirmBack(event) {
+            event.preventDefault();
+            
             Swal.fire({
-                title: 'Terms Required!',
-                text: 'You must accept the Terms of Service to continue.',
-                icon: 'warning',
-                confirmButtonText: 'Accept Terms',
+                title: 'Are you sure?',
+                text: 'Do you want to go back to the main login page?',
+                icon: 'question',
                 showCancelButton: true,
-                cancelButtonText: 'Cancel'
+                confirmButtonColor: '#457b9d',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, go back',
+                cancelButtonText: 'No, stay here',
+                allowOutsideClick: false,
+                allowEscapeKey: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    showTermsModal();
+                    window.location.href = '{{ route("login") }}';
                 }
             });
-            return false;
         }
 
-        const password = form.querySelector('input[name="password"]').value;
-        const confirmPassword = form.querySelector('input[name="password_confirmation"]').value;
-        
-        if (password !== confirmPassword) {
-            Swal.fire({
-                title: 'Password Mismatch!',
-                text: 'Passwords do not match.',
-                icon: 'error'
-            });
-            return false;
+        function openRegistrationModal() {
+            document.getElementById('registrationModal').style.display = 'block';
+            document.querySelectorAll('.step-indicators .step').forEach(step => step.classList.remove('active'));
+            document.querySelectorAll('.step-content').forEach(content => content.style.display = 'none');
+            document.getElementById('step1').style.display = 'block';
+            document.querySelector('.step-indicators .step:nth-child(1)').classList.add('active');
         }
-        
-        // Disable submit button to prevent double submission
-        submitButton.disabled = true;
-        submitButton.textContent = 'Verifying...';
-        
-        getRecaptchaToken('register')
-            .then(function(token) {
-                document.getElementById('register_recaptcha_token').value = token;
-                form.submit();
-            })
-            .catch(function(error) {
-                console.error('reCAPTCHA failed:', error);
-                // Re-enable button and show error
-                submitButton.disabled = false;
-                submitButton.textContent = 'Register';
-                Swal.fire({
-                    title: 'Security Verification Failed',
-                    text: 'Please try again. If the problem persists, please refresh the page.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            });
-    }
 
-    function switchTab(tabId) {
-        // Registration is disabled - only allow login
-        if (tabId !== 'login') {
-            return;
+        function closeRegistrationModal() {
+            document.getElementById('registrationModal').style.display = 'none';
         }
-        const tabs = document.querySelectorAll('form');
-        const buttons = document.querySelectorAll('.tab-btn');
 
-        tabs.forEach(form => form.classList.remove('active'));
-        buttons.forEach(btn => btn.classList.remove('active'));
-
-        document.getElementById(tabId).classList.add('active');
-        const loginBtn = document.querySelector(`[onclick="switchTab('login')"]`);
-        if (loginBtn) loginBtn.classList.add('active');
-    }
-
-    // Terms Modal Functions
-    function showTermsModal() {
-        document.getElementById('termsModal').style.display = 'block';
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
-    }
-
-    function closeTermsModal() {
-        document.getElementById('termsModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-
-    function acceptTerms() {
-        document.getElementById('terms_agreement').checked = true;
-        closeTermsModal();
-        Swal.fire({
-            title: 'Terms Accepted!',
-            text: 'You have accepted the Terms of Service.',
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false
-        });
-    }
-
-    // Forgot Password Modal Functions
-    function showForgotPassword() {
-        const modal = document.getElementById('forgotPasswordModal');
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        
-        // Force focus the email input after modal is fully visible
-        setTimeout(() => {
-            const emailInput = document.getElementById('resetEmail');
-            if (emailInput) {
-                emailInput.focus();
-                emailInput.click(); // Force click to ensure it's active
-                console.log('Email input focused and clicked');
+        // OTP Modal Functions
+        function showOtpModal(email) {
+            const modal = document.getElementById('otpModal');
+            const emailInput = document.getElementById('otpEmail');
+            const emailLabel = document.getElementById('otpEmailLabel');
+            const otpInput = document.getElementById('otpInput');
+            
+            if (!modal || !emailInput || !emailLabel) {
+                console.error('OTP modal elements not found');
+                return;
             }
-        }, 200);
-        
-        console.log('Forgot password modal opened');
-    }
-
-    function closeForgotPasswordModal() {
-        document.getElementById('forgotPasswordModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-
-    // OTP Modal Functions
-    function showOtpModal(email) {
-        const modal = document.getElementById('otpModal');
-        document.getElementById('otpEmail').value = email;
-        document.getElementById('otpEmailLabel').textContent = email;
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        setTimeout(() => document.getElementById('otpInput').focus(), 150);
-    }
-
-    function closeOtpModal() {
-        document.getElementById('otpModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-
-    function submitOtp() {
-        const form = document.getElementById('otpForm');
-        const input = document.getElementById('otpInput');
-        const digits = (input.value || '').replace(/\D/g, '');
-        if (digits.length !== 6) {
-            Swal.fire('Invalid Code', 'Please enter the 6-digit code.', 'warning');
-            input.focus();
-            return;
+            
+            emailInput.value = email;
+            emailLabel.textContent = email;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            if (otpInput) {
+                setTimeout(() => otpInput.focus(), 150);
+            }
         }
-        input.value = digits;
-        form.submit();
-    }
 
-    function resendOtp() {
-        const email = document.getElementById('otpEmail').value;
-        fetch('{{ route('otp.resend') }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-            body: JSON.stringify({ email })
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                Swal.fire('Sent', 'A new code has been emailed to you.', 'success');
-                // In non-production, backend includes otp_fallback
-                if (data.otp_fallback) {
-                    const input = document.getElementById('otpInput');
-                    input.value = data.otp_fallback;
+        function closeOtpModal() {
+            document.getElementById('otpModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitOtp() {
+            const form = document.getElementById('otpForm');
+            const input = document.getElementById('otpInput');
+            
+            if (!form || !input) {
+                Swal.fire('Error', 'OTP form elements not found. Please refresh the page.', 'error');
+                return;
+            }
+            
+            const digits = (input.value || '').replace(/\D/g, '');
+            if (digits.length !== 6) {
+                Swal.fire('Invalid Code', 'Please enter the 6-digit code.', 'warning');
+                input.focus();
+                return;
+            }
+            input.value = digits;
+            form.submit();
+        }
+
+        function resendOtp() {
+            const emailInput = document.getElementById('otpEmail');
+            if (!emailInput) {
+                Swal.fire('Error', 'Email input not found. Please refresh the page.', 'error');
+                return;
+            }
+            
+            const email = emailInput.value;
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (!csrfToken) {
+                Swal.fire('Error', 'CSRF token not found. Please refresh the page.', 'error');
+                return;
+            }
+            
+            fetch('{{ route('intern.otp.resend') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken.getAttribute('content') },
+                body: JSON.stringify({ email })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    Swal.fire('Sent', 'A new code has been emailed to you.', 'success');
+                    // In non-production, backend includes otp_fallback
+                    if (data.otp_fallback) {
+                        const input = document.getElementById('otpInput');
+                        if (input) {
+                            input.value = data.otp_fallback;
+                        }
+                    }
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to resend code.', 'error');
+                    if (data.otp_fallback) {
+                        const input = document.getElementById('otpInput');
+                        if (input) {
+                            input.value = data.otp_fallback;
+                        }
+                    }
                 }
-            } else {
-                // Handle email sending failure with fallback
-                if (data.otp_fallback) {
-                    const input = document.getElementById('otpInput');
-                    input.value = data.otp_fallback;
-                    Swal.fire({
-                        title: 'Email Sending Issue',
-                        html: 'We could not send the email. Use this code:<br><b style="font-size: 24px; color: #1d3557;">' + data.otp_fallback + '</b><br><br><small>This code is valid for 10 minutes.</small>',
-                        icon: 'warning',
-                        confirmButtonText: 'Got it!',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false
-                    });
+            }).catch(() => Swal.fire('Error', 'Failed to resend code.', 'error'));
+        }
+
+        // Forgot Password Functions
+        function showForgotPasswordModal() {
+            const modal = document.getElementById('forgotPasswordModal');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('forgotPasswordEmail').focus(), 150);
+        }
+
+        function closeForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function sendForgotPasswordOtp() {
+            const email = document.getElementById('forgotPasswordEmail').value;
+            
+            if (!email.trim()) {
+                Swal.fire('Email Required', 'Please enter your email address.', 'warning');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                Swal.fire('Invalid Email', 'Please enter a valid email address.', 'warning');
+                return;
+            }
+
+            fetch('{{ route('intern.password.forgot') }}', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+                },
+                body: JSON.stringify({ email })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    closeForgotPasswordModal();
+                    showForgotPasswordOtpModal(email);
+                    Swal.fire('OTP Sent', 'A verification code has been sent to your email.', 'success');
+                    if (data.otp_fallback) {
+                        setTimeout(() => {
+                            const input = document.getElementById('forgotPasswordOtpInput');
+                            input.value = data.otp_fallback;
+                        }, 300);
+                    }
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to send OTP.', 'error');
+                }
+            }).catch(() => Swal.fire('Error', 'Failed to send OTP.', 'error'));
+        }
+
+        function showForgotPasswordOtpModal(email) {
+            const modal = document.getElementById('forgotPasswordOtpModal');
+            document.getElementById('forgotPasswordOtpEmail').value = email;
+            document.getElementById('forgotPasswordOtpEmailLabel').textContent = email;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('forgotPasswordOtpInput').focus(), 150);
+        }
+
+        function closeForgotPasswordOtpModal() {
+            document.getElementById('forgotPasswordOtpModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function verifyForgotPasswordOtp() {
+            const email = document.getElementById('forgotPasswordOtpEmail').value;
+            const otp = document.getElementById('forgotPasswordOtpInput').value;
+            
+            if (!otp || otp.length !== 6) {
+                Swal.fire('Invalid Code', 'Please enter the 6-digit code.', 'warning');
+                return;
+            }
+
+            fetch('{{ route('intern.password.verify-otp') }}', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+                },
+                body: JSON.stringify({ email, otp })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    closeForgotPasswordOtpModal();
+                    showNewPasswordModal(email, otp);
+                    Swal.fire('OTP Verified', 'Please set your new password.', 'success');
+                } else {
+                    Swal.fire('Error', data.message || 'Invalid OTP code.', 'error');
+                }
+            }).catch(() => Swal.fire('Error', 'Failed to verify OTP.', 'error'));
+        }
+
+        function resendForgotPasswordOtp() {
+            const email = document.getElementById('forgotPasswordOtpEmail').value;
+            
+            fetch('{{ route('intern.password.resend-otp') }}', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+                },
+                body: JSON.stringify({ email })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    Swal.fire('Sent', 'A new code has been emailed to you.', 'success');
+                    if (data.otp_fallback) {
+                        const input = document.getElementById('forgotPasswordOtpInput');
+                        input.value = data.otp_fallback;
+                    }
                 } else {
                     Swal.fire('Error', data.message || 'Failed to resend code.', 'error');
                 }
-            }
-        }).catch(() => Swal.fire('Error', 'Failed to resend code.', 'error'));
-    }
-
-    // Forgot Password Functions
-    function sendForgotPasswordOtp() {
-        const email = document.getElementById('resetEmail').value;
-        
-        if (!email.trim()) {
-            Swal.fire('Email Required', 'Please enter your email address.', 'warning');
-            return;
+            }).catch(() => Swal.fire('Error', 'Failed to resend code.', 'error'));
         }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            Swal.fire('Invalid Email', 'Please enter a valid email address.', 'warning');
-            return;
+        function showNewPasswordModal(email, otp) {
+            const modal = document.getElementById('newPasswordModal');
+            document.getElementById('newPasswordEmail').value = email;
+            document.getElementById('newPasswordOtp').value = otp;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('newPassword').focus(), 150);
         }
 
-        // Immediately transition to OTP modal
-        closeForgotPasswordModal();
-        showForgotPasswordOtpModal(email);
-
-        // Send OTP request in background
-        fetch('{{ route('password.forgot') }}', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
-            },
-            body: JSON.stringify({ email })
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                Swal.fire('OTP Sent', 'A verification code has been sent to your email.', 'success');
-                if (data.otp_fallback) {
-                    setTimeout(() => {
-                        const input = document.getElementById('forgotPasswordOtpInput');
-                        input.value = data.otp_fallback;
-                    }, 300);
-                }
-            } else {
-                // Handle email sending failure with fallback
-                if (data.otp_fallback) {
-                    setTimeout(() => {
-                        const input = document.getElementById('forgotPasswordOtpInput');
-                        input.value = data.otp_fallback;
-                    }, 300);
-                    Swal.fire({
-                        title: 'Email Sending Issue',
-                        html: 'We could not send the email. Use this code:<br><b style="font-size: 24px; color: #1d3557;">' + data.otp_fallback + '</b><br><br><small>This code is valid for 10 minutes.</small>',
-                        icon: 'warning',
-                        confirmButtonText: 'Got it!',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false
-                    });
-            } else {
-                // If OTP sending failed, go back to email modal
-                closeForgotPasswordOtpModal();
-                showForgotPasswordModal();
-                Swal.fire('Error', data.message || 'Failed to send OTP.', 'error');
-                }
-            }
-        }).catch(() => {
-            // If OTP sending failed, go back to email modal
-            closeForgotPasswordOtpModal();
-            showForgotPasswordModal();
-            Swal.fire('Error', 'Failed to send OTP.', 'error');
-        });
-    }
-
-    function showForgotPasswordModal() {
-        const modal = document.getElementById('forgotPasswordModal');
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        setTimeout(() => document.getElementById('resetEmail').focus(), 150);
-    }
-
-    function showForgotPasswordOtpModal(email) {
-        const modal = document.getElementById('forgotPasswordOtpModal');
-        document.getElementById('forgotPasswordOtpEmail').value = email;
-        document.getElementById('forgotPasswordOtpEmailLabel').textContent = email;
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        setTimeout(() => document.getElementById('forgotPasswordOtpInput').focus(), 150);
-    }
-
-    function closeForgotPasswordOtpModal() {
-        document.getElementById('forgotPasswordOtpModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-
-    function verifyForgotPasswordOtp() {
-        const email = document.getElementById('forgotPasswordOtpEmail').value;
-        const otp = document.getElementById('forgotPasswordOtpInput').value;
-        
-        if (!otp || otp.length !== 6) {
-            Swal.fire('Invalid Code', 'Please enter the 6-digit code.', 'warning');
-            return;
+        function closeNewPasswordModal() {
+            document.getElementById('newPasswordModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
         }
 
-        fetch('{{ route('password.verify-otp') }}', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
-            },
-            body: JSON.stringify({ email, otp })
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                closeForgotPasswordOtpModal();
-                showNewPasswordModal(email, otp);
-                Swal.fire('OTP Verified', 'Please set your new password.', 'success');
-            } else {
-                Swal.fire('Error', data.message || 'Invalid OTP code.', 'error');
-            }
-        }).catch(() => Swal.fire('Error', 'Failed to verify OTP.', 'error'));
-    }
-
-    function resendForgotPasswordOtp() {
-        const email = document.getElementById('forgotPasswordOtpEmail').value;
-        
-        fetch('{{ route('password.resend-otp') }}', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
-            },
-            body: JSON.stringify({ email })
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                Swal.fire('Sent', 'A new code has been emailed to you.', 'success');
-                if (data.otp_fallback) {
-                    const input = document.getElementById('forgotPasswordOtpInput');
-                    input.value = data.otp_fallback;
-                }
-            } else {
-                // Handle email sending failure with fallback
-                if (data.otp_fallback) {
-                    const input = document.getElementById('forgotPasswordOtpInput');
-                    input.value = data.otp_fallback;
-                    Swal.fire({
-                        title: 'Email Sending Issue',
-                        html: 'We could not send the email. Use this code:<br><b style="font-size: 24px; color: #1d3557;">' + data.otp_fallback + '</b><br><br><small>This code is valid for 10 minutes.</small>',
-                        icon: 'warning',
-                        confirmButtonText: 'Got it!',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false
-                    });
-            } else {
-                Swal.fire('Error', data.message || 'Failed to resend code.', 'error');
-                }
-            }
-        }).catch(() => Swal.fire('Error', 'Failed to resend code.', 'error'));
-    }
-
-    function showNewPasswordModal(email, otp) {
-        const modal = document.getElementById('newPasswordModal');
-        document.getElementById('newPasswordEmail').value = email;
-        document.getElementById('newPasswordOtp').value = otp;
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        setTimeout(() => document.getElementById('newPassword').focus(), 150);
-    }
-
-    function closeNewPasswordModal() {
-        document.getElementById('newPasswordModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-
-    function submitNewPassword() {
-        const form = document.getElementById('newPasswordForm');
-        const password = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('newPasswordConfirmation').value;
-        
-        if (!password || password.length < 8) {
-            Swal.fire('Invalid Password', 'Password must be at least 8 characters long.', 'warning');
-            return;
-        }
-        
-        if (password !== confirmPassword) {
-            Swal.fire('Password Mismatch', 'Passwords do not match.', 'warning');
-            return;
-        }
-
-        form.submit();
-    }
-
-    // Close modals when clicking outside
-    window.onclick = function(event) {
-        const termsModal = document.getElementById('termsModal');
-        const forgotPasswordModal = document.getElementById('forgotPasswordModal');
-        const forgotPasswordOtpModal = document.getElementById('forgotPasswordOtpModal');
-        const newPasswordModal = document.getElementById('newPasswordModal');
-        const otpModal = document.getElementById('otpModal');
-        
-        if (event.target === termsModal) {
-            closeTermsModal();
-        }
-        if (event.target === forgotPasswordModal) {
-            closeForgotPasswordModal();
-        }
-        if (event.target === forgotPasswordOtpModal) {
-            closeForgotPasswordOtpModal();
-        }
-        if (event.target === newPasswordModal) {
-            closeNewPasswordModal();
-        }
-        if (event.target === otpModal) {
-            closeOtpModal();
-        }
-    }
-
-    // Password strength validation removed for better user experience
-
-    // Real-time password strength validation removed
-    document.addEventListener('DOMContentLoaded', function() {
-
-        // Add Enter key support and debugging for forgot password email input
-        const resetEmailInput = document.getElementById('resetEmail');
-        if (resetEmailInput) {
-            // Debug: Log when input is clicked or focused
-            resetEmailInput.addEventListener('click', function() {
-                console.log('Email input clicked');
-            });
+        function submitNewPassword() {
+            const form = document.getElementById('newPasswordForm');
+            const password = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('newPasswordConfirmation').value;
             
-            resetEmailInput.addEventListener('focus', function() {
-                console.log('Email input focused');
-            });
-            
-            resetEmailInput.addEventListener('input', function() {
-                console.log('Email input changed:', this.value);
-            });
-            
-            resetEmailInput.addEventListener('keypress', function(e) {
-                console.log('Key pressed:', e.key);
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    submitForgotPassword();
-                }
-            });
-            
-            // Force enable the input
-            resetEmailInput.disabled = false;
-            resetEmailInput.readOnly = false;
-            resetEmailInput.style.pointerEvents = 'auto';
-            resetEmailInput.style.opacity = '1';
-            
-            console.log('Email input event listeners added');
-        }
-
-        // Secret 5-tap trigger anywhere on screen
-        let tapCount = 0;
-        let tapTimer = null;
-        document.addEventListener('click', function() {
-            tapCount++;
-            if (tapTimer) clearTimeout(tapTimer);
-            tapTimer = setTimeout(() => { tapCount = 0; }, 1000);
-            if (tapCount >= 5) {
-                tapCount = 0;
-                openSecretAdmin();
+            if (!password || password.length < 8) {
+                Swal.fire('Invalid Password', 'Password must be at least 8 characters long.', 'warning');
+                return;
             }
-        }, true);
-
-        // Hide admin Register tab - registration is always disabled
-        const regTab = document.getElementById('adminRegisterTab');
-        if (regTab) regTab.style.display = 'none';
-
-        // Form validation is now handled by reCAPTCHA functions above
-    });
-
-    // Removed secret admin logic
-
-    // Lockout functionality with persistent timer
-    let failedAttempts = parseInt(localStorage.getItem('failedAttempts')) || 0;
-    let lockoutEndTime = parseInt(localStorage.getItem('lockoutEndTime')) || 0;
-    let backgroundTimerInterval = null;
-
-    function getRemainingTime() {
-        const now = Date.now();
-        if (lockoutEndTime > now) {
-            const remainingSeconds = Math.ceil((lockoutEndTime - now) / 1000);
-            const minutes = Math.floor(remainingSeconds / 60);
-            const seconds = remainingSeconds % 60;
-            return { 
-                locked: true, 
-                timeLeft: `${minutes}:${seconds.toString().padStart(2, '0')}`,
-                remainingSeconds: remainingSeconds
-            };
-        } else if (lockoutEndTime > 0) {
-            // Lockout expired, reset
-            localStorage.removeItem('failedAttempts');
-            localStorage.removeItem('lockoutEndTime');
-            failedAttempts = 0;
-            lockoutEndTime = 0;
-            enableAllButtons();
-            stopBackgroundTimer();
-        }
-        return { locked: false, timeLeft: '0:00', remainingSeconds: 0 };
-    }
-
-    function disableAllButtons() {
-        document.querySelectorAll('button, input[type="submit"]').forEach(btn => {
-            btn.disabled = true;
-            btn.style.opacity = '0.5';
-            btn.style.cursor = 'not-allowed';
-        });
-    }
-
-    function enableAllButtons() {
-        document.querySelectorAll('button, input[type="submit"]').forEach(btn => {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
-        });
-    }
-
-    function startBackgroundTimer() {
-        // Clear any existing timer
-        if (backgroundTimerInterval) {
-            clearInterval(backgroundTimerInterval);
-        }
-        
-        // Start continuous background timer
-        backgroundTimerInterval = setInterval(() => {
-            const status = getRemainingTime();
-            if (!status.locked) {
-                stopBackgroundTimer();
-                enableAllButtons();
-            }
-        }, 1000);
-    }
-
-    function stopBackgroundTimer() {
-        if (backgroundTimerInterval) {
-            clearInterval(backgroundTimerInterval);
-            backgroundTimerInterval = null;
-        }
-    }
-
-    // SweetAlert configuration for all messages
-    document.addEventListener('DOMContentLoaded', function() {
-        // Check lockout on page load and start persistent timer if needed
-        const lockoutStatus = getRemainingTime();
-        if (lockoutStatus.locked) {
-            disableAllButtons();
-            startBackgroundTimer(); // Start the persistent background timer
             
-            Swal.fire({
-                title: 'System Locked!',
-                html: `Too many failed attempts.<br>Please wait <b>${lockoutStatus.timeLeft}</b> before trying again.`,
-                icon: 'warning',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                showConfirmButton: true,
-                confirmButtonText: 'OK',
-                didOpen: () => {
-                    const content = Swal.getHtmlContainer();
-                    const b = content.querySelector('b');
-                    
-                    const timerInterval = setInterval(() => {
-                        const status = getRemainingTime();
-                        if (status.locked) {
-                            b.textContent = status.timeLeft;
+            if (password !== confirmPassword) {
+                Swal.fire('Password Mismatch', 'Passwords do not match.', 'warning');
+                return;
+            }
+
+            form.submit();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Parse invitation from query and bind input parsing
+            const params = new URLSearchParams(window.location.search);
+            const invite = params.get('invite');
+            const hiddenTokenInput = document.getElementById('invited_token');
+            const inviteInput = document.getElementById('invitation_link_input');
+            if (invite) {
+                // Verify token with backend
+                fetch(`{{ route('api.invite.verify') }}?token=${encodeURIComponent(invite)}`)
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.valid) {
+                            hiddenTokenInput.value = invite;
+                            if (inviteInput) inviteInput.value = window.location.href;
+                            // enable fields
+                            document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(el => {
+                                if (el.id !== 'invitation_link_input') {
+                                    el.disabled = false;
+                                }
+                            });
                         } else {
-                            clearInterval(timerInterval);
-                            Swal.close();
+                            Swal.fire({ title: 'Expired Link', text: 'The invitation link has expired.', icon: 'error', timer: 2000, showConfirmButton: false });
                         }
-                    }, 1000);
-                }
-            });
-        }
-
-        // Check for session error message
-        @if(session('error'))
-            failedAttempts++;
-            localStorage.setItem('failedAttempts', failedAttempts);
-            
-            const attemptsLeft = 3 - failedAttempts;
-            
-            if (failedAttempts >= 3) {
-                // Lockout for 5 minutes
-                lockoutEndTime = Date.now() + (5 * 60 * 1000);
-                localStorage.setItem('lockoutEndTime', lockoutEndTime);
+                    })
+                    .catch(() => {
+                        Swal.fire({ title: 'Expired Link', text: 'The invitation link has expired.', icon: 'error', timer: 2000, showConfirmButton: false });
+                    });
+            }
+            if (inviteInput) {
+                inviteInput.addEventListener('input', function() {
+                    try {
+                        const url = new URL(this.value);
+                        const qp = new URLSearchParams(url.search);
+                        const t = qp.get('invite');
+                        if (t) {
+                            fetch(`{{ route('api.invite.verify') }}?token=${encodeURIComponent(t)}`)
+                                .then(r => r.json())
+                                .then(res => {
+                                    if (res.valid) {
+                                        hiddenTokenInput.value = t;
+                                        document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(el => {
+                                            if (el.id !== 'invitation_link_input') {
+                                                el.disabled = false;
+                                            }
+                                        });
+                                    } else {
+                                        hiddenTokenInput.value = '';
+                                        document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(el => {
+                                            if (el.id !== 'invitation_link_input') {
+                                                el.disabled = true;
+                                            }
+                                        });
+                                        Swal.fire({ title: 'Expired Link', text: 'The invitation link has expired.', icon: 'error', timer: 1800, showConfirmButton: false });
+                                    }
+                                })
+                                .catch(() => {
+                                    hiddenTokenInput.value = '';
+                                    document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(el => {
+                                        if (el.id !== 'invitation_link_input') {
+                                            el.disabled = true;
+                                        }
+                                    });
+                                    Swal.fire({ title: 'Expired Link', text: 'The invitation link has expired.', icon: 'error', timer: 1800, showConfirmButton: false });
+                                });
+                        }
+                    } catch (e) {
+                        // ignore malformed
+                    }
+                });
+            }
+            const lockoutStatus = getRemainingTime();
+            if (lockoutStatus.locked) {
                 disableAllButtons();
-                startBackgroundTimer(); // Start persistent timer
+                startBackgroundTimer();
                 
                 Swal.fire({
-                    title: 'Account Locked!',
-                    html: 'Too many failed attempts.<br>Please wait <b>5:00</b> before trying again.',
-                    icon: 'error',
+                    title: 'System Locked!',
+                    html: `Too many failed attempts.<br>Please wait <b>${lockoutStatus.timeLeft}</b> before trying again.`,
+                    icon: 'warning',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
                     showConfirmButton: true,
@@ -1517,238 +1210,205 @@
                         }, 1000);
                     }
                 });
-            } else {
+            }
+
+            @if(session('error'))
+                failedAttempts++;
+                localStorage.setItem('internFailedAttempts', failedAttempts);
+                
+                const attemptsLeft = 3 - failedAttempts;
+                
+                if (failedAttempts >= 3) {
+                    lockoutEndTime = Date.now() + (5 * 60 * 1000);
+                    localStorage.setItem('internLockoutEndTime', lockoutEndTime);
+                    disableAllButtons();
+                    startBackgroundTimer();
+                    
+                    Swal.fire({
+                        title: 'Account Locked!',
+                        html: 'Too many failed attempts.<br>Please wait <b>5:00</b> before trying again.',
+                        icon: 'error',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK',
+                        didOpen: () => {
+                            const content = Swal.getHtmlContainer();
+                            const b = content.querySelector('b');
+                            
+                            const timerInterval = setInterval(() => {
+                                const status = getRemainingTime();
+                                if (status.locked) {
+                                    b.textContent = status.timeLeft;
+                                } else {
+                                    clearInterval(timerInterval);
+                                    Swal.close();
+                                }
+                            }, 1000);
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Login Error!',
+                        html: '{{ session('error') }}<br><br><b style="color: #fbbf24;">You only have ' + attemptsLeft + ' attempt' + (attemptsLeft > 1 ? 's' : '') + ' left!</b>',
+                        icon: 'error',
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    });
+                }
+            @endif
+
+            @if ($errors->any())
+                let errorMessages = '';
+                @foreach ($errors->all() as $error)
+                    errorMessages += '{{ $error }}\n';
+                @endforeach
+                
                 Swal.fire({
-                    title: 'Error!',
-                    html: '{{ session('error') }}<br><br><b style="color: #fbbf24;">You only have ' + attemptsLeft + ' attempt' + (attemptsLeft > 1 ? 's' : '') + ' left!</b>',
+                    title: 'Validation Error!',
+                    text: errorMessages.trim(),
                     icon: 'error',
-                    timer: 3000,
+                    timer: 1500,
                     timerProgressBar: true,
                     showConfirmButton: false,
-                    allowOutsideClick: false,
-                    backdrop: 'rgba(0,0,0,0.7)',
-                    focusConfirm: true,
-                    allowEscapeKey: false
-                });
-            }
-        @endif
-
-        // Check for validation errors
-        @if ($errors->any())
-            let errorMessages = '';
-            @foreach ($errors->all() as $error)
-                errorMessages += '{{ $error }}\n';
-            @endforeach
-            
-            Swal.fire({
-                title: 'Validation Error!',
-                text: errorMessages.trim(),
-                icon: 'error',
-                timer: 1500,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                allowOutsideClick: false,
-                backdrop: 'rgba(0,0,0,0.7)',
-                focusConfirm: true,
-                allowEscapeKey: false
-            });
-        @endif
-
-        // Check for success message
-        @if(session('success'))
-            // Reset failed attempts on successful login
-            localStorage.removeItem('failedAttempts');
-            localStorage.removeItem('lockoutEndTime');
-            failedAttempts = 0;
-            lockoutEndTime = 0;
-            stopBackgroundTimer();
-            
-            Swal.fire({
-                title: 'Success!',
-                text: '{{ session('success') }}',
-                icon: 'success',
-                timer: 1500,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                allowOutsideClick: false,
-                backdrop: 'rgba(0,0,0,0.7)',
-                focusConfirm: true,
-                allowEscapeKey: false
-            });
-        @endif
-
-        // Open OTP modal automatically after registration or login prompt
-        @if(session('otp_email'))
-            showOtpModal('{{ session('otp_email') }}');
-            @if(session('otp_code_fallback'))
-                // Fallback: show OTP if email could not be sent
-                setTimeout(() => {
-                    const input = document.getElementById('otpInput');
-                    input.value = '{{ session('otp_code_fallback') }}';
-                }, 300);
-                Swal.fire({
-                    title: 'Email Sending Issue',
-                    html: 'We could not send the email. Use this code:<br><b style="font-size: 24px; color: #1d3557;">{{ session('otp_code_fallback') }}</b><br><br><small>This code is valid for 10 minutes.</small>',
-                    icon: 'warning',
-                    confirmButtonText: 'Got it!',
                     allowOutsideClick: false,
                     allowEscapeKey: false
                 });
             @endif
-        @endif
-    });
 
-    // Ensure timer continues even when user navigates away and comes back
-    window.addEventListener('beforeunload', function() {
-        // Timer data is already saved in localStorage, so it persists
-        // No need to do anything here - the timer will continue counting down
-    });
-
-    // Handle visibility change (tab switching, minimizing browser, etc.)
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            // Page became visible again, check if lockout expired
-            const status = getRemainingTime();
-            if (!status.locked && lockoutEndTime > 0) {
-                // Lockout expired while user was away
-                localStorage.removeItem('failedAttempts');
-                localStorage.removeItem('lockoutEndTime');
+            @if(session('success'))
+                localStorage.removeItem('internFailedAttempts');
+                localStorage.removeItem('internLockoutEndTime');
                 failedAttempts = 0;
                 lockoutEndTime = 0;
-                enableAllButtons();
                 stopBackgroundTimer();
+                
+                Swal.fire({
+                    title: 'Success!',
+                    text: '{{ session('success') }}',
+                    icon: 'success',
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+            @endif
+
+            @if(session('document_success'))
+                Swal.fire({
+                    title: 'Documents Submitted!',
+                    text: '{{ session('document_success') }}',
+                    icon: 'success',
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+            @endif
+
+            // Open OTP modal automatically after registration
+            @if(session('otp_email'))
+                showOtpModal('{{ session('otp_email') }}');
+                @if(session('otp_code_fallback'))
+                    // Fallback: show OTP if email could not be sent
+                    setTimeout(() => {
+                        const input = document.getElementById('otpInput');
+                        if (input) {
+                            input.value = '{{ session('otp_code_fallback') }}';
+                        }
+                    }, 500);
+                    // Show fallback OTP after OTP modal is displayed
+                    setTimeout(() => {
+                        Swal.fire({
+                            title: 'Email Sending Issue',
+                            html: 'We could not send the email. Use this code:<br><b style="font-size: 24px; color: #1d3557;">{{ session('otp_code_fallback') }}</b>',
+                            icon: 'warning',
+                            confirmButtonColor: '#457b9d',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false
+                        });
+                    }, 600);
+                @endif
+            @endif
+
+            const stepIndicators = document.querySelectorAll('.step-indicators .step');
+            const stepContents = document.querySelectorAll('.step-content');
+            let currentStep = 0;
+
+            function showStep(stepIndex) {
+                stepIndicators.forEach(indicator => indicator.classList.remove('active'));
+                stepIndicators[stepIndex].classList.add('active');
+                stepContents.forEach(content => content.style.display = 'none');
+                stepContents[stepIndex].style.display = 'block';
+                currentStep = stepIndex;
+            }
+
+            stepIndicators.forEach((indicator, index) => {
+                indicator.addEventListener('click', () => {
+                    if (index < currentStep) {
+                        showStep(index);
+                    } else if (index > currentStep) {
+                        if (currentStep === 0) {
+                            document.getElementById('registrationForm').submit();
+                        } else if (currentStep === 1) {
+                            document.getElementById('preDeploymentForm').submit();
+                        } else if (currentStep === 2) {
+                            document.getElementById('midDeploymentForm').submit();
+                        } else if (currentStep === 3) {
+                            document.getElementById('deploymentForm').submit();
+                        }
+                    }
+                });
+            });
+        });
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const otpModal = document.getElementById('otpModal');
+            const registrationModal = document.getElementById('registrationModal');
+            const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+            const forgotPasswordOtpModal = document.getElementById('forgotPasswordOtpModal');
+            const newPasswordModal = document.getElementById('newPasswordModal');
+            
+            if (event.target === otpModal) {
+                closeOtpModal();
+            }
+            if (event.target === registrationModal) {
+                closeRegistrationModal();
+            }
+            if (event.target === forgotPasswordModal) {
+                closeForgotPasswordModal();
+            }
+            if (event.target === forgotPasswordOtpModal) {
+                closeForgotPasswordOtpModal();
+            }
+            if (event.target === newPasswordModal) {
+                closeNewPasswordModal();
             }
         }
-    });
 
-    // Debug function to test email input - call this from browser console
-    window.testEmailInput = function() {
-        const emailInput = document.getElementById('resetEmail');
-        if (emailInput) {
-            console.log('Email input found:', emailInput);
-            console.log('Input disabled:', emailInput.disabled);
-            console.log('Input readonly:', emailInput.readOnly);
-            console.log('Input style:', emailInput.style.cssText);
-            
-            // Try to set a test value
-            emailInput.value = 'test@example.com';
-            console.log('Test value set:', emailInput.value);
-            
-            // Try to focus
-            emailInput.focus();
-            console.log('Input focused');
-        } else {
-            console.log('Email input not found!');
-        }
-    };
+        window.addEventListener('beforeunload', function() {
+            // Timer data is already saved in localStorage
+        });
 
-    // Secret Admin Modal logic
-    function openSecretAdmin() {
-        const modal = document.getElementById('secretAdminModal');
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        // Default to Login tab
-        switchAdminTab('login');
-    }
-    function closeSecretAdmin() {
-        document.getElementById('secretAdminModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-    function switchAdminTab(tab) {
-        const loginF = document.getElementById('adminLoginForm');
-        const regF = document.getElementById('adminRegisterForm');
-        const forgotF = document.getElementById('adminForgotForm');
-        loginF.style.display = tab === 'login' ? 'block' : 'none';
-        regF.style.display = tab === 'register' ? 'block' : 'none';
-        forgotF.style.display = tab === 'forgot' ? 'block' : 'none';
-        document.getElementById('adminLoginTab').className = tab==='login'?'btn btn-primary':'btn btn-secondary';
-        const regTab = document.getElementById('adminRegisterTab');
-        if (regTab) regTab.className = tab==='register'?'btn btn-primary':'btn btn-secondary';
-        document.getElementById('adminForgotTab').className = tab==='forgot'?'btn btn-primary':'btn btn-secondary';
-    }
-    function submitAdminLogin() {
-        const email = document.getElementById('adminLoginEmail').value.trim();
-        const password = document.getElementById('adminLoginPassword').value;
-        fetch('{{ route('admin.login') }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-            body: JSON.stringify({ email, password })
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                window.location.href = data.redirect_url || '{{ route('admin.dashboard') }}';
-            } else {
-                Swal.fire('Error', data.message || 'Login failed', 'error');
-            }
-        }).catch(() => Swal.fire('Error', 'Login request failed', 'error'));
-    }
-    function submitAdminRegister() {
-        const name = document.getElementById('adminRegName').value.trim();
-        const email = document.getElementById('adminRegEmail').value.trim();
-        const password = document.getElementById('adminRegPassword').value;
-        const confirm = document.getElementById('adminRegPasswordConfirm').value;
-        if (password !== confirm) { Swal.fire('Error', 'Passwords do not match', 'error'); return; }
-        fetch('{{ route('admin.register') }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-            body: JSON.stringify({ name, email, password, password_confirmation: confirm })
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                Swal.fire('Success', 'Admin created. You can login now.', 'success');
-                // Hide register button permanently after creating first admin
-                const regTab = document.getElementById('adminRegisterTab');
-                if (regTab) regTab.style.display = 'none';
-                switchAdminTab('login');
-            } else {
-                Swal.fire('Error', data.message || 'Registration failed', 'error');
-            }
-        }).catch(() => Swal.fire('Error', 'Registration request failed', 'error'));
-    }
-    function submitAdminForgot() {
-        const email = document.getElementById('adminForgotEmail').value.trim();
-        fetch('{{ route('admin.forgot') }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-            body: JSON.stringify({ email })
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                // Move to OTP step inside Secret Admin modal
-                document.getElementById('adminForgotForm').style.display = 'none';
-                document.getElementById('adminForgotOtpForm').style.display = 'block';
-                document.getElementById('adminForgotOtpEmail').value = email;
-                document.getElementById('adminForgotOtpEmailLabel').textContent = email;
-                const otpInput = document.getElementById('adminForgotOtpInput');
-                setTimeout(() => otpInput && otpInput.focus(), 100);
-                if (data.otp_fallback) {
-                    otpInput.value = data.otp_fallback;
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                const status = getRemainingTime();
+                if (!status.locked && lockoutEndTime > 0) {
+                    localStorage.removeItem('internFailedAttempts');
+                    localStorage.removeItem('internLockoutEndTime');
+                    failedAttempts = 0;
+                    lockoutEndTime = 0;
+                    enableAllButtons();
+                    stopBackgroundTimer();
                 }
-            } else {
-                Swal.fire('Error', data.message || 'Failed to send reset', 'error');
             }
-        }).catch(() => Swal.fire('Error', 'Request failed', 'error'));
-    }
-    function submitAdminForgotOtp() {
-        const email = document.getElementById('adminForgotOtpEmail').value;
-        const otp = document.getElementById('adminForgotOtpInput').value;
-        if (!otp || otp.replace(/\D/g, '').length !== 6) {
-            Swal.fire('Invalid Code', 'Please enter the 6-digit code.', 'warning');
-            return;
-        }
-        fetch('{{ route('admin.verify-forgot-otp') }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-            body: JSON.stringify({ email, otp })
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                Swal.fire('Verified', 'You can now login with your account.', 'success');
-                // Return to login tab
-                document.getElementById('adminForgotOtpForm').style.display = 'none';
-                switchAdminTab('login');
-            } else {
-                Swal.fire('Error', data.message || 'Invalid code.', 'error');
-            }
-        }).catch(() => Swal.fire('Error', 'Verification failed', 'error'));
-    }
-</script>
-
+        });
+    </script>
 </body>
 </html>
