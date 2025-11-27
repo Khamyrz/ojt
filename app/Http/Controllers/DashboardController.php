@@ -472,11 +472,13 @@ class DashboardController extends Controller
 
     public function sendGradeRequest(Request $request)
     {
+        // Basic validation; allow any string and normalize below
         $request->validate([
             'intern_id' => 'required|exists:interns,id',
-            'type' => 'required|string|in:Midterm,Final,Certificate,Evaluation Form',
+            'type' => 'required|string',
         ]);
 
+        // Normalize type (handles: Midterm, midterm, Certificate, Evaluation Form, etc.)
         $normalized = strtolower(str_replace(' ', '', $request->type));
 
         $typeMap = [
@@ -484,6 +486,7 @@ class DashboardController extends Controller
             'final' => 'final',
             'certificate' => 'certificate',
             'evaluationform' => 'evaluation',
+            'evaluation' => 'evaluation',
         ];
 
         $type = $typeMap[$normalized] ?? null;
@@ -709,187 +712,61 @@ class DashboardController extends Controller
 
     /**
      * Export database to SQL file
+     *
+     * NOTE: To avoid server 500 errors on shared hosting / XAMPP where `exec`
+     * is often disabled, this implementation:
+     * - If `ojt.sql` exists in the project root, serves that file as the export.
+     * - Otherwise, for SQLite, copies the SQLite DB file.
+     * - For MySQL without `ojt.sql`, shows a clear message telling the admin
+     *   to generate an export via phpMyAdmin and place it as `ojt.sql`.
      */
     public function exportDatabase()
     {
         try {
             $connection = config('database.default');
             $config = config("database.connections.{$connection}");
-            
+
             $filename = 'ojt_backup_' . date('Y-m-d_H-i-s') . '.sql';
-            $backupPath = storage_path('app/backups');
-            
-            // Create backups directory if it doesn't exist
-            if (!file_exists($backupPath)) {
-                mkdir($backupPath, 0755, true);
+
+            // 1) Prefer an existing dump file in the project root (ojt.sql)
+            $existingDump = base_path('ojt.sql');
+            if (file_exists($existingDump)) {
+                return response()->download($existingDump, $filename, [
+                    'Content-Type' => 'application/sql',
+                ]);
             }
-            
-            $filePath = $backupPath . '/' . $filename;
-            
-            if ($connection === 'mysql') {
-                // Find mysqldump path (Windows XAMPP or Linux)
-                $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
-                
-                if ($isWindows) {
-                    // Try common XAMPP paths first
-                    $possiblePaths = [
-                        'C:\\xampp\\mysql\\bin\\mysqldump.exe',
-                        'C:\\xampp\\mysql\\bin\\mysqldump',
-                        'C:\\Program Files\\xampp\\mysql\\bin\\mysqldump.exe',
-                        'C:\\Program Files (x86)\\xampp\\mysql\\bin\\mysqldump.exe',
-                    ];
-                    
-                    $mysqldump = null;
-                    foreach ($possiblePaths as $path) {
-                        if (file_exists($path)) {
-                            $mysqldump = $path;
-                            break;
-                        }
-                    }
-                    
-                    // If not found in common paths, try to find it in PATH
-                    if (!$mysqldump) {
-                        $pathResult = shell_exec('where mysqldump 2>nul');
-                        $pathResult = trim($pathResult);
-                        if (!empty($pathResult) && file_exists($pathResult)) {
-                            $mysqldump = $pathResult;
-                        }
-                    }
-                    
-                    // Last resort: try just mysqldump (if in PATH)
-                    if (!$mysqldump) {
-                        // Test if mysqldump works
-                        $testResult = shell_exec('mysqldump --version 2>nul');
-                        if (!empty($testResult)) {
-                            $mysqldump = 'mysqldump';
-                        }
-                    }
-                    
-                    if (!$mysqldump) {
-                        throw new \Exception('mysqldump not found. Please ensure MySQL/XAMPP is installed. Common locations: C:\\xampp\\mysql\\bin\\mysqldump.exe');
-                    }
-                } else {
-                    $mysqldump = 'mysqldump';
-                }
-                
-                // Build command with proper escaping
-                $host = $config['host'] ?? '127.0.0.1';
-                $port = $config['port'] ?? '3306';
-                $username = $config['username'] ?? 'root';
-                $password = $config['password'] ?? '';
-                $database = $config['database'] ?? 'ojt';
-                
-                if ($isWindows) {
-                    // Windows: use Windows path format and cmd /c for proper redirection
-                    $filePathWin = str_replace('/', '\\', $filePath);
-                    $command = sprintf(
-                        'cmd /c "%s" --user=%s --password=%s --host=%s --port=%s %s > "%s" 2>&1',
-                        $mysqldump,
-                        escapeshellarg($username),
-                        escapeshellarg($password),
-                        escapeshellarg($host),
-                        escapeshellarg($port),
-                        escapeshellarg($database),
-                        $filePathWin
-                    );
-                } else {
-                    // Linux/Unix: use forward slashes
-                    $command = sprintf(
-                        '%s --user=%s --password=%s --host=%s --port=%s %s > %s 2>&1',
-                        escapeshellarg($mysqldump),
-                        escapeshellarg($username),
-                        escapeshellarg($password),
-                        escapeshellarg($host),
-                        escapeshellarg($port),
-                        escapeshellarg($database),
-                        escapeshellarg($filePath)
-                    );
-                }
-                
-                // Execute command and capture output
-                exec($command, $output, $returnVar);
-                
-                // Wait a moment for file to be written
-                sleep(1);
-                
-                // Check if file was created and has content
-                if (!file_exists($filePath)) {
-                    $errorMsg = !empty($output) ? implode("\n", $output) : 'Command executed but file was not created.';
-                    throw new \Exception('Database export failed. ' . $errorMsg);
-                }
-                
-                if (filesize($filePath) == 0) {
-                    $errorMsg = !empty($output) ? implode("\n", $output) : 'File was created but is empty.';
-                    // Read error from file if it contains error message
-                    $fileContent = file_get_contents($filePath);
-                    if (stripos($fileContent, 'error') !== false || stripos($fileContent, 'access denied') !== false) {
-                        $errorMsg = $fileContent;
-                    }
-                    throw new \Exception('Database export failed. ' . $errorMsg);
-                }
-                
-            } elseif ($connection === 'sqlite') {
-                // SQLite export - create SQL dump manually
+
+            // 2) If using SQLite, copy the SQLite DB file as the export
+            if ($connection === 'sqlite') {
                 $dbPath = $config['database'];
                 if (!file_exists($dbPath)) {
                     throw new \Exception('SQLite database file not found at: ' . $dbPath);
                 }
-                
-                // For SQLite, we'll create a simple backup by copying the file
-                // and optionally create a SQL dump
-                copy($dbPath, $filePath);
-                
-                // Also create a readable SQL dump if possible
-                try {
-                    $pdo = new \PDO("sqlite:$dbPath");
-                    $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(\PDO::FETCH_COLUMN);
-                    
-                    $sqlDump = "-- SQLite Database Backup\n";
-                    $sqlDump .= "-- Generated: " . date('Y-m-d H:i:s') . "\n\n";
-                    
-                    foreach ($tables as $table) {
-                        if ($table === 'sqlite_sequence') continue;
-                        
-                        $sqlDump .= "-- Table: $table\n";
-                        $rows = $pdo->query("SELECT * FROM `$table`")->fetchAll(\PDO::FETCH_ASSOC);
-                        
-                        foreach ($rows as $row) {
-                            $columns = implode('`, `', array_keys($row));
-                            $values = array_map(function($value) use ($pdo) {
-                                return $value === null ? 'NULL' : $pdo->quote($value);
-                            }, array_values($row));
-                            $valuesStr = implode(', ', $values);
-                            $sqlDump .= "INSERT INTO `$table` (`$columns`) VALUES ($valuesStr);\n";
-                        }
-                        $sqlDump .= "\n";
-                    }
-                    
-                    file_put_contents($filePath, $sqlDump);
-                } catch (\Exception $e) {
-                    // If SQL dump fails, at least we have the file copy
+
+                $backupPath = storage_path('app/backups');
+                if (!file_exists($backupPath)) {
+                    mkdir($backupPath, 0755, true);
                 }
-                
-            } else {
-                throw new \Exception('Unsupported database connection type: ' . $connection);
+
+                $filePath = $backupPath . '/' . $filename;
+                copy($dbPath, $filePath);
+
+                // Return download response
+                return response()->download($filePath, $filename, [
+                    'Content-Type' => 'application/octet-stream',
+                ])->deleteFileAfterSend(false);
             }
-            
-            // Verify file exists and has content
-            if (!file_exists($filePath)) {
-                throw new \Exception('Backup file was not created.');
+
+            // 3) For MySQL without exec access, guide the admin
+            if ($connection === 'mysql') {
+                throw new \Exception(
+                    'Automatic MySQL export is not available on this server. ' .
+                    'Please export the database via phpMyAdmin (or MySQL Workbench), ' .
+                    'save it as "ojt.sql" in the project root, and click Export Database again.'
+                );
             }
-            
-            if (filesize($filePath) == 0) {
-                throw new \Exception('Backup file is empty. Please check database connection and permissions.');
-            }
-            
-            // Clean up old backups (keep only last 24 backups)
-            $this->cleanupOldBackups($backupPath);
-            
-            // Return download response
-            return response()->download($filePath, $filename, [
-                'Content-Type' => 'application/sql',
-            ])->deleteFileAfterSend(false);
-            
+
+            throw new \Exception('Unsupported database connection type: ' . $connection);
         } catch (\Exception $e) {
             \Log::error('Database export failed: ' . $e->getMessage());
             return redirect()->route('grades')->with('error', 'Database export failed: ' . $e->getMessage());
